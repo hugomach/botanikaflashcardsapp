@@ -300,6 +300,14 @@ textarea { resize: vertical; }
   .flip-q { font-size: 17px; }
   .quiz-mode-toggle button { padding: 4px 7px; font-size: 11px; }
 }
+
+/* Multi-photo gallery */
+.photo-gallery { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+.photo-thumb { position: relative; width: 100px; height: 80px; border-radius: var(--radius); overflow: hidden; background: var(--surface2); flex-shrink: 0; }
+.photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photo-delete-btn { position: absolute; top: 3px; right: 3px; background: rgba(0,0,0,0.55); color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 11px; cursor: pointer; padding: 0; line-height: 20px; text-align: center; }
+.photo-delete-btn:hover { background: var(--flag); }
+.photo-count-badge { position: absolute; bottom: 5px; right: 5px; background: rgba(0,0,0,0.6); color: #fff; font-size: 10px; padding: 1px 5px; border-radius: 999px; pointer-events: none; }
 </style>
 </head>
 <body>
@@ -482,7 +490,11 @@ const SB_BUCKET = 'botanika-photos';
 
 // ── Storage key helpers ──
 const SK = latin => 'p_' + latin.replace(/\s/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
-function D(latin) { return userData[SK(latin)] || {status:'new',photo:'',funfact:'',flagged:false}; }
+function D(latin) {
+  const raw = userData[SK(latin)] || {};
+  const photos = raw.photos || (raw.photo ? [raw.photo] : []);
+  return {status:'new', funfact:'', flagged:false, ...raw, photos};
+}
 
 // ── Init ──
 window.onload = async () => {
@@ -698,7 +710,7 @@ function renderStats() {
     if (d.status==='learned') learned++;
     if (d.status==='review') review++;
     if (d.flagged) flagged++;
-    if (d.photo) photo++;
+    if (d.photos.length) photo++;
   });
   document.getElementById('statsbar').innerHTML =
     `<div class="stat">Celkem: <b>${total}</b></div>
@@ -716,8 +728,11 @@ function cardHTML(p) {
     : d.status==='review' ? '<span class="badge b-review">opakování</span>'
     : '<span class="badge b-new">nové</span>';
   const flag = d.flagged ? '<span class="flag-icon">🚩</span>' : '';
-  const img = d.photo
-    ? `<div class="card-img"><img src="${esc(d.photo)}" alt="" onerror="this.parentNode.innerHTML='bez fotky'"></div>`
+  const photos = d.photos;
+  const firstPhoto = photos[0] || '';
+  const countBadge = photos.length > 1 ? `<span class="photo-count-badge">${photos.length} 📷</span>` : '';
+  const img = firstPhoto
+    ? `<div class="card-img" style="position:relative"><img src="${esc(firstPhoto)}" alt="" onerror="this.parentNode.innerHTML='bez fotky'">${countBadge}</div>`
     : `<div class="card-img">bez fotky</div>`;
   const safe = esc(p.latin);
   const groupBadge = `<span class="badge" style="background:${GROUP_COLORS[p.group]||'#888'};color:#fff;margin-left:auto">${p.group||''}</span>`;
@@ -749,7 +764,7 @@ function filteredPlants(familySel, familyCzSel, statusSel, searchVal) {
     if (st==='review' && d.status!=='review') return false;
     if (st==='learned' && d.status!=='learned') return false;
     if (st==='flagged' && !d.flagged) return false;
-    if (st==='photo' && !d.photo) return false;
+    if (st==='photo' && !d.photos.length) return false;
     if (q) {
       const searchIn = [p.latin, p.czech, p.family_cz, p.family_lat, p.habitat, p.life_form, ...(p.tags||[])].join(' ').toLowerCase();
       if (!searchIn.includes(q)) return false;
@@ -791,10 +806,6 @@ function openModal(latin) {
   const d = D(latin);
   const enc = encodeURIComponent(latin);
   const sl = latin.replace(/'/g,"\\'");
-  const isBase64 = (d.photo||'').startsWith('data:');
-  const imgEl = d.photo
-    ? `<img class="modal-img" src="${isBase64 ? d.photo : esc(d.photo)}" onerror="this.style.display='none'">`
-    : `<div class="no-img">Zatím žádná fotka</div>`;
   document.getElementById('modal-inner').innerHTML = `
     <div class="modal-head">
       <div>
@@ -805,7 +816,7 @@ function openModal(latin) {
       <button class="btn-close" onclick="closeModal()">✕</button>
     </div>
     <div class="modal-body">
-      <div id="modal-img-wrap">${imgEl}</div>
+      <div id="modal-img-wrap">${buildGalleryHTML(latin)}</div>
 
       <div class="photo-tabs">
         <div class="photo-tab active" onclick="switchPhotoTab('file',this)">📁 Soubor / přetažení</div>
@@ -832,13 +843,13 @@ function openModal(latin) {
       </div>
 
       <div id="pp-url" class="photo-panel">
-        <input type="url" id="m-photo" value="${esc((isBase64?'':d.photo)||'')}" placeholder="https://upload.wikimedia.org/…" style="margin-top:6px;">
+        <input type="url" id="m-photo" value="" placeholder="https://upload.wikimedia.org/…" style="margin-top:6px;">
         <div class="ext-links" style="margin-top:5px;">
           <a class="ext-link" href="https://commons.wikimedia.org/w/index.php?search=${enc}&ns6=1" target="_blank">🔍 Wikimedia Commons</a>
           <a class="ext-link" href="https://www.inaturalist.org/taxa/search?q=${enc}" target="_blank">🌿 iNaturalist</a>
           <a class="ext-link" href="https://cs.wikipedia.org/w/index.php?search=${enc}" target="_blank">📖 Wikipedia</a>
         </div>
-        <button class="btn" style="margin-top:8px;width:100%;" onclick="savePhotoUrl('${sl}')">Uložit URL</button>
+        <button class="btn" style="margin-top:8px;width:100%;" onclick="savePhotoUrl('${sl}')">Přidat URL</button>
       </div>
 
       <label style="margin-top:12px;">Zajímavost / poznámka</label>
@@ -849,7 +860,7 @@ function openModal(latin) {
         <button class="btn red-flag${d.flagged?' active':''}" id="flag-btn" onclick="toggleFlag('${sl}')">🚩 Nevím</button>
       </div>
       <button class="btn btn-save" onclick="saveFunfact('${sl}')">Uložit poznámku</button>
-      ${d.photo ? `<button class="btn" style="width:100%;margin-top:5px;font-size:11px;color:#185FA5;border-color:#185FA5" onclick="analyzePhoto('${sl}')">🤖 AI analýza fotky</button><div id="ai-result" style="font-size:12px;color:var(--text2);margin-top:6px;line-height:1.6"></div>` : ''}
+      ${d.photos.length ? `<button class="btn" style="width:100%;margin-top:5px;font-size:11px;color:#185FA5;border-color:#185FA5" onclick="analyzePhoto('${sl}')">🤖 AI analýza fotky</button><div id="ai-result" style="font-size:12px;color:var(--text2);margin-top:6px;line-height:1.6"></div>` : ''}
     </div>`;
   document.getElementById('modal').style.display = 'flex';
 }
@@ -931,9 +942,7 @@ async function imgToBase64(file, latin) {
       const compressed = await compressImage(file);
       data = compressed.dataUrl;
     }
-    setData(latin, {photo: data});
-    updateModalImg(data);
-    renderAll();
+    addPhoto(latin, data);
   } catch (e) {
     console.error('imgToBase64 failed:', e);
     alert('Obrázek se nepodařilo zpracovat. Zkus jiný soubor nebo URL odkaz.');
@@ -943,6 +952,33 @@ async function imgToBase64(file, latin) {
 function updateModalImg(src) {
   const wrap = document.getElementById('modal-img-wrap');
   if (wrap) wrap.innerHTML = `<img class="modal-img" src="${src.startsWith('data:') ? src : esc(src)}">`;
+}
+
+function buildGalleryHTML(latin) {
+  const d = D(latin);
+  const sl = latin.replace(/'/g,"\\'");
+  if (!d.photos.length) return `<div class="no-img">Zatím žádná fotka</div>`;
+  return `<div class="photo-gallery">` +
+    d.photos.map((src, i) => {
+      const s = src.startsWith('data:') ? src : esc(src);
+      return `<div class="photo-thumb"><img src="${s}" onerror="this.parentNode.style.background='var(--surface2)'" alt=""><button class="photo-delete-btn" onclick="removePhoto('${sl}',${i})" title="Odstranit">✕</button></div>`;
+    }).join('') + `</div>`;
+}
+
+function addPhoto(latin, url) {
+  const d = D(latin);
+  setData(latin, {photos: [...d.photos, url]});
+  const wrap = document.getElementById('modal-img-wrap');
+  if (wrap) wrap.innerHTML = buildGalleryHTML(latin);
+  renderAll();
+}
+
+function removePhoto(latin, idx) {
+  const d = D(latin);
+  setData(latin, {photos: d.photos.filter((_,i) => i !== idx)});
+  const wrap = document.getElementById('modal-img-wrap');
+  if (wrap) wrap.innerHTML = buildGalleryHTML(latin);
+  renderAll();
 }
 
 function handleFile(event, latin) {
@@ -956,7 +992,7 @@ function handleDrop(event, latin) {
   const file = event.dataTransfer.files[0];
   if (file && file.type.startsWith('image/')) imgToBase64(file, latin);
   const url = event.dataTransfer.getData('text/uri-list') || event.dataTransfer.getData('text/plain');
-  if (!file && url && url.startsWith('http')) { setData(latin,{photo:url}); updateModalImg(url); renderAll(); }
+  if (!file && url && url.startsWith('http')) addPhoto(latin, url);
 }
 
 function handlePaste(event, latin) {
@@ -970,12 +1006,16 @@ function handlePaste(event, latin) {
     }
   }
   const text = event.clipboardData.getData('text');
-  if (text && text.startsWith('http')) { setData(latin,{photo:text}); updateModalImg(text); renderAll(); }
+  if (text && text.startsWith('http')) addPhoto(latin, text);
 }
 
 function savePhotoUrl(latin) {
-  const url = document.getElementById('m-photo')?.value.trim();
-  if (url) { setData(latin, {photo: url}); updateModalImg(url); renderAll(); }
+  const inp = document.getElementById('m-photo');
+  const url = inp?.value.trim();
+  if (url) {
+    addPhoto(latin, url);
+    if (inp) inp.value = '';
+  }
 }
 
 function saveFunfact(latin) {
@@ -985,9 +1025,8 @@ function saveFunfact(latin) {
 }
 
 function saveModal(latin) {
-  const photo = document.getElementById('m-photo')?.value.trim() || D(latin).photo;
   const funfact = document.getElementById('m-fact')?.value || '';
-  setData(latin, {photo, funfact});
+  setData(latin, {funfact});
   closeModal(); renderAll();
 }
 
@@ -1033,7 +1072,7 @@ function getQuizPlants() {
     if (activeQuizLF && p.life_form !== activeQuizLF) return false;
     if (fam && p.family_lat !== fam) return false;
     if (famCz && p.family_cz !== famCz) return false;
-    if (src==='photo' && !d.photo) return false;
+    if (src==='photo' && !d.photos.length) return false;
     if (src==='flagged' && !d.flagged) return false;
     if (src==='review' && d.status!=='review') return false;
     return true;
@@ -1058,17 +1097,17 @@ function renderQuiz() {
   const p = quizList[quizIdx];
   const d = D(p.latin);
   const pct = Math.round((quizIdx/quizList.length)*100);
-  const isB64 = d.photo && d.photo.startsWith('data:');
-  const photoSrc = isB64 ? d.photo : esc(d.photo||'');
+  const photo = d.photos[0] || '';
+  const photoSrc = photo ? (photo.startsWith('data:') ? photo : esc(photo)) : '';
 
   let frontHTML = '', backHTML = '';
 
   if (quizMode === 'foto') {
-    frontHTML = d.photo
+    frontHTML = photoSrc
       ? `<img class="flip-img" style="max-height:170px;max-width:100%;object-fit:contain;border-radius:8px;" src="${photoSrc}" onerror="this.style.display='none'">`
       : `<div style="font-size:13px;color:var(--text3);">bez fotky</div>`;
     backHTML = `
-      ${d.photo ? `<img class="flip-img" style="max-height:80px;max-width:100%;object-fit:contain;border-radius:6px;" src="${photoSrc}" onerror="this.style.display='none'">` : ''}
+      ${photoSrc ? `<img class="flip-img" style="max-height:80px;max-width:100%;object-fit:contain;border-radius:6px;" src="${photoSrc}" onerror="this.style.display='none'">` : ''}
       <div class="flip-a">${p.czech}</div>
       <div class="flip-a" style="font-size:14px;font-style:italic;">${p.latin}</div>
       <div class="flip-family">${p.family_cz} · ${p.family_lat}</div>
@@ -1081,7 +1120,7 @@ function renderQuiz() {
     const hint = quizMode==='lat'?'Jaký je český název?':quizMode==='cz'?'Jaký je latinský název?':'Jaká je čeleď?';
     frontHTML = `<div class="flip-hint">${hint}</div><div class="flip-q ${qCls}">${qText}</div><div class="flip-hint" style="margin-top:6px;">klepni pro odpověď</div>`;
     backHTML = `
-      ${d.photo && quizFlipped ? `<img class="flip-img" src="${photoSrc}" onerror="this.style.display='none'">` : ''}
+      ${photoSrc && quizFlipped ? `<img class="flip-img" src="${photoSrc}" onerror="this.style.display='none'">` : ''}
       <div class="flip-a ${aCls}">${aText}</div>
       <div class="flip-family">${p.family_cz} · ${p.family_lat}</div>
       ${d.funfact && quizFlipped ? `<div class="flip-fact">${esc(d.funfact)}</div>` : ''}`;
@@ -1339,20 +1378,21 @@ function showMatchDone() {
 async function analyzePhoto(latin) {
   const d = D(latin);
   const p = PLANTS.find(x => x.latin === latin);
-  if (!d.photo) return;
+  const photo = d.photos[0] || '';
+  if (!photo) return;
   const resultEl = document.getElementById('ai-result');
   if (!resultEl) return;
   resultEl.textContent = '🤖 Analyzuji fotku…';
 
   try {
-    const isB64 = d.photo.startsWith('data:');
+    const isB64 = photo.startsWith('data:');
     let imageContent;
     if (isB64) {
-      const [meta, data] = d.photo.split(',');
+      const [meta, data] = photo.split(',');
       const mediaType = meta.match(/:(.*?);/)?.[1] || 'image/jpeg';
       imageContent = { type: 'image', source: { type: 'base64', media_type: mediaType, data } };
     } else {
-      imageContent = { type: 'image', source: { type: 'url', url: d.photo } };
+      imageContent = { type: 'image', source: { type: 'url', url: photo } };
     }
 
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
