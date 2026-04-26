@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Botanika OŽP</title>
+<style>
+:root {
+  --green: #1D9E75; --green-dark: #0F6E56; --green-light: #E1F5EE;
+  --amber: #EF9F27; --amber-light: #FAEEDA;
+  --red-light: #fff3f3; --red: #a32d2d;
+  --bg: #fafaf8; --surface: #ffffff; --surface2: #f0efec;
+  --border: #e2e0da; --border2: #ccc;
+  --text: #1a1a18; --text2: #5a5a56; --text3: #9a9a96;
+  --radius: 10px; --radius-lg: 14px;
+  --flag: #e85d3c;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* Layout */
+.app { max-width: 1100px; margin: 0 auto; padding: 1rem; }
+.topbar { display: flex; align-items: center; gap: 10px; margin-bottom: 1.25rem; flex-wrap: wrap; }
+.topbar h1 { font-size: 17px; font-weight: 600; flex: 1; }
+.sync-status { font-size: 12px; color: var(--text3); display: flex; align-items: center; gap: 5px; }
+.sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text3); }
+.sync-dot.ok { background: var(--green); }
+.sync-dot.err { background: var(--flag); }
+
+/* Tabs */
+.tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; gap: 2px; }
+.tab { padding: 8px 16px; font-size: 14px; border: none; background: none; cursor: pointer; color: var(--text2); border-bottom: 2px solid transparent; margin-bottom: -1px; border-radius: var(--radius) var(--radius) 0 0; transition: color 0.15s; }
+.tab:hover { color: var(--text); background: var(--surface2); }
+.tab.active { color: var(--green); border-bottom-color: var(--green); font-weight: 500; }
+
+/* Stats bar */
+.statsbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; }
+.stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 5px 11px; font-size: 12px; color: var(--text2); }
+.stat b { color: var(--text); font-weight: 600; }
+.stat.flagged b { color: var(--flag); }
+
+/* Filter bar */
+.filterbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
+.filterbar input, .filterbar select { font-size: 13px; padding: 7px 10px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); outline: none; }
+.filterbar input { flex: 1; min-width: 160px; }
+.filterbar input:focus, .filterbar select:focus { border-color: var(--green); }
+.quiz-mode-toggle { display: flex; background: var(--surface2); border-radius: var(--radius); padding: 3px; gap: 2px; border: 1px solid var(--border); }
+.quiz-mode-toggle button { padding: 5px 12px; font-size: 12px; border: none; background: none; border-radius: 7px; cursor: pointer; color: var(--text2); }
+.quiz-mode-toggle button.active { background: var(--surface); color: var(--green); font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+/* Grid */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; cursor: pointer; transition: box-shadow 0.15s, border-color 0.15s; position: relative; }
+.card:hover { border-color: var(--green); box-shadow: 0 2px 10px rgba(29,158,117,0.12); }
+.card.learned { border-left: 3px solid var(--green); }
+.card.review { border-left: 3px solid var(--amber); }
+.card.flagged-card { border-left: 3px solid var(--flag); }
+.card-img { width: 100%; height: 120px; object-fit: cover; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--text3); overflow: hidden; }
+.card-img img { width: 100%; height: 100%; object-fit: cover; }
+.card-body { padding: 10px 12px 12px; }
+.card-latin { font-size: 14px; font-weight: 500; font-style: italic; line-height: 1.3; }
+.card-czech { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.card-family { font-size: 11px; color: var(--text3); margin-top: 3px; }
+.card-footer { display: flex; align-items: center; gap: 5px; margin-top: 8px; flex-wrap: wrap; }
+.badge { font-size: 10px; padding: 2px 7px; border-radius: 999px; font-weight: 500; }
+.b-learned { background: var(--green-light); color: var(--green-dark); }
+.b-review { background: var(--amber-light); color: #854F0B; }
+.b-new { background: var(--surface2); color: var(--text3); }
+.flag-icon { margin-left: auto; font-size: 14px; opacity: 0.8; }
+
+/* Modal */
+.modal-wrap { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 1rem; }
+.modal { background: var(--surface); border-radius: var(--radius-lg); width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 40px rgba(0,0,0,0.2); }
+.modal-head { padding: 1.1rem 1.25rem 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.modal-body { padding: 0.75rem 1.25rem 1.25rem; }
+.modal-img { width: 100%; max-height: 200px; object-fit: cover; border-radius: var(--radius); margin: 10px 0; }
+.no-img { height: 80px; background: var(--surface2); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--text3); margin: 10px 0; }
+label { font-size: 11px; color: var(--text3); display: block; margin-top: 10px; margin-bottom: 3px; }
+input[type=url], textarea { width: 100%; font-size: 13px; padding: 7px 9px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); outline: none; font-family: inherit; }
+input[type=url]:focus, textarea:focus { border-color: var(--green); }
+textarea { resize: vertical; }
+.ext-links { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 5px; }
+.ext-link { font-size: 11px; color: #185FA5; text-decoration: none; }
+.ext-link:hover { text-decoration: underline; }
+.action-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 12px; }
+.btn { padding: 7px 12px; font-size: 12px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); cursor: pointer; font-weight: 500; transition: background 0.12s; }
+.btn:hover { background: var(--surface2); }
+.btn.green { background: var(--green); color: #fff; border-color: var(--green); }
+.btn.green:hover { background: var(--green-dark); }
+.btn.amber { background: var(--amber-light); color: #854F0B; border-color: var(--amber); }
+.btn.red-flag { background: #fff0ee; color: var(--flag); border-color: #f5c4b3; }
+.btn.red-flag.active { background: var(--flag); color: #fff; border-color: var(--flag); }
+.btn-save { width: 100%; margin-top: 8px; }
+.btn-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text3); padding: 0 4px; }
+
+/* Quiz */
+.quiz-area { max-width: 560px; margin: 0 auto; }
+.quiz-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px; color: var(--text2); }
+.progress { background: var(--surface2); border-radius: 999px; height: 5px; margin-bottom: 1rem; overflow: hidden; }
+.progress-fill { background: var(--green); height: 100%; border-radius: 999px; transition: width 0.3s; }
+.flip-card { perspective: 900px; height: 220px; margin: 0.5rem 0 1rem; cursor: pointer; user-select: none; }
+.flip-inner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.4s ease; }
+.flip-card.flipped .flip-inner { transform: rotateY(180deg); }
+.flip-face { position: absolute; inset: 0; backface-visibility: hidden; background: var(--surface2); border-radius: var(--radius-lg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 1.5rem; border: 1px solid var(--border); }
+.flip-back { transform: rotateY(180deg); background: var(--green-light); border-color: #9FE1CB; }
+.flip-hint { font-size: 11px; color: var(--text3); }
+.flip-q { font-size: 22px; font-weight: 600; font-style: italic; text-align: center; color: var(--text); line-height: 1.3; }
+.flip-q.cz { font-style: normal; font-size: 20px; }
+.flip-sub { font-size: 12px; color: var(--text3); }
+.flip-a { font-size: 18px; font-weight: 600; color: var(--green-dark); text-align: center; font-style: italic; }
+.flip-a.cz { font-style: normal; }
+.flip-family { font-size: 12px; color: var(--green); }
+.flip-fact { font-size: 11px; color: var(--green-dark); font-style: italic; text-align: center; max-width: 90%; }
+.flip-img { max-height: 60px; border-radius: 6px; object-fit: cover; }
+.quiz-btns { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; }
+.quiz-empty { text-align: center; padding: 3rem 1rem; color: var(--text3); }
+.quiz-empty .btn { margin-top: 12px; }
+
+/* Setup */
+.setup-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem; max-width: 500px; margin: 0 auto; }
+.setup-box h2 { font-size: 15px; font-weight: 600; margin-bottom: 0.75rem; }
+.setup-box p { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 0.75rem; }
+.setup-box ol { font-size: 13px; color: var(--text2); line-height: 2; padding-left: 1.25rem; margin-bottom: 1rem; }
+.setup-box ol a { color: #185FA5; }
+.token-row { display: flex; gap: 6px; }
+.token-row input { flex: 1; font-size: 13px; padding: 7px 9px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); outline: none; font-family: monospace; }
+.token-row input:focus { border-color: var(--green); }
+
+:root {
+  --green: #1D9E75; --green-dark: #0F6E56; --green-light: #E1F5EE;
+  --amber: #EF9F27; --amber-light: #FAEEDA;
+  --bg: #fafaf8; --surface: #ffffff; --surface2: #f0efec;
+  --border: #e2e0da; --border2: #ccc;
+  --text: #1a1a18; --text2: #5a5a56; --text3: #9a9a96;
+  --radius: 10px; --radius-lg: 14px; --flag: #e85d3c;
+}
+body.dark {
+  --bg: #141412; --surface: #1e1e1b; --surface2: #2a2a26;
+  --border: #333330; --border2: #444440;
+  --text: #f0efe8; --text2: #a0a09a; --text3: #58584e;
+  --green-light: #0a2e22; --amber-light: #2e1e04;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; transition: background 0.2s, color 0.2s; }
+
+.app { max-width: 1100px; margin: 0 auto; padding: 1rem; }
+.topbar { display: flex; align-items: center; gap: 10px; margin-bottom: 1.25rem; flex-wrap: wrap; }
+.topbar h1 { font-size: 17px; font-weight: 600; flex: 1; }
+.sync-status { font-size: 12px; color: var(--text3); display: flex; align-items: center; gap: 5px; }
+.sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text3); }
+.sync-dot.ok { background: var(--green); }
+.sync-dot.err { background: var(--flag); }
+.dark-toggle { background: var(--surface2); border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px; font-size: 13px; cursor: pointer; color: var(--text2); }
+
+.tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; gap: 2px; }
+.tab { padding: 8px 16px; font-size: 14px; border: none; background: none; cursor: pointer; color: var(--text2); border-bottom: 2px solid transparent; margin-bottom: -1px; border-radius: var(--radius) var(--radius) 0 0; }
+.tab:hover { color: var(--text); background: var(--surface2); }
+.tab.active { color: var(--green); border-bottom-color: var(--green); font-weight: 500; }
+
+.statsbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; }
+.stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 5px 11px; font-size: 12px; color: var(--text2); }
+.stat b { color: var(--text); font-weight: 600; }
+.stat.flagged b { color: var(--flag); }
+
+.filterbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
+.filterbar input, .filterbar select { font-size: 13px; padding: 7px 10px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); outline: none; }
+.filterbar input { flex: 1; min-width: 160px; }
+.filterbar input:focus, .filterbar select:focus { border-color: var(--green); }
+.quiz-mode-toggle { display: flex; background: var(--surface2); border-radius: var(--radius); padding: 3px; gap: 2px; border: 1px solid var(--border); flex-wrap: wrap; }
+.quiz-mode-toggle button { padding: 5px 10px; font-size: 12px; border: none; background: none; border-radius: 7px; cursor: pointer; color: var(--text2); }
+.quiz-mode-toggle button.active { background: var(--surface); color: var(--green); font-weight: 500; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; cursor: pointer; transition: border-color 0.15s; }
+.card:hover { border-color: var(--green); }
+.card.learned { border-left: 3px solid var(--green); }
+.card.review { border-left: 3px solid var(--amber); }
+.card.flagged-card { border-left: 3px solid var(--flag); }
+.card-img { width: 100%; height: 180px; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--text3); overflow: hidden; }
+.card-img img { width: 100%; height: 100%; object-fit: cover; }
+.card-body { padding: 10px 12px 12px; }
+.card-latin { font-size: 14px; font-weight: 500; font-style: italic; line-height: 1.3; }
+.card-czech { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.card-family { font-size: 11px; color: var(--text3); margin-top: 3px; }
+.card-footer { display: flex; align-items: center; gap: 5px; margin-top: 8px; flex-wrap: wrap; }
+.badge { font-size: 10px; padding: 2px 7px; border-radius: 999px; font-weight: 500; }
+.b-learned { background: var(--green-light); color: var(--green-dark); }
+.b-review { background: var(--amber-light); color: #854F0B; }
+.b-new { background: var(--surface2); color: var(--text3); }
+.flag-icon { margin-left: auto; font-size: 14px; }
+
+.modal-wrap { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 1rem; }
+.modal { background: var(--surface); border-radius: var(--radius-lg); width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+.modal-head { padding: 1.1rem 1.25rem 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.modal-body { padding: 0.75rem 1.25rem 1.25rem; }
+.modal-img { width: 100%; max-height: 220px; object-fit: cover; border-radius: var(--radius); margin: 10px 0; }
+.no-img { height: 80px; background: var(--surface2); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--text3); margin: 10px 0; }
+label { font-size: 11px; color: var(--text3); display: block; margin-top: 10px; margin-bottom: 3px; }
+input[type=url], textarea { width: 100%; font-size: 13px; padding: 7px 9px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); outline: none; font-family: inherit; }
+input[type=url]:focus, textarea:focus { border-color: var(--green); }
+textarea { resize: vertical; }
+.ext-links { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 5px; }
+.ext-link { font-size: 11px; color: #3b8de0; text-decoration: none; }
+.ext-link:hover { text-decoration: underline; }
+.action-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 12px; }
+.btn { padding: 7px 12px; font-size: 12px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); cursor: pointer; font-weight: 500; transition: background 0.12s; }
+.btn:hover { background: var(--surface2); }
+.btn.green { background: var(--green); color: #fff; border-color: var(--green); }
+.btn.green:hover { background: var(--green-dark); }
+.btn.amber { background: var(--amber-light); color: #854F0B; border-color: var(--amber); }
+.btn.red-flag { background: #fff0ee; color: var(--flag); border-color: #f5c4b3; }
+.btn.red-flag.active { background: var(--flag); color: #fff; border-color: var(--flag); }
+.btn-save { width: 100%; margin-top: 8px; }
+.btn-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text3); padding: 0 4px; }
+
+.quiz-area { max-width: 560px; margin: 0 auto; }
+.quiz-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px; color: var(--text2); }
+.progress { background: var(--surface2); border-radius: 999px; height: 5px; margin-bottom: 1rem; overflow: hidden; }
+.progress-fill { background: var(--green); height: 100%; border-radius: 999px; transition: width 0.3s; }
+.flip-card { perspective: 900px; height: 260px; margin: 0.5rem 0 1rem; cursor: pointer; user-select: none; touch-action: pan-y; }
+.flip-inner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.4s ease; }
+.flip-card.flipped .flip-inner { transform: rotateY(180deg); }
+.flip-face { position: absolute; inset: 0; backface-visibility: hidden; background: var(--surface2); border-radius: var(--radius-lg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 1.5rem; border: 1px solid var(--border); overflow: hidden; }
+.flip-back { transform: rotateY(180deg); background: var(--green-light); border-color: #9FE1CB; }
+.flip-hint { font-size: 11px; color: var(--text3); }
+.flip-q { font-size: 22px; font-weight: 600; font-style: italic; text-align: center; color: var(--text); line-height: 1.3; }
+.flip-q.cz { font-style: normal; font-size: 20px; }
+.flip-a { font-size: 18px; font-weight: 600; color: var(--green-dark); text-align: center; font-style: italic; }
+.flip-a.cz { font-style: normal; }
+.flip-family { font-size: 12px; color: var(--green); }
+.flip-fact { font-size: 11px; color: var(--green-dark); font-style: italic; text-align: center; max-width: 90%; }
+.flip-img { max-height: 60px; border-radius: 6px; object-fit: cover; }
+.quiz-btns { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; }
+.quiz-empty { text-align: center; padding: 3rem 1rem; color: var(--text3); }
+.quiz-empty .btn { margin-top: 12px; }
+.swipe-hint { text-align: center; font-size: 11px; color: var(--text3); margin-bottom: 6px; }
+
+/* Group filter chips */
+.filter-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 0.75rem; }
+.filter-row-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text3); margin-bottom: 4px; }
+.group-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 0.25rem; }
+.chip { padding: 4px 12px; font-size: 12px; border-radius: 999px; border: 1px solid var(--border2); background: var(--surface); color: var(--text2); cursor: pointer; transition: background 0.12s, color 0.12s, border-color 0.12s; white-space: nowrap; }
+.chip:hover { border-color: var(--green); color: var(--text); }
+.chip.on { color: #fff; background: var(--chip-color, var(--green)); border-color: var(--chip-color, var(--green)); }
+.chip[data-g="přesličky"].on    { background: #5F5E5A; border-color: #5F5E5A; }
+.chip[data-g="kapradiny"].on    { background: #3B6D11; border-color: #3B6D11; }
+.chip[data-g="nahosemenné"].on  { background: #085041; border-color: #085041; }
+.chip[data-g="trávy"].on        { background: #639922; border-color: #639922; }
+.chip[data-g="stromy a keře"].on{ background: #854F0B; border-color: #854F0B; }
+.chip[data-g="jednoděložné"].on { background: #185FA5; border-color: #185FA5; }
+.chip[data-g="dvouděložné"].on  { background: #993556; border-color: #993556; }
+
+/* Matching quiz */
+.match-wrap { max-width: 700px; margin: 0 auto; }
+.match-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 8px; }
+.match-score { font-size: 13px; color: var(--text2); }
+.match-score b { color: var(--text); }
+.match-directions { font-size: 12px; color: var(--text3); margin-bottom: 0.75rem; }
+.match-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; }
+.match-col-title { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+.match-item { padding: 8px 12px; border: 1.5px solid var(--border); border-radius: var(--radius); font-size: 13px; cursor: pointer; margin-bottom: 5px; background: var(--surface); color: var(--text); transition: border-color 0.12s, background 0.12s; line-height: 1.3; }
+.match-item:hover { border-color: var(--border2); }
+.match-item.selected { border-color: var(--green); background: var(--green-light); color: var(--green-dark); }
+.match-item.correct { border-color: var(--green); background: var(--green-light); color: var(--green-dark); pointer-events: none; opacity: 0.8; }
+.match-item.wrong { border-color: var(--flag); background: #fff0ee; color: var(--flag); animation: shake 0.3s; }
+.match-item.disabled { opacity: 0.4; pointer-events: none; }
+.match-item i { font-style: italic; }
+.match-result { text-align: center; padding: 2rem 1rem; }
+.match-result h2 { font-size: 20px; font-weight: 600; margin-bottom: 0.5rem; }
+.match-result p { font-size: 14px; color: var(--text2); margin-bottom: 1.25rem; }
+.match-mode-toggle { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 0.75rem; }
+.match-mode-toggle button { padding: 5px 12px; font-size: 12px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text2); cursor: pointer; }
+.match-mode-toggle button.active { background: var(--green); color: #fff; border-color: var(--green); }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+
+.setup-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem; max-width: 500px; margin: 0 auto; }
+.setup-box h2 { font-size: 15px; font-weight: 600; margin-bottom: 0.75rem; }
+.setup-box p { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 0.75rem; }
+.setup-box ol { font-size: 13px; color: var(--text2); line-height: 2; padding-left: 1.25rem; margin-bottom: 1rem; }
+.setup-box ol a { color: #3b8de0; }
+.token-row { display: flex; gap: 6px; }
+.token-row input { flex: 1; font-size: 13px; padding: 7px 9px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); outline: none; font-family: monospace; }
+.token-row input:focus { border-color: var(--green); }
+
+.empty { text-align: center; padding: 3rem; color: var(--text3); font-size: 13px; }
+
+.drop-zone { border: 2px dashed var(--border2); border-radius: var(--radius); padding: 14px 10px; text-align: center; font-size: 12px; color: var(--text3); cursor: pointer; transition: border-color 0.15s, background 0.15s; margin: 8px 0 4px; position: relative; }
+.drop-zone:hover, .drop-zone.over { border-color: var(--green); background: var(--green-light); color: var(--green-dark); }
+.drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.photo-tabs { display: flex; gap: 4px; margin-top: 10px; }
+.photo-tab { flex: 1; padding: 5px; font-size: 12px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface2); color: var(--text2); cursor: pointer; text-align: center; }
+.photo-tab.active { background: var(--green); color: #fff; border-color: var(--green); }
+.photo-panel { display: none; }
+.photo-panel.active { display: block; }
+.paste-zone { border: 2px dashed var(--border2); border-radius: var(--radius); padding: 14px 10px; text-align: center; font-size: 12px; color: var(--text3); cursor: pointer; outline: none; }
+.paste-zone:focus { border-color: var(--green); }
+@media (max-width: 500px) {
+  .quiz-btns { grid-template-columns: 1fr 1fr; }
+  .action-row { grid-template-columns: 1fr 1fr; }
+  .flip-q { font-size: 17px; }
+  .quiz-mode-toggle button { padding: 4px 7px; font-size: 11px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="topbar">
+  <h1>🌿 Botanika OŽP</h1>
+  <div class="sync-status" id="sync-status">
+    <div class="sync-dot" id="sync-dot"></div>
+    <span id="sync-label">nepřipojeno</span>
+  </div>
+  <button class="dark-toggle" id="dark-btn" onclick="toggleDark()">🌙 Tmavý</button>
+  <button class="btn" onclick="showSetup()" style="font-size:12px;">⚙ Sync</button>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('browse')">Kartičky</button>
+  <button class="tab" onclick="showTab('quiz')">Kvíz</button>
+  <button class="tab" onclick="showTab('match')">Čeledi</button>
+  <button class="tab" onclick="showTab('flagged')">Nevím 🚩</button>
+</div>
+
+<!-- BROWSE TAB -->
+<div id="tab-browse">
+  <div class="statsbar" id="statsbar"></div>
+
+  <div class="filter-section">
+    <div class="filter-row-label">Evoluční linie</div>
+    <div class="group-chips" id="browse-chips"></div>
+    <div class="filter-row-label" style="margin-top:6px">Životní forma</div>
+    <div class="group-chips" id="lf-chips"></div>
+    <div class="filter-row-label" style="margin-top:6px">Biotop</div>
+    <div class="group-chips" id="hab-chips"></div>
+    <div class="filter-row-label" style="margin-top:6px">Toxicita</div>
+    <div class="group-chips" id="tox-chips"></div>
+  </div>
+
+  <div class="filterbar" style="margin-top:0.5rem">
+    <input type="text" id="search" placeholder="Hledat (lat / CZ / čeleď / tag)…" oninput="renderGrid()">
+    <select id="filter-family-cz" onchange="syncFamilyFromCz();renderGrid()"><option value="">Všechny čeledi (CZ)</option></select>
+    <select id="filter-family" onchange="syncFamilyFromLat();renderGrid()"><option value="">Všechny čeledi (LAT)</option></select>
+    <select id="filter-status" onchange="renderGrid()">
+      <option value="">Vše</option>
+      <option value="new">Nové</option>
+      <option value="review">K opakování</option>
+      <option value="learned">Naučené</option>
+      <option value="flagged">🚩 Nevím</option>
+      <option value="photo">S fotkou</option>
+    </select>
+    <button class="btn" onclick="clearAllFilters()" style="font-size:11px;white-space:nowrap">✕ Vymazat filtry</button>
+  </div>
+  <div style="font-size:11px;color:var(--text3);margin-bottom:0.5rem" id="filter-summary"></div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<!-- QUIZ TAB -->
+<div id="tab-quiz" style="display:none;">
+  <div class="filter-section">
+    <div class="filter-row-label">Evoluční linie</div>
+    <div class="group-chips" id="quiz-chips"></div>
+    <div class="filter-row-label" style="margin-top:4px">Životní forma</div>
+    <div class="group-chips" id="quiz-lf-chips"></div>
+  </div>
+  <div class="filterbar" style="margin-bottom:0.75rem;margin-top:0.5rem;">
+    <select id="quiz-family-cz" onchange="syncQuizFamilyFromCz();resetQuiz()"><option value="">Všechny čeledi (CZ)</option></select>
+    <select id="quiz-family" onchange="syncQuizFamilyFromLat();resetQuiz()"><option value="">Všechny čeledi (LAT)</option></select>
+    <select id="quiz-source" onchange="resetQuiz()">
+      <option value="photo">Jen s fotkou</option>
+      <option value="all">Všechny kartičky</option>
+      <option value="flagged">Jen 🚩 Nevím</option>
+      <option value="review">Jen k opakování</option>
+    </select>
+    <div class="quiz-mode-toggle">
+      <button id="qm-foto" class="active" onclick="setQuizMode('foto')">Foto → název</button>
+      <button id="qm-lat" onclick="setQuizMode('lat')">LAT → CZ</button>
+      <button id="qm-cz" onclick="setQuizMode('cz')">CZ → LAT</button>
+      <button id="qm-fam" onclick="setQuizMode('fam')">Čeleď</button>
+    </div>
+  </div>
+  <div class="quiz-area" id="quiz-area"></div>
+</div>
+
+<!-- MATCHING TAB -->
+<div id="tab-match" style="display:none;">
+  <div class="match-wrap">
+    <div class="match-header">
+      <div class="match-score" id="match-score"></div>
+      <button class="btn green" onclick="startMatch()">Nové kolo</button>
+    </div>
+    <div class="match-mode-toggle">
+      <button id="mm-ptof" class="active" onclick="setMatchMode('ptof')">Rostlina → čeleď</button>
+      <button id="mm-ftop" onclick="setMatchMode('ftop')">Čeleď → rostliny</button>
+    </div>
+    <div class="match-directions" id="match-dir">Klikni na rostlinu vlevo, pak na správnou čeleď vpravo.</div>
+    <div id="match-area"></div>
+  </div>
+</div>
+
+<!-- FLAGGED TAB -->
+<div id="tab-flagged" style="display:none;">
+  <div style="margin-bottom:1rem;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+    <span style="font-size:13px;color:var(--text2);">Rostliny označené vlajkou:</span>
+    <button class="btn" onclick="startFlaggedQuiz()">Kvíz z těchto 🚩</button>
+  </div>
+  <div class="grid" id="flagged-grid"></div>
+</div>
+
+</div><!-- /app -->
+
+<!-- MODAL -->
+<div class="modal-wrap" id="modal" style="display:none;" onclick="modalBgClick(event)">
+  <div class="modal" id="modal-inner"></div>
+</div>
+
+<!-- SETUP MODAL -->
+<div class="modal-wrap" id="setup-modal" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal">
+    <div class="modal-head">
+      <div style="font-size:15px;font-weight:600;">Cloud sync nastavení</div>
+      <button class="btn-close" onclick="document.getElementById('setup-modal').style.display='none'">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="setup-box" style="border:none;padding:0;max-width:100%;">
+        <p><b>Doporučeno:</b> Supabase (lepší pro hodně fotek). Fotky půjdou do Storage, data do DB, a budou se synchronizovat mezi iPhone/iPad/Mac.</p>
+        <label>Supabase URL</label>
+        <input type="url" id="sb-url" placeholder="https://xxxxx.supabase.co" autocomplete="off">
+        <label>Supabase anon key</label>
+        <input type="password" id="sb-key" placeholder="eyJ..." autocomplete="off">
+        <label>Sync klíč (stejný na všech zařízeních)</label>
+        <input type="text" id="sb-user-key" placeholder="napr. botanika-hugo" autocomplete="off">
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+          <button class="btn green" onclick="saveSupabaseConfig()">Připojit Supabase</button>
+          <button class="btn" onclick="clearSupabaseConfig()">Odpojit Supabase</button>
+        </div>
+        <div id="sb-status" style="font-size:12px;color:var(--text3);margin-top:6px;"></div>
+
+        <div style="margin-top:12px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2);font-size:12px;color:var(--text2);line-height:1.6;">
+          SQL (spusť jednou v Supabase SQL Editoru):<br>
+          <code style="white-space:pre-wrap;display:block;margin-top:6px;font-size:11px;">create table if not exists botanika_sync (
+  user_key text primary key,
+  data jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
+alter table botanika_sync enable row level security;
+create policy if not exists "anon read botanika_sync" on botanika_sync for select to anon using (true);
+create policy if not exists "anon upsert botanika_sync" on botanika_sync for insert to anon with check (true);
+create policy if not exists "anon update botanika_sync" on botanika_sync for update to anon using (true) with check (true);</code>
+        </div>
+
+        <div style="margin-top:12px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2);font-size:12px;color:var(--text2);line-height:1.6;">
+          Storage bucket vytvoř v Supabase jako public bucket jménem <b>botanika-photos</b>.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const PLANTS = [{"latin": "Sambucus nigra", "czech": "bez černý", "family_lat": "Adoxaceae", "family_cz": "kalinovité", "group": "stromy a keře", "habitat": "les/ruderál", "life_form": "keř", "toxic": "mírně", "tags": ["vonný", "léčivý", "jedlý plod"]}, {"latin": "Alisma plantago-aquatica", "czech": "žabník jitrocelový", "family_lat": "Alismataceae", "family_cz": "žabníkovité", "group": "jednoděložné", "habitat": "mokřad", "life_form": "bylina", "toxic": "ne", "tags": ["vodní", "mokřad"]}, {"latin": "Chenopodium album", "czech": "merlík bílý", "family_lat": "Amaranthaceae", "family_cz": "laskavcovité", "group": "dvouděložné", "habitat": "ruderál/pole", "life_form": "bylina", "toxic": "ne", "tags": ["plevel", "jedlý"]}, {"latin": "Allium ursinum", "czech": "česnek medvědí", "family_lat": "Amaryllidaceae", "family_cz": "amarylkovité", "group": "jednoděložné", "habitat": "les", "life_form": "bylina", "toxic": "ne", "tags": ["vonný", "jedlý", "jarní"]}, {"latin": "Galanthus nivalis", "czech": "sněženka podsněžník", "family_lat": "Amaryllidaceae", "family_cz": "amarylkovité", "group": "jednoděložné", "habitat": "les", "life_form": "bylina", "toxic": "jedovatý", "tags": ["jarní", "chráněný", "cibulovitý"]}, {"latin": "Leucojum vernum", "czech": "bledule jarní", "family_lat": "Amaryllidaceae", "family_cz": "amarylkovité", "group": "jednoděložné", "habitat": "les/mokřad", "life_form": "bylina", "toxic": "jedovatý", "tags": ["jarní", "chráněný", "cibulovitý"]}, {"latin": "Anthriscus sylvestris", "czech": "kerblík lesní", "family_lat": "Apiaceae", "family_cz": "miříkovité", "group": "dvouděložné", "habitat": "louka/les", "life_form": "bylina", "toxic": "ne", "tags": ["bílý květ", "miříkovitá"]}, {"latin": "Daucus carota", "czech": "mrkev obecná", "family_lat": "Apiaceae", "family_cz": "miříkovité", "group": "dvouděložné", "habitat": "louka/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["bílý květ", "miříkovitá", "dvouletá"]}, {"latin": "Sanicula europaea", "czech": "žindava evropská", "family_lat": "Apiaceae", "family_cz": "miříkovité", "group": "dvouděložné", "habitat": "les", "life_form": "bylina", "toxic": "ne", "tags": ["stinný les", "bílý květ"]}, {"latin": "Vinca minor", "czech": "barvínek menší", "family_lat": "Apocynaceae", "family_cz": "toješťovité", "group": "stromy a keře", "habitat": "les", "life_form": "bylina", "toxic": "jedovatý", "tags": ["fialový květ", "stálezelený", "plazivý"]}, {"latin": "Vincetoxicum hirundinaria", "czech": "tolita lékařský", "family_lat": "Apocynaceae", "family_cz": "toješťovité", "group": "dvouděložné", "habitat": "les/skalní stěny", "life_form": "bylina", "toxic": "jedovatý", "tags": ["bílý květ", "popínavý"]}, {"latin": "Arum maculatum", "czech": "árón plamatý", "family_lat": "Araceae", "family_cz": "árónovité", "group": "jednoděložné", "habitat": "les", "life_form": "bylina", "toxic": "jedovatý", "tags": ["jarní", "stinný les", "jedovatý plod"]}, {"latin": "Lemna minor", "czech": "okřehek menší", "family_lat": "Araceae", "family_cz": "okřehkovité", "group": "jednoděložné", "habitat": "mokřad", "life_form": "bylina", "toxic": "ne", "tags": ["vodní", "plovoucí"]}, {"latin": "Hedera helix", "czech": "břečťan popínavý", "family_lat": "Araliaceae", "family_cz": "aralkovité", "group": "stromy a keře", "habitat": "les", "life_form": "liana", "toxic": "jedovatý", "tags": ["stálezelený", "popínavý", "stinný les"]}, {"latin": "Aristolochia clematitis", "czech": "podražec křovištní", "family_lat": "Aristolochiaceae", "family_cz": "podražcovité", "group": "dvouděložné", "habitat": "ruderál/vinice", "life_form": "bylina", "toxic": "jedovatý", "tags": ["žlutý květ", "popínavý"]}, {"latin": "Asarum europaeum", "czech": "kopytník evropský", "family_lat": "Aristolochiaceae", "family_cz": "podražcovité", "group": "dvouděložné", "habitat": "les", "life_form": "bylina", "toxic": "jedovatý", "tags": ["stinný les", "plazivý"]}, {"latin": "Convallaria majalis", "czech": "konvalinka vonná", "family_lat": "Asparagaceae", "family_cz": "chřestovité", "group": "jednoděložné", "habitat": "les", "life_form": "bylina", "toxic": "jedovatý", "tags": ["bílý květ", "vonný", "jarní", "chráněný"]}, {"latin": "Maianthemum bifolium", "czech": "pstroček dvoulistý", "family_lat": "Asparagaceae", "family_cz": "chřestovité", "group": "jednoděložné", "habitat": "les", "life_form": "bylina", "toxic": "ne", "tags": ["bílý květ", "stinný les", "jarní"]}, {"latin": "Muscari comosum", "czech": "modřenec chocholatý", "family_lat": "Asparagaceae", "family_cz": "chřestovité", "group": "jednoděložné", "habitat": "louka/vinice", "life_form": "bylina", "toxic": "ne", "tags": ["fialový květ", "cibulovitý"]}, {"latin": "Polygonatum multiflorum", "czech": "kokořík mnohokvětý", "family_lat": "Asparagaceae", "family_cz": "chřestovité", "group": "jednoděložné", "habitat": "les", "life_form": "bylina", "toxic": "jedovatý", "tags": ["bílý květ", "stinný les"]}, {"latin": "Polygonatum odoratum", "czech": "kokořík vonný", "family_lat": "Asparagaceae", "family_cz": "chřestovité", "group": "jednoděložné", "habitat": "les/skalní", "life_form": "bylina", "toxic": "jedovatý", "tags": ["bílý květ", "vonný"]}, {"latin": "Asplenium ruta-muraria", "czech": "sleziník routička", "family_lat": "Aspleniaceae", "family_cz": "sleziníkovité", "group": "kapradiny", "habitat": "skála/zeď", "life_form": "kapradina", "toxic": "ne", "tags": ["skalní štěrbiny", "stálezelený"]}, {"latin": "Asplenium trichomanes", "czech": "sleziník červený", "family_lat": "Aspleniaceae", "family_cz": "sleziníkovité", "group": "kapradiny", "habitat": "skála/zeď", "life_form": "kapradina", "toxic": "ne", "tags": ["skalní štěrbiny", "stálezelený"]}, {"latin": "Achillea millefolium", "czech": "řebříček obecný", "family_lat": "Asteraceae", "family_cz": "hvězdnicovité", "group": "dvouděložné", "habitat": "louka", "life_form": "bylina", "toxic": "ne", "tags": ["bílý květ", "léčivý", "aromatický"]}, {"latin": "Arctium tomentosum", "czech": "lopuch plstnatý", "family_lat": "Asteraceae", "family_cz": "hvězdnicovité", "group": "dvouděložné", "habitat": "ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["růžový květ", "velké listy", "dvouletá"]}, {"latin": "Artemisia vulgaris", "czech": "pelyněk černobýl", "family_lat": "Asteraceae", "family_cz": "hvězdnicovité", "group": "dvouděložné", "habitat": "ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["aromatický", "léčivý", "plevel"]}, {"latin": "Bellis perennis", "czech": "sedmikráska chudobka", "family_lat": "Asteraceae", "family_cz": "hvězdnicovité", "group": "dvouděložné", "habitat": "louka/trávník", "life_form": "bylina", "toxic": "ne", "tags": ["bílý květ", "jarní", "trávník"]}, {"latin": "Centaurea cyanus", "czech": "chrpa modrá", "family_lat": "Asteraceae", "family_cz": "hvězdnicovité", "group": "dvouděložné", "habitat": "pole", "life_form": "bylina", "toxic": "ne", "tags": ["modrý květ", "polní plevel", "chráněný"]}, {"latin": "Centaurea jacea", "czech": "chrpa luční", "family_lat": "Asteraceae", "family_cz": "hvězdnicovité", "group": "dvouděložné", "habitat": "louka", "life_form": "bylina", "toxic": "ne", "tags": ["fialový květ", "louka"]}, {"latin": "Cichorium intybus", "czech": "čekanka obecná", "family_lat": "Asteraceae", "family_cz": "hvězdnicovité", "group": "dvouděložné", "habitat": "ruderál/louka", "life_form": "bylina", "toxic": "ne", "tags": ["modrý květ", "léčivý"]}, {"latin": "Cirsium arvense", "czech": "pcháč rolní", "family_lat": "Asteraceae", "family_cz": "hvězdnicovité", "group": "dvouděložné", "habitat": "pole/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["růžový květ", "plevel", "trnitý"]}, {"latin": "Echinops sphaerocephalus", "czech": "bělotrn kulatohlavý", "family_lat": "Asteraceae", "family_cz": "hvězdnicovité", "group": "dvouděložné", "habitat": "ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["modrý květ", "trnitý", "vysoký"]}, {"latin": "Leucanthemum vulgare", "czech": "kopretina bílá", "family_lat": "Asteraceae", "family_cz": "hvězdnicovité", "group": "dvouděložné", "habitat": "louka", "life_form": "bylina", "toxic": "ne", "tags": ["bílý květ", "louka"]}, {"latin": "Matricaria chamomilla", "czech": "heřmánek pravý", "family_lat": "Asteraceae", "family_cz": "hvězdnicovité", "group": "dvouděložné", "habitat": "pole/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["bílý květ", "léčivý", "vonný"]}, {"latin": "Pilosella officinarum", "czech": "chlupáček zední", "family_lat": "Asteraceae", "family_cz": "hvězdnicovité", "group": "dvouděložné", "habitat": "suchá louka/skalní", "life_form": "bylina", "toxic": "ne", "tags": ["žlutý květ", "suchomilný"]}, {"latin": "Senecio vulgaris", "czech": "starček obecný", "family_lat": "Asteraceae", "family_cz": "hvězdnicovité", "group": "dvouděložné", "habitat": "ruderál/pole", "life_form": "bylina", "toxic": "jedovatý", "tags": ["žlutý květ", "plevel"]}, {"latin": "Tanacetum vulgare", "czech": "vratič obecný", "family_lat": "Asteraceae", "family_cz": "hvězdnicovité", "group": "dvouděložné", "habitat": "ruderál", "life_form": "bylina", "toxic": "jedovatý", "tags": ["žlutý květ", "aromatický", "léčivý"]}, {"latin": "Taraxacum officinale", "czech": "pampeliška smetánka", "family_lat": "Asteraceae", "family_cz": "hvězdnicovité", "group": "dvouděložné", "habitat": "louka/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["žlutý květ", "léčivý", "jedlý", "jarní"]}, {"latin": "Tripleurospermum inodorum", "czech": "heřmánkovec nevonný", "family_lat": "Asteraceae", "family_cz": "hvězdnicovité", "group": "dvouděložné", "habitat": "pole/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["bílý květ", "plevel"]}, {"latin": "Tussilago farfara", "czech": "podběl lékařský", "family_lat": "Asteraceae", "family_cz": "hvězdnicovité", "group": "dvouděložné", "habitat": "ruderál/mokřad", "life_form": "bylina", "toxic": "ne", "tags": ["žlutý květ", "léčivý", "jarní", "první jarní"]}, {"latin": "Athyrium filix-femina", "czech": "papratka samičí", "family_lat": "Athyriaceae", "family_cz": "papratkovité", "group": "kapradiny", "habitat": "les/mokřad", "life_form": "kapradina", "toxic": "ne", "tags": ["vlhký les", "velká kapradina"]}, {"latin": "Impatiens glandulifera", "czech": "netýkavka žláznatá", "family_lat": "Balsaminaceae", "family_cz": "netýkavkovité", "group": "dvouděložné", "habitat": "mokřad/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["růžový květ", "invazní", "vlhký"]}, {"latin": "Impatiens noli-tangere", "czech": "netýkavka nedůtklivá", "family_lat": "Balsaminaceae", "family_cz": "netýkavkovité", "group": "dvouděložné", "habitat": "les/mokřad", "life_form": "bylina", "toxic": "ne", "tags": ["žlutý květ", "vlhký les"]}, {"latin": "Impatiens parviflora", "czech": "netýkavka malokvětá", "family_lat": "Balsaminaceae", "family_cz": "netýkavkovité", "group": "dvouděložné", "habitat": "les/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["bílý květ", "invazní", "jednoletá"]}, {"latin": "Berberis vulgaris", "czech": "dřišťál obecný", "family_lat": "Berberidaceae", "family_cz": "dřišťálovité", "group": "stromy a keře", "habitat": "skalní/les", "life_form": "keř", "toxic": "mírně", "tags": ["trnitý", "jedlý plod", "žlutý květ"]}, {"latin": "Alnus glutinosa", "czech": "olše lepkavá", "family_lat": "Betulaceae", "family_cz": "břízovité", "group": "stromy a keře", "habitat": "mokřad/říční niva", "life_form": "strom", "toxic": "ne", "tags": ["vlhká stanoviště", "jehnědky"]}, {"latin": "Betula pendula", "czech": "bříza bělokorá", "family_lat": "Betulaceae", "family_cz": "břízovité", "group": "stromy a keře", "habitat": "les/ruderál", "life_form": "strom", "toxic": "ne", "tags": ["bílá kůra", "pionýrský druh"]}, {"latin": "Carpinus betulus", "czech": "habr obecný", "family_lat": "Betulaceae", "family_cz": "břízovité", "group": "stromy a keře", "habitat": "les", "life_form": "strom", "toxic": "ne", "tags": ["bukový les", "listnatý"]}, {"latin": "Corylus avellana", "czech": "líska obecná", "family_lat": "Betulaceae", "family_cz": "břízovité", "group": "stromy a keře", "habitat": "les", "life_form": "keř", "toxic": "ne", "tags": ["jedlý plod", "jehnědky", "jarní"]}, {"latin": "Echium vulgare", "czech": "hadinec obecný", "family_lat": "Boraginaceae", "family_cz": "brutnákovité", "group": "dvouděložné", "habitat": "suchá louka/ruderál", "life_form": "bylina", "toxic": "mírně", "tags": ["modrý květ", "suchomilný", "dvouletá"]}, {"latin": "Lithospermum purpurocaeruleum", "czech": "kamejka modronachová", "family_lat": "Boraginaceae", "family_cz": "brutnákovité", "group": "dvouděložné", "habitat": "les/skalní", "life_form": "bylina", "toxic": "ne", "tags": ["modrý květ", "stínomilný"]}, {"latin": "Myosotis arvensis", "czech": "pomněnka rolní", "family_lat": "Boraginaceae", "family_cz": "brutnákovité", "group": "dvouděložné", "habitat": "pole/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["modrý květ", "plevel", "jarní"]}, {"latin": "Pulmonaria officinalis", "czech": "plicník lékařský", "family_lat": "Boraginaceae", "family_cz": "brutnákovité", "group": "dvouděložné", "habitat": "les", "life_form": "bylina", "toxic": "ne", "tags": ["fialový/červený květ", "léčivý", "jarní", "skvrnitý list"]}, {"latin": "Symphytum officinale", "czech": "kostival lékařský", "family_lat": "Boraginaceae", "family_cz": "brutnákovité", "group": "dvouděložné", "habitat": "mokřad/ruderál", "life_form": "bylina", "toxic": "mírně", "tags": ["fialový květ", "léčivý", "vlhký"]}, {"latin": "Alliaria petiolata", "czech": "česnáček lékařský", "family_lat": "Brassicaceae", "family_cz": "brukvovité", "group": "dvouděložné", "habitat": "les/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["bílý květ", "česneková vůně", "jarní"]}, {"latin": "Arabidopsis thaliana", "czech": "huseníček rolní", "family_lat": "Brassicaceae", "family_cz": "brukvovité", "group": "dvouděložné", "habitat": "pole/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["bílý květ", "modelová rostlina", "jednoletá"]}, {"latin": "Aurinia saxatilis", "czech": "tařice skalní", "family_lat": "Brassicaceae", "family_cz": "brukvovité", "group": "dvouděložné", "habitat": "skalní", "life_form": "bylina", "toxic": "ne", "tags": ["žlutý květ", "skalní", "okrasný"]}, {"latin": "Capsella bursa-pastoris", "czech": "kokoška pastuší tobolka", "family_lat": "Brassicaceae", "family_cz": "brukvovité", "group": "dvouděložné", "habitat": "pole/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["bílý květ", "plevel", "jednoletá"]}, {"latin": "Cardamine pratensis", "czech": "řeřišnice luční", "family_lat": "Brassicaceae", "family_cz": "brukvovité", "group": "dvouděložné", "habitat": "louka/mokřad", "life_form": "bylina", "toxic": "ne", "tags": ["fialový květ", "jarní", "vlhká louka"]}, {"latin": "Dentaria bulbifera", "czech": "kyčelnice cibulkonosná", "family_lat": "Brassicaceae", "family_cz": "brukvovité", "group": "dvouděložné", "habitat": "les", "life_form": "bylina", "toxic": "ne", "tags": ["fialový květ", "jarní", "cibulovitý"]}, {"latin": "Erophila verna", "czech": "osívka jarní", "family_lat": "Brassicaceae", "family_cz": "brukvovité", "group": "dvouděložné", "habitat": "suchá louka/skalní", "life_form": "bylina", "toxic": "ne", "tags": ["bílý květ", "jarní", "malý"]}, {"latin": "Lunaria rediviva", "czech": "měsíčnice vytrvalá", "family_lat": "Brassicaceae", "family_cz": "brukvovité", "group": "dvouděložné", "habitat": "les", "life_form": "bylina", "toxic": "ne", "tags": ["fialový květ", "stinný les", "velké šešule"]}, {"latin": "Thlaspi arvense", "czech": "penízek rolní", "family_lat": "Brassicaceae", "family_cz": "brukvovité", "group": "dvouděložné", "habitat": "pole/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["bílý květ", "plevel", "jednoletá"]}, {"latin": "Campanula patula", "czech": "zvonek rozkladitý", "family_lat": "Campanulaceae", "family_cz": "zvonkovité", "group": "dvouděložné", "habitat": "louka", "life_form": "bylina", "toxic": "ne", "tags": ["fialový květ", "louka", "letní"]}, {"latin": "Knautia arvensis", "czech": "chrastavec rolní", "family_lat": "Caprifoliaceae", "family_cz": "zimolezovité", "group": "dvouděložné", "habitat": "louka", "life_form": "bylina", "toxic": "ne", "tags": ["fialový květ", "louka", "motýlník"]}, {"latin": "Valeriana officinalis", "czech": "kozlík lékařský", "family_lat": "Caprifoliaceae", "family_cz": "zimolezovité", "group": "dvouděložné", "habitat": "louka/mokřad", "life_form": "bylina", "toxic": "ne", "tags": ["bílý květ", "léčivý", "vonný"]}, {"latin": "Cerastium arvense", "czech": "rožec rolní", "family_lat": "Caryophyllaceae", "family_cz": "hvozdíkovité", "group": "dvouděložné", "habitat": "suchá louka", "life_form": "bylina", "toxic": "ne", "tags": ["bílý květ", "suchomilný"]}, {"latin": "Cerastium holosteoides", "czech": "rožec obecný", "family_lat": "Caryophyllaceae", "family_cz": "hvozdíkovité", "group": "dvouděložné", "habitat": "louka/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["bílý květ", "trávník"]}, {"latin": "Dianthus carthusianorum", "czech": "hvozdík kartouzek", "family_lat": "Caryophyllaceae", "family_cz": "hvozdíkovité", "group": "dvouděložné", "habitat": "suchá louka", "life_form": "bylina", "toxic": "ne", "tags": ["červený květ", "suchomilný", "chráněný"]}, {"latin": "Lychnis flos-cuculi", "czech": "kohoutek luční", "family_lat": "Caryophyllaceae", "family_cz": "hvozdíkovité", "group": "dvouděložné", "habitat": "mokrá louka", "life_form": "bylina", "toxic": "ne", "tags": ["růžový květ", "vlhká louka"]}, {"latin": "Silene latifolia", "czech": "silenka širolistá bílá", "family_lat": "Caryophyllaceae", "family_cz": "hvozdíkovité", "group": "dvouděložné", "habitat": "ruderál/louka", "life_form": "bylina", "toxic": "ne", "tags": ["bílý květ", "noční květ", "vonný"]}, {"latin": "Silene vulgaris", "czech": "silenka nadmutá", "family_lat": "Caryophyllaceae", "family_cz": "hvozdíkovité", "group": "dvouděložné", "habitat": "suchá louka/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["bílý květ", "nafouklý kalich"]}, {"latin": "Stellaria holostea", "czech": "ptačinec velkokvětý", "family_lat": "Caryophyllaceae", "family_cz": "hvozdíkovité", "group": "dvouděložné", "habitat": "les", "life_form": "bylina", "toxic": "ne", "tags": ["bílý květ", "jarní", "les"]}, {"latin": "Stellaria media", "czech": "ptačinec prostřední", "family_lat": "Caryophyllaceae", "family_cz": "hvozdíkovité", "group": "dvouděložné", "habitat": "pole/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["bílý květ", "plevel", "jedlý"]}, {"latin": "Viscaria vulgaris", "czech": "smolnička obecná", "family_lat": "Caryophyllaceae", "family_cz": "hvozdíkovité", "group": "dvouděložné", "habitat": "suchá louka/skalní", "life_form": "bylina", "toxic": "ne", "tags": ["červený květ", "lepkavý stonek"]}, {"latin": "Colchicum autumnale", "czech": "ocún jesenní", "family_lat": "Colchicaceae", "family_cz": "ocúnovité", "group": "jednoděložné", "habitat": "louka", "life_form": "bylina", "toxic": "jedovatý", "tags": ["fialový květ", "podzimní", "chráněný", "cibulovitý"]}, {"latin": "Convolvulus arvensis", "czech": "svlačec rolní", "family_lat": "Convolvulaceae", "family_cz": "svlačcovité", "group": "dvouděložné", "habitat": "pole/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["bílý/růžový květ", "popínavý", "plevel"]}, {"latin": "Cornus mas", "czech": "dřín obecný", "family_lat": "Cornaceae", "family_cz": "dřínovité", "group": "stromy a keře", "habitat": "les/skalní", "life_form": "keř", "toxic": "ne", "tags": ["žlutý květ", "jarní", "jedlý plod"]}, {"latin": "Sedum acre", "czech": "rozchodník ostrý", "family_lat": "Crassulaceae", "family_cz": "tlusticovité", "group": "dvouděložné", "habitat": "skalní/suchá", "life_form": "bylina", "toxic": "mírně", "tags": ["žlutý květ", "sukulentní", "suchomilný"]}, {"latin": "Sedum album", "czech": "rozchodník bílý", "family_lat": "Crassulaceae", "family_cz": "tlusticovité", "group": "dvouděložné", "habitat": "skalní/suchá", "life_form": "bylina", "toxic": "ne", "tags": ["bílý květ", "sukulentní", "suchomilný"]}, {"latin": "Juniperus communis", "czech": "jalovec obecný", "family_lat": "Cupressaceae", "family_cz": "cypřišovité", "group": "nahosemenné", "habitat": "suchá louka/skalní", "life_form": "keř", "toxic": "mírně", "tags": ["stálezelený", "aromatický", "jedlý plod"]}, {"latin": "Thuja occidentalis", "czech": "zerav západní", "family_lat": "Cupressaceae", "family_cz": "cypřišovité", "group": "nahosemenné", "habitat": "parky", "life_form": "strom", "toxic": "jedovatý", "tags": ["stálezelený", "okrasný", "invazní"]}, {"latin": "Carex brizoides", "czech": "ostřice třeslicovitá", "family_lat": "Cyperaceae", "family_cz": "šáchorovité", "group": "trávy", "habitat": "les", "life_form": "tráva", "toxic": "ne", "tags": ["stinný les", "hustý trs"]}, {"latin": "Carex hirta", "czech": "ostřice srstnatá", "family_lat": "Cyperaceae", "family_cz": "šáchorovité", "group": "trávy", "habitat": "louka/ruderál", "life_form": "tráva", "toxic": "ne", "tags": ["vlhká místa", "chlupatý"]}, {"latin": "Eriophorum vaginatum", "czech": "suchopýr pochvatý", "family_lat": "Cyperaceae", "family_cz": "šáchorovité", "group": "trávy", "habitat": "rašeliniště", "life_form": "tráva", "toxic": "ne", "tags": ["bílý chlupatý klas", "rašeliniště", "chráněný"]}, {"latin": "Scirpus sylvaticus", "czech": "skřípina lesní", "family_lat": "Cyperaceae", "family_cz": "šáchorovité", "group": "trávy", "habitat": "mokřad/les", "life_form": "tráva", "toxic": "ne", "tags": ["vlhký les", "mokřad"]}, {"latin": "Pteridium aquilinum", "czech": "hasivka orličí", "family_lat": "Dennstaedtiaceae", "family_cz": "hasivkovité", "group": "kapradiny", "habitat": "les/vřesoviště", "life_form": "kapradina", "toxic": "jedovatý", "tags": ["velká kapradina", "acidofilní", "invazní"]}, {"latin": "Dryopteris filix-mas", "czech": "kapraď samec", "family_lat": "Dryopteridaceae", "family_cz": "kapraďovité", "group": "kapradiny", "habitat": "les", "life_form": "kapradina", "toxic": "mírně", "tags": ["velká kapradina", "stinný les"]}, {"latin": "Equisetum arvense", "czech": "přeslička rolní", "family_lat": "Equisetaceae", "family_cz": "přesličkovité", "group": "přesličky", "habitat": "pole/ruderál", "life_form": "přeslička", "toxic": "mírně", "tags": ["plevel", "jarní výtrusnice"]}, {"latin": "Equisetum sylvaticum", "czech": "přeslička lesní", "family_lat": "Equisetaceae", "family_cz": "přesličkovité", "group": "přesličky", "habitat": "les/mokřad", "life_form": "přeslička", "toxic": "mírně", "tags": ["vlhký les", "jemně větvená"]}, {"latin": "Equisetum telmateia", "czech": "přeslička největší", "family_lat": "Equisetaceae", "family_cz": "přesličkovité", "group": "přesličky", "habitat": "mokřad/pramen", "life_form": "přeslička", "toxic": "mírně", "tags": ["největší přeslička", "vlhký"]}, {"latin": "Calluna vulgaris", "czech": "vřes obecný", "family_lat": "Ericaceae", "family_cz": "vřesovcovité", "group": "stromy a keře", "habitat": "vřesoviště/les", "life_form": "keř", "toxic": "ne", "tags": ["fialový květ", "kyselé půdy", "vřesoviště"]}, {"latin": "Erica carnea", "czech": "vřesovec pleťový", "family_lat": "Ericaceae", "family_cz": "vřesovcovité", "group": "stromy a keře", "habitat": "les/skalní", "life_form": "keř", "toxic": "ne", "tags": ["růžový květ", "jarní", "kyselé půdy"]}, {"latin": "Vaccinium myrtillus", "czech": "brusnice borůvka", "family_lat": "Ericaceae", "family_cz": "vřesovcovité", "group": "stromy a keře", "habitat": "les", "life_form": "keř", "toxic": "ne", "tags": ["jedlý plod", "kyselé půdy", "lesní"]}, {"latin": "Vaccinium vitis-idaea", "czech": "brusnice brusinka", "family_lat": "Ericaceae", "family_cz": "vřesovcovité", "group": "stromy a keře", "habitat": "les", "life_form": "keř", "toxic": "ne", "tags": ["jedlý plod", "stálezelený", "kyselé půdy"]}, {"latin": "Euphorbia amygdaloides", "czech": "pryšec mandloňovitý", "family_lat": "Euphorbiaceae", "family_cz": "pryšcovité", "group": "dvouděložné", "habitat": "les", "life_form": "bylina", "toxic": "jedovatý", "tags": ["žlutozelený květ", "mléčnice", "stinný les"]}, {"latin": "Euphorbia cyparissias", "czech": "pryšec chvojka", "family_lat": "Euphorbiaceae", "family_cz": "pryšcovité", "group": "dvouděložné", "habitat": "suchá louka/skalní", "life_form": "bylina", "toxic": "jedovatý", "tags": ["žlutozelený květ", "mléčnice", "suchomilný"]}, {"latin": "Euphorbia peplus", "czech": "pryšec okrouhlý", "family_lat": "Euphorbiaceae", "family_cz": "pryšcovité", "group": "dvouděložné", "habitat": "pole/zahrada", "life_form": "bylina", "toxic": "jedovatý", "tags": ["mléčnice", "plevel", "jednoletá"]}, {"latin": "Mercurialis perennis", "czech": "bažanka vytrvalá", "family_lat": "Euphorbiaceae", "family_cz": "pryšcovité", "group": "dvouděložné", "habitat": "les", "life_form": "bylina", "toxic": "jedovatý", "tags": ["stinný les", "kobercový", "dvoudomý"]}, {"latin": "Lathyrus pratensis", "czech": "hrachor luční", "family_lat": "Fabaceae", "family_cz": "bobovité", "group": "dvouděložné", "habitat": "louka", "life_form": "bylina", "toxic": "ne", "tags": ["žlutý květ", "popínavý", "louka"]}, {"latin": "Lathyrus vernus", "czech": "hrachor jarní", "family_lat": "Fabaceae", "family_cz": "bobovité", "group": "dvouděložné", "habitat": "les", "life_form": "bylina", "toxic": "ne", "tags": ["fialový květ", "jarní", "les"]}, {"latin": "Lotus corniculatus", "czech": "štírovník růžkatý", "family_lat": "Fabaceae", "family_cz": "bobovité", "group": "dvouděložné", "habitat": "suchá louka", "life_form": "bylina", "toxic": "ne", "tags": ["žlutý květ", "motýlník", "suchomilný"]}, {"latin": "Medicago lupulina", "czech": "tolice dětelová", "family_lat": "Fabaceae", "family_cz": "bobovité", "group": "dvouděložné", "habitat": "louka/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["žlutý květ", "malý", "plevel"]}, {"latin": "Robinia pseudoacacia", "czech": "trnovník akát", "family_lat": "Fabaceae", "family_cz": "bobovité", "group": "stromy a keře", "habitat": "ruderál/les", "life_form": "strom", "toxic": "jedovatý", "tags": ["bílý květ", "vonný", "invazní", "trnitý"]}, {"latin": "Securigera varia", "czech": "čičorka pestrá", "family_lat": "Fabaceae", "family_cz": "bobovité", "group": "dvouděložné", "habitat": "suchá louka/ruderál", "life_form": "bylina", "toxic": "mírně", "tags": ["fialový/bílý květ", "suchomilný"]}, {"latin": "Trifolium pratense", "czech": "jetel luční", "family_lat": "Fabaceae", "family_cz": "bobovité", "group": "dvouděložné", "habitat": "louka", "life_form": "bylina", "toxic": "ne", "tags": ["červený květ", "motýlník", "louka"]}, {"latin": "Trifolium repens", "czech": "jetel plazivý", "family_lat": "Fabaceae", "family_cz": "bobovité", "group": "dvouděložné", "habitat": "louka/trávník", "life_form": "bylina", "toxic": "ne", "tags": ["bílý květ", "motýlník", "plazivý"]}, {"latin": "Vicia cracca", "czech": "vikev ptačí", "family_lat": "Fabaceae", "family_cz": "bobovité", "group": "dvouděložné", "habitat": "louka/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["fialový květ", "popínavý", "louka"]}, {"latin": "Vicia sepium", "czech": "vikev plotní", "family_lat": "Fabaceae", "family_cz": "bobovité", "group": "dvouděložné", "habitat": "les/louka", "life_form": "bylina", "toxic": "ne", "tags": ["fialový květ", "popínavý"]}, {"latin": "Fagus sylvatica", "czech": "buk lesní", "family_lat": "Fagaceae", "family_cz": "bukovité", "group": "stromy a keře", "habitat": "les", "life_form": "strom", "toxic": "ne", "tags": ["dominantní strom", "stínící", "bukový les"]}, {"latin": "Quercus petraea", "czech": "dub zimní", "family_lat": "Fagaceae", "family_cz": "bukovité", "group": "stromy a keře", "habitat": "les", "life_form": "strom", "toxic": "ne", "tags": ["acidofilní", "doubrava", "listnatý"]}, {"latin": "Quercus robur", "czech": "dub letní", "family_lat": "Fagaceae", "family_cz": "bukovité", "group": "stromy a keře", "habitat": "les/louka", "life_form": "strom", "toxic": "ne", "tags": ["hájový les", "listnatý", "dlouhověký"]}, {"latin": "Quercus rubra", "czech": "dub červený", "family_lat": "Fagaceae", "family_cz": "bukovité", "group": "stromy a keře", "habitat": "les/park", "life_form": "strom", "toxic": "ne", "tags": ["invazní", "červené listy", "podzim"]}, {"latin": "Erodium cicutarium", "czech": "pumpava obecná", "family_lat": "Geraniaceae", "family_cz": "kakostovité", "group": "dvouděložné", "habitat": "pole/suchá louka", "life_form": "bylina", "toxic": "ne", "tags": ["fialový květ", "suchomilný", "plevel"]}, {"latin": "Geranium pratense", "czech": "kakost luční", "family_lat": "Geraniaceae", "family_cz": "kakostovité", "group": "dvouděložné", "habitat": "louka", "life_form": "bylina", "toxic": "ne", "tags": ["modrý květ", "vlhká louka"]}, {"latin": "Geranium robertianum", "czech": "kakost smrdutý", "family_lat": "Geraniaceae", "family_cz": "kakostovité", "group": "dvouděložné", "habitat": "les/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["růžový květ", "aromatický", "ruiny"]}, {"latin": "Ginkgo biloba", "czech": "jinan dvoulaločný", "family_lat": "Ginkgoaceae", "family_cz": "jinanovité", "group": "nahosemenné", "habitat": "park", "life_form": "strom", "toxic": "mírně", "tags": ["relikt", "okrasný", "zlatý podzim"]}, {"latin": "Hypericum perforatum", "czech": "třezalka tečkovaná", "family_lat": "Hypericaceae", "family_cz": "třezalkovité", "group": "dvouděložné", "habitat": "suchá louka/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["žlutý květ", "léčivý", "tečkovaný list"]}, {"latin": "Gladiolus imbricatus", "czech": "mečík střechovitý", "family_lat": "Iridaceae", "family_cz": "kosatcovité", "group": "jednoděložné", "habitat": "mokrá louka", "life_form": "bylina", "toxic": "ne", "tags": ["fialový květ", "cibulovitý", "chráněný"]}, {"latin": "Iris pseudacorus", "czech": "kosatec žlutý", "family_lat": "Iridaceae", "family_cz": "kosatcovité", "group": "jednoděložné", "habitat": "mokřad", "life_form": "bylina", "toxic": "jedovatý", "tags": ["žlutý květ", "vodní", "chráněný"]}, {"latin": "Iris sibirica", "czech": "kosatec sibiřský", "family_lat": "Iridaceae", "family_cz": "kosatcovité", "group": "jednoděložné", "habitat": "mokrá louka", "life_form": "bylina", "toxic": "jedovatý", "tags": ["fialový květ", "chráněný", "vlhká louka"]}, {"latin": "Juncus effusus", "czech": "sítina rozkladitá", "family_lat": "Juncaceae", "family_cz": "sítinovité", "group": "trávy", "habitat": "mokřad", "life_form": "tráva", "toxic": "ne", "tags": ["cylindrický stonek", "mokřad", "vlhký"]}, {"latin": "Luzula luzuloides", "czech": "bika bělavá", "family_lat": "Juncaceae", "family_cz": "sítinovité", "group": "trávy", "habitat": "les", "life_form": "tráva", "toxic": "ne", "tags": ["stinný les", "bílý květ"]}, {"latin": "Luzula pilosa", "czech": "bika chlupatá", "family_lat": "Juncaceae", "family_cz": "sítinovité", "group": "trávy", "habitat": "les", "life_form": "tráva", "toxic": "ne", "tags": ["stinný les", "jarní", "chlupatý"]}, {"latin": "Luzula sylvatica", "czech": "bika lesní", "family_lat": "Juncaceae", "family_cz": "sítinovité", "group": "trávy", "habitat": "les", "life_form": "tráva", "toxic": "ne", "tags": ["velká bika", "stinný les", "kyselé půdy"]}, {"latin": "Ajuga reptans", "czech": "zběhovec plazivý", "family_lat": "Lamiaceae", "family_cz": "hluchavkovité", "group": "dvouděložné", "habitat": "les/louka", "life_form": "bylina", "toxic": "ne", "tags": ["modrý květ", "plazivý", "jarní"]}, {"latin": "Galeobdolon luteum", "czech": "pitulník žlutý", "family_lat": "Lamiaceae", "family_cz": "hluchavkovité", "group": "dvouděložné", "habitat": "les", "life_form": "bylina", "toxic": "ne", "tags": ["žlutý květ", "stinný les", "jarní"]}, {"latin": "Glechoma hederacea", "czech": "popenec obecný", "family_lat": "Lamiaceae", "family_cz": "hluchavkovité", "group": "dvouděložné", "habitat": "les/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["fialový květ", "aromatický", "plazivý"]}, {"latin": "Lamium album", "czech": "hluchavka bílá", "family_lat": "Lamiaceae", "family_cz": "hluchavkovité", "group": "dvouděložné", "habitat": "ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["bílý květ", "léčivý", "plevel"]}, {"latin": "Lamium maculatum", "czech": "hluchavka skvrnitá", "family_lat": "Lamiaceae", "family_cz": "hluchavkovité", "group": "dvouděložné", "habitat": "les/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["fialový květ", "skvrnitý list"]}, {"latin": "Lamium purpureum", "czech": "hluchavka nachová", "family_lat": "Lamiaceae", "family_cz": "hluchavkovité", "group": "dvouděložné", "habitat": "pole/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["červený květ", "plevel", "jarní"]}, {"latin": "Salvia pratensis", "czech": "šalvěj luční", "family_lat": "Lamiaceae", "family_cz": "hluchavkovité", "group": "dvouděložné", "habitat": "suchá louka", "life_form": "bylina", "toxic": "ne", "tags": ["fialový květ", "aromatický", "suchomilný"]}, {"latin": "Gagea lutea", "czech": "křivatec žlutý", "family_lat": "Liliaceae", "family_cz": "liliovité", "group": "jednoděložné", "habitat": "les/louka", "life_form": "bylina", "toxic": "ne", "tags": ["žlutý květ", "jarní", "cibulovitý"]}, {"latin": "Lilium martagon", "czech": "lilie zlatohlavá", "family_lat": "Liliaceae", "family_cz": "liliovité", "group": "jednoděložné", "habitat": "les", "life_form": "bylina", "toxic": "ne", "tags": ["červený květ", "chráněný", "cibulovitý", "aromatický"]}, {"latin": "Liriodendron tulipifera", "czech": "liliovník tulipánokvětý", "family_lat": "Magnoliaceae", "family_cz": "šácholanovité", "group": "stromy a keře", "habitat": "park", "life_form": "strom", "toxic": "ne", "tags": ["okrasný", "severoamerický", "tulipánový květ"]}, {"latin": "Magnolia sp.", "czech": "šácholan", "family_lat": "Magnoliaceae", "family_cz": "šácholanovité", "group": "stromy a keře", "habitat": "park", "life_form": "strom", "toxic": "ne", "tags": ["okrasný", "velký květ", "jarní"]}, {"latin": "Malva neglecta", "czech": "sléz přehlížený", "family_lat": "Malvaceae", "family_cz": "slézovité", "group": "dvouděložné", "habitat": "ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["fialový květ", "léčivý", "plevel"]}, {"latin": "Tilia cordata", "czech": "lípa malolistá", "family_lat": "Malvaceae", "family_cz": "slézovité", "group": "stromy a keře", "habitat": "les/park", "life_form": "strom", "toxic": "ne", "tags": ["vonný květ", "léčivý", "letní", "lípa"]}, {"latin": "Paris quadrifolia", "czech": "vraní oko čtyřlisté", "family_lat": "Melanthiaceae", "family_cz": "kýchavicovité", "group": "jednoděložné", "habitat": "les", "life_form": "bylina", "toxic": "jedovatý", "tags": ["jedovatý plod", "stinný les", "jarní"]}, {"latin": "Fraxinus excelsior", "czech": "jasan ztepilý", "family_lat": "Oleaceae", "family_cz": "olivovníkovité", "group": "stromy a keře", "habitat": "les/říční niva", "life_form": "strom", "toxic": "ne", "tags": ["křídlatý plod", "pozdní rašení"]}, {"latin": "Oenothera biennis", "czech": "pupalka dvouletá", "family_lat": "Onagraceae", "family_cz": "pupalkovité", "group": "dvouděložné", "habitat": "ruderál/suchá", "life_form": "bylina", "toxic": "ne", "tags": ["žlutý květ", "noční květ", "dvouletá", "invazní"]}, {"latin": "Matteuccia struthiopteris", "czech": "pérovník pštrosí", "family_lat": "Onocleaceae", "family_cz": "onokleovité", "group": "kapradiny", "habitat": "mokřad/říční niva", "life_form": "kapradina", "toxic": "ne", "tags": ["velká kapradina", "vlhký", "chráněný"]}, {"latin": "Oxalis stricta", "czech": "šťavel evropský", "family_lat": "Oxalidaceae", "family_cz": "šťavelovité", "group": "dvouděložné", "habitat": "zahrada/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["žlutý květ", "plevel", "invazní"]}, {"latin": "Chelidonium majus", "czech": "vlaštovičník větší", "family_lat": "Papaveraceae", "family_cz": "makovité", "group": "dvouděložné", "habitat": "ruderál/les", "life_form": "bylina", "toxic": "jedovatý", "tags": ["žlutý květ", "oranžová míza", "léčivý", "zeď"]}, {"latin": "Corydalis cava", "czech": "dymnivka dutá", "family_lat": "Papaveraceae", "family_cz": "makovité", "group": "dvouděložné", "habitat": "les", "life_form": "bylina", "toxic": "jedovatý", "tags": ["fialový květ", "jarní", "cibulovitý", "duté hlízy"]}, {"latin": "Corydalis solida", "czech": "dymnivka plná", "family_lat": "Papaveraceae", "family_cz": "makovité", "group": "dvouděložné", "habitat": "les", "life_form": "bylina", "toxic": "jedovatý", "tags": ["fialový květ", "jarní", "cibulovitý"]}, {"latin": "Fumaria officinalis", "czech": "zemědým lékařský", "family_lat": "Papaveraceae", "family_cz": "makovité", "group": "dvouděložné", "habitat": "pole/ruderál", "life_form": "bylina", "toxic": "mírně", "tags": ["růžový květ", "plevel", "léčivý"]}, {"latin": "Papaver rhoeas", "czech": "mák vlčí", "family_lat": "Papaveraceae", "family_cz": "makovité", "group": "dvouděložné", "habitat": "pole", "life_form": "bylina", "toxic": "mírně", "tags": ["červený květ", "polní plevel", "jednoletá"]}, {"latin": "Abies alba", "czech": "jedle bělokorá", "family_lat": "Pinaceae", "family_cz": "borovicovité", "group": "nahosemenné", "habitat": "horský les", "life_form": "strom", "toxic": "ne", "tags": ["stálezelený", "jehlice", "šišky vzpřímené", "chráněný"]}, {"latin": "Larix decidua", "czech": "modřín opadavý", "family_lat": "Pinaceae", "family_cz": "borovicovité", "group": "nahosemenné", "habitat": "horský les", "life_form": "strom", "toxic": "ne", "tags": ["opadavý jehličnan", "jarní zelení", "šišky"]}, {"latin": "Picea abies", "czech": "smrk ztepilý", "family_lat": "Pinaceae", "family_cz": "borovicovité", "group": "nahosemenné", "habitat": "les/horský les", "life_form": "strom", "toxic": "ne", "tags": ["stálezelený", "visící šišky", "jehličnan"]}, {"latin": "Pinus mugo", "czech": "borovice kleč", "family_lat": "Pinaceae", "family_cz": "borovicovité", "group": "nahosemenné", "habitat": "horský/rašeliniště", "life_form": "keř", "toxic": "ne", "tags": ["stálezelený", "alpínský", "kleč"]}, {"latin": "Pinus nigra", "czech": "borovice černá", "family_lat": "Pinaceae", "family_cz": "borovicovité", "group": "nahosemenné", "habitat": "suchá skalní", "life_form": "strom", "toxic": "ne", "tags": ["stálezelený", "tmavá kůra", "suchomilný"]}, {"latin": "Pinus strobus", "czech": "borovice vejmutovka", "family_lat": "Pinaceae", "family_cz": "borovicovité", "group": "nahosemenné", "habitat": "les/park", "life_form": "strom", "toxic": "ne", "tags": ["stálezelený", "dlouhé jehlice", "invazní"]}, {"latin": "Pinus sylvestris", "czech": "borovice lesní", "family_lat": "Pinaceae", "family_cz": "borovicovité", "group": "nahosemenné", "habitat": "les/suchá", "life_form": "strom", "toxic": "ne", "tags": ["stálezelený", "červená kůra", "suchomilný"]}, {"latin": "Digitalis purpurea", "czech": "náprstník červený", "family_lat": "Plantaginaceae", "family_cz": "jitrocelovité", "group": "dvouděložné", "habitat": "les/ruderál", "life_form": "bylina", "toxic": "jedovatý", "tags": ["fialový květ", "dvouletá", "léčivý", "srdce"]}, {"latin": "Plantago lanceolata", "czech": "jitrocel kopinatý", "family_lat": "Plantaginaceae", "family_cz": "jitrocelovité", "group": "dvouděložné", "habitat": "louka/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["léčivý", "kopinatý list", "louka"]}, {"latin": "Plantago major", "czech": "jitrocel větší", "family_lat": "Plantaginaceae", "family_cz": "jitrocelovité", "group": "dvouděložné", "habitat": "ruderál/trávník", "life_form": "bylina", "toxic": "ne", "tags": ["léčivý", "šlapaný", "plevel"]}, {"latin": "Veronica chamaedrys", "czech": "rozrazil rezekvítek", "family_lat": "Plantaginaceae", "family_cz": "jitrocelovité", "group": "dvouděložné", "habitat": "louka/les", "life_form": "bylina", "toxic": "ne", "tags": ["modrý květ", "jarní", "les/louka"]}, {"latin": "Veronica persica", "czech": "rozrazil perský", "family_lat": "Plantaginaceae", "family_cz": "jitrocelovité", "group": "dvouděložné", "habitat": "pole/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["modrý květ", "plevel", "jarní", "jednoletá"]}, {"latin": "Alopecurus pratensis", "czech": "psárka luční", "family_lat": "Poaceae", "family_cz": "lipnicovité", "group": "trávy", "habitat": "louka/mokřad", "life_form": "tráva", "toxic": "ne", "tags": ["jarní", "liškovitý klas", "louka"]}, {"latin": "Anthoxanthum odoratum", "czech": "tomka vonná", "family_lat": "Poaceae", "family_cz": "lipnicovité", "group": "trávy", "habitat": "louka", "life_form": "tráva", "toxic": "ne", "tags": ["vonný", "klas", "suchá louka"]}, {"latin": "Arrhenatherum elatius", "czech": "ovsík vyvýšený", "family_lat": "Poaceae", "family_cz": "lipnicovité", "group": "trávy", "habitat": "louka/ruderál", "life_form": "tráva", "toxic": "ne", "tags": ["vysoká tráva", "louka", "ovsík"]}, {"latin": "Briza media", "czech": "třeslice prostřední", "family_lat": "Poaceae", "family_cz": "lipnicovité", "group": "trávy", "habitat": "suchá louka", "life_form": "tráva", "toxic": "ne", "tags": ["třeslice", "pohyblivé klásky", "chráněný"]}, {"latin": "Calamagrostis epigejos", "czech": "třtina křovištní", "family_lat": "Poaceae", "family_cz": "lipnicovité", "group": "trávy", "habitat": "les/ruderál", "life_form": "tráva", "toxic": "ne", "tags": ["vysoká tráva", "šíří se", "ruderál"]}, {"latin": "Dactylis glomerata", "czech": "srha laločnatá", "family_lat": "Poaceae", "family_cz": "lipnicovité", "group": "trávy", "habitat": "louka/ruderál", "life_form": "tráva", "toxic": "ne", "tags": ["srha", "shluknuté klásky", "louka"]}, {"latin": "Elymus repens", "czech": "pýr plazivý", "family_lat": "Poaceae", "family_cz": "lipnicovité", "group": "trávy", "habitat": "pole/ruderál", "life_form": "tráva", "toxic": "ne", "tags": ["plevel", "plazivý oddenek", "pýr"]}, {"latin": "Festuca ovina", "czech": "kostřava ovčí", "family_lat": "Poaceae", "family_cz": "lipnicovité", "group": "trávy", "habitat": "suchá louka/skalní", "life_form": "tráva", "toxic": "ne", "tags": ["suchomilný", "trsnatý", "jemné listy"]}, {"latin": "Lolium perenne", "czech": "jílek vytrvalý", "family_lat": "Poaceae", "family_cz": "lipnicovité", "group": "trávy", "habitat": "louka/trávník", "life_form": "tráva", "toxic": "ne", "tags": ["trávník", "výsevní", "louka"]}, {"latin": "Melica nutans", "czech": "strdivka nící", "family_lat": "Poaceae", "family_cz": "lipnicovité", "group": "trávy", "habitat": "les", "life_form": "tráva", "toxic": "ne", "tags": ["stinný les", "nící klásky"]}, {"latin": "Phalaris arundinacea", "czech": "chrastice rákosovitá", "family_lat": "Poaceae", "family_cz": "lipnicovité", "group": "trávy", "habitat": "mokřad/říční niva", "life_form": "tráva", "toxic": "ne", "tags": ["vysoká tráva", "vodní", "říční"]}, {"latin": "Phleum pratense", "czech": "bojínek luční", "family_lat": "Poaceae", "family_cz": "lipnicovité", "group": "trávy", "habitat": "louka", "life_form": "tráva", "toxic": "ne", "tags": ["válcový klas", "louka", "výsevní"]}, {"latin": "Phragmites australis", "czech": "rákos obecný", "family_lat": "Poaceae", "family_cz": "lipnicovité", "group": "trávy", "habitat": "mokřad", "life_form": "tráva", "toxic": "ne", "tags": ["rákos", "vodní", "vysoký", "invazní tendence"]}, {"latin": "Poa annua", "czech": "lipnice roční", "family_lat": "Poaceae", "family_cz": "lipnicovité", "group": "trávy", "habitat": "ruderál/trávník", "life_form": "tráva", "toxic": "ne", "tags": ["plevel", "jednoletá", "trávník"]}, {"latin": "Poa pratensis", "czech": "lipnice luční", "family_lat": "Poaceae", "family_cz": "lipnicovité", "group": "trávy", "habitat": "louka/trávník", "life_form": "tráva", "toxic": "ne", "tags": ["louka", "trávník", "výsevní"]}, {"latin": "Bistorta officinalis", "czech": "rdesno hadí kořen", "family_lat": "Polygonaceae", "family_cz": "rdesnovité", "group": "dvouděložné", "habitat": "mokrá louka", "life_form": "bylina", "toxic": "ne", "tags": ["růžový květ", "vlhká louka", "léčivý"]}, {"latin": "Polygonum aviculare", "czech": "truskavec ptačí", "family_lat": "Polygonaceae", "family_cz": "rdesnovité", "group": "dvouděložné", "habitat": "ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["plevel", "šlapaný", "jednoletá"]}, {"latin": "Rumex acetosa", "czech": "šťovík kyselý", "family_lat": "Polygonaceae", "family_cz": "rdesnovité", "group": "dvouděložné", "habitat": "louka", "life_form": "bylina", "toxic": "ne", "tags": ["jedlý", "kyselý", "louka"]}, {"latin": "Rumex obtusifolius", "czech": "šťovík tupolistý", "family_lat": "Polygonaceae", "family_cz": "rdesnovité", "group": "dvouděložné", "habitat": "ruderál/louka", "life_form": "bylina", "toxic": "ne", "tags": ["velké listy", "plevel", "louka"]}, {"latin": "Polypodium vulgare", "czech": "osladič obecný", "family_lat": "Polypodiaceae", "family_cz": "osladičovité", "group": "kapradiny", "habitat": "skalní/les", "life_form": "kapradina", "toxic": "ne", "tags": ["skalní štěrbiny", "stálezelený", "léčivý"]}, {"latin": "Anagallis arvensis", "czech": "drchnička rolní", "family_lat": "Primulaceae", "family_cz": "prvosenkovité", "group": "dvouděložné", "habitat": "pole/ruderál", "life_form": "bylina", "toxic": "jedovatý", "tags": ["červený/modrý květ", "plevel", "jednoletá"]}, {"latin": "Lysimachia nummularia", "czech": "vrbina penízková", "family_lat": "Primulaceae", "family_cz": "prvosenkovité", "group": "dvouděložné", "habitat": "louka/mokřad", "life_form": "bylina", "toxic": "ne", "tags": ["žlutý květ", "plazivý", "vlhký"]}, {"latin": "Primula elatior", "czech": "prvosenka větší", "family_lat": "Primulaceae", "family_cz": "prvosenkovité", "group": "dvouděložné", "habitat": "les/louka", "life_form": "bylina", "toxic": "ne", "tags": ["žlutý květ", "léčivý", "jarní", "vlhká louka"]}, {"latin": "Primula veris", "czech": "prvosenka jarní", "family_lat": "Primulaceae", "family_cz": "prvosenkovité", "group": "dvouděložné", "habitat": "louka", "life_form": "bylina", "toxic": "ne", "tags": ["žlutý květ", "léčivý", "jarní", "suchá louka"]}, {"latin": "Anemone nemorosa", "czech": "sasanka hajní", "family_lat": "Ranunculaceae", "family_cz": "pryskyřníkovité", "group": "dvouděložné", "habitat": "les", "life_form": "bylina", "toxic": "jedovatý", "tags": ["bílý květ", "jarní", "kobercový", "hájový les"]}, {"latin": "Anemone ranunculoides", "czech": "sasanka pryskyřníkovitá", "family_lat": "Ranunculaceae", "family_cz": "pryskyřníkovité", "group": "dvouděložné", "habitat": "les", "life_form": "bylina", "toxic": "jedovatý", "tags": ["žlutý květ", "jarní", "hájový les"]}, {"latin": "Caltha palustris", "czech": "blatouch bahenní", "family_lat": "Ranunculaceae", "family_cz": "pryskyřníkovité", "group": "dvouděložné", "habitat": "mokřad", "life_form": "bylina", "toxic": "jedovatý", "tags": ["žlutý květ", "jarní", "vodní"]}, {"latin": "Ficaria verna", "czech": "orsej jarní", "family_lat": "Ranunculaceae", "family_cz": "pryskyřníkovité", "group": "dvouděložné", "habitat": "les/louka", "life_form": "bylina", "toxic": "mírně", "tags": ["žlutý květ", "jarní", "cibulovitý", "hájový"]}, {"latin": "Hepatica nobilis", "czech": "jaterník podléška", "family_lat": "Ranunculaceae", "family_cz": "pryskyřníkovité", "group": "dvouděložné", "habitat": "les", "life_form": "bylina", "toxic": "mírně", "tags": ["fialový květ", "jarní", "chráněný", "hájový les"]}, {"latin": "Ranunculus acris", "czech": "pryskyřník prudký", "family_lat": "Ranunculaceae", "family_cz": "pryskyřníkovité", "group": "dvouděložné", "habitat": "louka", "life_form": "bylina", "toxic": "jedovatý", "tags": ["žlutý květ", "louka", "vlhká louka"]}, {"latin": "Ranunculus repens", "czech": "pryskyřník plazivý", "family_lat": "Ranunculaceae", "family_cz": "pryskyřníkovité", "group": "dvouděložné", "habitat": "louka/mokřad", "life_form": "bylina", "toxic": "jedovatý", "tags": ["žlutý květ", "plazivý", "vlhký"]}, {"latin": "Agrimonia eupatoria", "czech": "řepík lékařský", "family_lat": "Rosaceae", "family_cz": "růžovité", "group": "dvouděložné", "habitat": "suchá louka/les", "life_form": "bylina", "toxic": "ne", "tags": ["žlutý květ", "léčivý", "háj"]}, {"latin": "Alchemilla vulgaris", "czech": "kontryhel obecný", "family_lat": "Rosaceae", "family_cz": "růžovité", "group": "dvouděložné", "habitat": "louka", "life_form": "bylina", "toxic": "ne", "tags": ["žlutozelený květ", "léčivý", "rosa na listech"]}, {"latin": "Filipendula ulmaria", "czech": "tužebník jilmový", "family_lat": "Rosaceae", "family_cz": "růžovité", "group": "dvouděložné", "habitat": "mokřad/louka", "life_form": "bylina", "toxic": "ne", "tags": ["bílý květ", "vonný", "léčivý", "vlhká louka"]}, {"latin": "Fragaria vesca", "czech": "jahodník obecný", "family_lat": "Rosaceae", "family_cz": "růžovité", "group": "dvouděložné", "habitat": "les/louka", "life_form": "bylina", "toxic": "ne", "tags": ["bílý květ", "jedlý plod", "jarní"]}, {"latin": "Geum urbanum", "czech": "kuklík městský", "family_lat": "Rosaceae", "family_cz": "růžovité", "group": "dvouděložné", "habitat": "les/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["žlutý květ", "háčkovitý plod", "stinný les"]}, {"latin": "Potentilla argentea", "czech": "mochna stříbrná", "family_lat": "Rosaceae", "family_cz": "růžovité", "group": "dvouděložné", "habitat": "suchá louka/skalní", "life_form": "bylina", "toxic": "ne", "tags": ["žlutý květ", "stříbrný list", "suchomilný"]}, {"latin": "Potentilla reptans", "czech": "mochna plazivá", "family_lat": "Rosaceae", "family_cz": "růžovité", "group": "dvouděložné", "habitat": "louka/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["žlutý květ", "plazivý", "louka"]}, {"latin": "Prunus avium", "czech": "třešeň ptačí", "family_lat": "Rosaceae", "family_cz": "růžovité", "group": "stromy a keře", "habitat": "les", "life_form": "strom", "toxic": "ne", "tags": ["bílý květ", "jedlý plod", "jarní", "lesní třešeň"]}, {"latin": "Prunus padus", "czech": "střemcha obecná", "family_lat": "Rosaceae", "family_cz": "růžovité", "group": "stromy a keře", "habitat": "les/mokřad", "life_form": "strom", "toxic": "mírně", "tags": ["bílý květ", "vonný", "jarní", "vlhký les"]}, {"latin": "Rosa canina", "czech": "růže šípková", "family_lat": "Rosaceae", "family_cz": "růžovité", "group": "stromy a keře", "habitat": "les/louka", "life_form": "keř", "toxic": "ne", "tags": ["růžový květ", "jedlý plod", "trnitý", "šípek"]}, {"latin": "Rubus fruticosus", "czech": "ostružiník křovitý", "family_lat": "Rosaceae", "family_cz": "růžovité", "group": "stromy a keře", "habitat": "les/ruderál", "life_form": "keř", "toxic": "ne", "tags": ["bílý květ", "jedlý plod", "trnitý", "šíří se"]}, {"latin": "Rubus idaeus", "czech": "ostružiník maliník", "family_lat": "Rosaceae", "family_cz": "růžovité", "group": "stromy a keře", "habitat": "les/ruderál", "life_form": "keř", "toxic": "ne", "tags": ["bílý květ", "jedlý plod", "maliník"]}, {"latin": "Sanguisorba officinalis", "czech": "krvavec toten", "family_lat": "Rosaceae", "family_cz": "růžovité", "group": "dvouděložné", "habitat": "mokrá louka", "life_form": "bylina", "toxic": "ne", "tags": ["tmavě červený klas", "léčivý", "vlhká louka"]}, {"latin": "Sorbus aucuparia", "czech": "jeřáb ptačí", "family_lat": "Rosaceae", "family_cz": "růžovité", "group": "stromy a keře", "habitat": "les", "life_form": "strom", "toxic": "ne", "tags": ["bílý květ", "červený plod", "jedlý plod", "podzim"]}, {"latin": "Galium album", "czech": "svízel bílý", "family_lat": "Rubiaceae", "family_cz": "mořenovité", "group": "dvouděložné", "habitat": "louka/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["bílý květ", "vonný", "louka"]}, {"latin": "Galium aparine", "czech": "svízel přítula", "family_lat": "Rubiaceae", "family_cz": "mořenovité", "group": "dvouděložné", "habitat": "les/ruderál", "life_form": "bylina", "toxic": "ne", "tags": ["lepivý", "popínavý", "ruderál"]}, {"latin": "Salix alba", "czech": "vrba bílá", "family_lat": "Salicaceae", "family_cz": "vrbovité", "group": "stromy a keře", "habitat": "mokřad/říční niva", "life_form": "strom", "toxic": "ne", "tags": ["vlhká stanoviště", "léčivý", "stříbrný list"]}, {"latin": "Salix caprea", "czech": "vrba jíva", "family_lat": "Salicaceae", "family_cz": "vrbovité", "group": "stromy a keře", "habitat": "les/ruderál", "life_form": "strom", "toxic": "ne", "tags": ["kočičky", "jarní", "vlhký"]}, {"latin": "Populus tremula", "czech": "topol osika", "family_lat": "Salicaceae", "family_cz": "vrbovité", "group": "stromy a keře", "habitat": "les", "life_form": "strom", "toxic": "ne", "tags": ["chvějící listy", "pionýrský druh", "bílá kůra"]}, {"latin": "Acer platanoides", "czech": "javor mléč", "family_lat": "Sapindaceae", "family_cz": "mýdelníkovité", "group": "stromy a keře", "habitat": "les/park", "life_form": "strom", "toxic": "ne", "tags": ["listnatý", "jarní květ", "žlutý květ", "alejna"]}, {"latin": "Acer pseudoplatanus", "czech": "javor klen", "family_lat": "Sapindaceae", "family_cz": "mýdelníkovité", "group": "stromy a keře", "habitat": "les/park", "life_form": "strom", "toxic": "ne", "tags": ["listnatý", "vlhký les", "velký strom"]}, {"latin": "Chrysosplenium alternifolium", "czech": "mokrýš střídavolistý", "family_lat": "Saxifragaceae", "family_cz": "lomikamenovité", "group": "dvouděložné", "habitat": "mokřad/pramen", "life_form": "bylina", "toxic": "ne", "tags": ["žlutozelený květ", "jarní", "vlhký"]}, {"latin": "Scrophularia nodosa", "czech": "krtičník hlíznatý", "family_lat": "Scrophulariaceae", "family_cz": "krtičníkovité", "group": "dvouděložné", "habitat": "les/ruderál", "life_form": "bylina", "toxic": "mírně", "tags": ["hnědočervený květ", "stinný vlhký les"]}, {"latin": "Verbascum thapsus", "czech": "divizna malokvětá", "family_lat": "Scrophulariaceae", "family_cz": "krtičníkovité", "group": "dvouděložné", "habitat": "ruderál/suchá", "life_form": "bylina", "toxic": "ne", "tags": ["žlutý květ", "dvouletá", "vysoký", "léčivý"]}, {"latin": "Atropa belladonna", "czech": "rulík zlomocný", "family_lat": "Solanaceae", "family_cz": "lilkovité", "group": "dvouděložné", "habitat": "les/ruderál", "life_form": "bylina", "toxic": "silně jedovatý", "tags": ["fialový květ", "černý jedovatý plod", "léčivý"]}, {"latin": "Datura stramonium", "czech": "durman obecný", "family_lat": "Solanaceae", "family_cz": "lilkovité", "group": "dvouděložné", "habitat": "ruderál", "life_form": "bylina", "toxic": "silně jedovatý", "tags": ["bílý květ", "trnitý plod", "halucinogenní", "invazní"]}, {"latin": "Solanum dulcamara", "czech": "lilek potměchuť", "family_lat": "Solanaceae", "family_cz": "lilkovité", "group": "dvouděložné", "habitat": "les/mokřad", "life_form": "bylina", "toxic": "jedovatý", "tags": ["fialový květ", "červený plod", "plazivý"]}, {"latin": "Solanum nigrum", "czech": "lilek černý", "family_lat": "Solanaceae", "family_cz": "lilkovité", "group": "dvouděložné", "habitat": "pole/ruderál", "life_form": "bylina", "toxic": "jedovatý", "tags": ["bílý květ", "černý plod", "plevel"]}, {"latin": "Taxus baccata", "czech": "tis červený", "family_lat": "Taxaceae", "family_cz": "tisovité", "group": "nahosemenné", "habitat": "les/park", "life_form": "strom", "toxic": "silně jedovatý", "tags": ["stálezelený", "červený míšek", "jehličnan", "chráněný"]}, {"latin": "Urtica dioica", "czech": "kopřiva dvoudomá", "family_lat": "Urticaceae", "family_cz": "kopřivovité", "group": "dvouděložné", "habitat": "ruderál/les", "life_form": "bylina", "toxic": "ne", "tags": ["žahavý", "léčivý", "jedlý", "dusíkomilný"]}, {"latin": "Viola arvensis", "czech": "violka rolní", "family_lat": "Violaceae", "family_cz": "violkovité", "group": "dvouděložné", "habitat": "pole", "life_form": "bylina", "toxic": "ne", "tags": ["bílý/žlutý květ", "polní plevel", "jednoletá"]}, {"latin": "Viola odorata", "czech": "violka vonná", "family_lat": "Violaceae", "family_cz": "violkovité", "group": "dvouděložné", "habitat": "les/park", "life_form": "bylina", "toxic": "ne", "tags": ["fialový květ", "vonný", "jarní", "léčivý"]}];
+
+// ── State ──
+let userData = {};
+let sbUrl = null;
+let sbAnonKey = null;
+let sbUserKey = null;
+let sb = null;
+let syncTimer = null;
+let quizList = [], quizIdx = 0, quizFlipped = false, quizMode = 'foto';
+let dirty = false;
+let activeGroup = '';
+let activeQuizGroup = '';
+let activeLF = '';       // life form filter
+let activeHab = '';      // habitat filter
+let activeTox = '';      // toxicity filter
+let activeQuizLF = '';   // quiz life form filter
+const SB_TABLE = 'botanika_sync';
+const SB_BUCKET = 'botanika-photos';
+
+// ── Storage key helpers ──
+const SK = latin => 'p_' + latin.replace(/\s/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
+function D(latin) { return userData[SK(latin)] || {status:'new',photo:'',funfact:'',flagged:false}; }
+
+// ── Init ──
+window.onload = async () => {
+  sbUrl = localStorage.getItem('sb_url');
+  sbAnonKey = localStorage.getItem('sb_anon_key');
+  sbUserKey = localStorage.getItem('sb_user_key');
+  populateSelects();
+  if (initSupabaseClient()) {
+    await loadFromSupabase();
+  }
+  renderAll();
+  if (hasSupabaseConfig()) syncStatus('ok','cloud synced');
+};
+
+function hasSupabaseConfig() {
+  return !!(sb && sbUserKey);
+}
+
+function initSupabaseClient() {
+  if (!sbUrl || !sbAnonKey || !window.supabase?.createClient) return false;
+  sb = window.supabase.createClient(sbUrl, sbAnonKey, {auth:{persistSession:false}});
+  return true;
+}
+
+async function loadFromSupabase() {
+  if (!hasSupabaseConfig()) return;
+  try {
+    syncStatus('...','načítám cloud…');
+    const {data, error} = await sb.from(SB_TABLE).select('data').eq('user_key', sbUserKey).maybeSingle();
+    if (error && error.code !== 'PGRST116') throw error;
+    if (data?.data && typeof data.data === 'object') userData = data.data;
+    syncStatus('ok','cloud synced');
+  } catch (e) {
+    syncStatus('err','chyba cloud načtení');
+    console.error('loadFromSupabase failed:', e);
+  }
+}
+
+async function saveToSupabase() {
+  if (!hasSupabaseConfig()) return;
+  try {
+    syncStatus('...','ukládám cloud…');
+    const row = {user_key: sbUserKey, data: userData, updated_at: new Date().toISOString()};
+    const {error} = await sb.from(SB_TABLE).upsert(row, {onConflict: 'user_key'});
+    if (error) throw error;
+    syncStatus('ok','cloud uloženo ✓');
+    dirty = false;
+  } catch (e) {
+    syncStatus('err','chyba cloud uložení');
+    console.error('saveToSupabase failed:', e);
+  }
+}
+
+async function saveRemoteData() {
+  if (hasSupabaseConfig()) return saveToSupabase();
+}
+
+function scheduleSave() {
+  dirty = true;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(saveRemoteData, 1200);
+}
+
+function syncStatus(state, label) {
+  document.getElementById('sync-dot').className = 'sync-dot' + (state==='ok'?' ok':state==='err'?' err':'');
+  document.getElementById('sync-label').textContent = label;
+}
+
+function showSetup() {
+  const su = document.getElementById('sb-url');
+  const sk = document.getElementById('sb-key');
+  const suk = document.getElementById('sb-user-key');
+  if (su) su.value = sbUrl || '';
+  if (sk) sk.value = sbAnonKey || '';
+  if (suk) suk.value = sbUserKey || '';
+  document.getElementById('setup-modal').style.display = 'flex';
+}
+
+async function saveSupabaseConfig() {
+  const url = document.getElementById('sb-url').value.trim();
+  const key = document.getElementById('sb-key').value.trim();
+  const userKey = document.getElementById('sb-user-key').value.trim();
+  if (!url || !key || !userKey) return;
+
+  sbUrl = url;
+  sbAnonKey = key;
+  sbUserKey = userKey;
+  localStorage.setItem('sb_url', sbUrl);
+  localStorage.setItem('sb_anon_key', sbAnonKey);
+  localStorage.setItem('sb_user_key', sbUserKey);
+  initSupabaseClient();
+
+  document.getElementById('sb-status').textContent = 'Připojuji…';
+  await loadFromSupabase();
+  if (!Object.keys(userData).length) await saveToSupabase();
+  document.getElementById('sb-status').textContent = 'Připojeno k Supabase ✓';
+  renderAll();
+}
+
+function clearSupabaseConfig() {
+  sb = null;
+  sbUrl = null;
+  sbAnonKey = null;
+  sbUserKey = null;
+  localStorage.removeItem('sb_url');
+  localStorage.removeItem('sb_anon_key');
+  localStorage.removeItem('sb_user_key');
+  document.getElementById('sb-status').textContent = 'Supabase odpojeno';
+  syncStatus('','nepřipojeno');
+}
+
+// ── Data helpers ──
+function setData(latin, patch) {
+  const key = SK(latin);
+  userData[key] = Object.assign(D(latin), patch);
+  scheduleSave();
+}
+
+// ── Populate selects ──
+const GROUP_ORDER = ['přesličky','kapradiny','nahosemenné','trávy','stromy a keře','jednoděložné','dvouděložné'];
+const GROUP_COLORS = {
+  'přesličky':   '#5F5E5A',
+  'kapradiny':   '#3B6D11',
+  'nahosemenné': '#085041',
+  'trávy':       '#639922',
+  'stromy a keře':'#854F0B',
+  'jednoděložné':'#185FA5',
+  'dvouděložné': '#993556',
+};
+const LF_ORDER = ['strom','keř','liana','bylina','tráva','kapradina','přeslička'];
+const LF_COLORS = {'strom':'#854F0B','keř':'#BA7517','liana':'#3B6D11','bylina':'#1D9E75','tráva':'#639922','kapradina':'#3B6D11','přeslička':'#5F5E5A'};
+const HAB_ORDER = ['les','louka','mokřad','pole','suchá louka','skalní','ruderál','vřesoviště','horský les','park','rašeliniště'];
+const HAB_COLORS = {'les':'#3B6D11','louka':'#639922','mokřad':'#185FA5','pole':'#EF9F27','suchá louka':'#BA7517','skalní':'#888780','ruderál':'#5F5E5A','vřesoviště':'#7F77DD','horský les':'#085041','park':'#1D9E75','rašeliniště':'#185FA5'};
+const TOX_ORDER = ['ne','mírně','jedovatý','silně jedovatý'];
+const TOX_COLORS = {'ne':'#1D9E75','mírně':'#EF9F27','jedovatý':'#e85d3c','silně jedovatý':'#A32D2D'};
+
+function makeChips(containerId, order, colors, activeVar, handler) {
+  const c = document.getElementById(containerId);
+  if (!c) return;
+  c.innerHTML = `<span class="chip on" data-v="" onclick="${handler}(this,'')"">Vše</span>`
+    + order.map(v => `<span class="chip" data-v="${v}" style="--chip-color:${colors[v]||'#888'}" onclick="${handler}(this,'${v.replace(/'/g,"\\'")}')"> ${v}</span>`).join('');
+}
+
+function populateSelects() {
+  const famLat = [...new Set(PLANTS.map(p=>p.family_lat))].sort();
+  const famCz  = [...new Set(PLANTS.map(p=>p.family_cz))].sort((a,b)=>a.localeCompare(b,'cs'));
+  ['filter-family','quiz-family'].forEach(id => {
+    const sel = document.getElementById(id);
+    famLat.forEach(f => { const o=document.createElement('option'); o.value=f; o.textContent=f; sel.appendChild(o); });
+  });
+  ['filter-family-cz','quiz-family-cz'].forEach(id => {
+    const sel = document.getElementById(id);
+    famCz.forEach(f => { const o=document.createElement('option'); o.value=f; o.textContent=f; sel.appendChild(o); });
+  });
+
+  // Browse chips
+  makeChips('browse-chips', GROUP_ORDER, GROUP_COLORS, 'activeGroup', 'setFilterGroup');
+  makeChips('lf-chips',     LF_ORDER,    LF_COLORS,    'activeLF',    'setFilterLF');
+  makeChips('hab-chips',    HAB_ORDER,   HAB_COLORS,   'activeHab',   'setFilterHab');
+  makeChips('tox-chips',    TOX_ORDER,   TOX_COLORS,   'activeTox',   'setFilterTox');
+
+  // Quiz chips
+  makeChips('quiz-chips',    GROUP_ORDER, GROUP_COLORS, 'activeQuizGroup', 'setQuizFilterGroup');
+  makeChips('quiz-lf-chips', LF_ORDER,    LF_COLORS,    'activeQuizLF',    'setQuizFilterLF');
+}
+
+function setChipActive(containerId, val) {
+  document.querySelectorAll(`#${containerId} .chip`).forEach(c => c.classList.toggle('on', c.dataset.v === val));
+}
+
+function setFilterGroup(el, v)     { activeGroup = v;      setChipActive('browse-chips', v); renderGrid(); }
+function setFilterLF(el, v)        { activeLF = v;         setChipActive('lf-chips', v);     renderGrid(); }
+function setFilterHab(el, v)       { activeHab = v;        setChipActive('hab-chips', v);    renderGrid(); }
+function setFilterTox(el, v)       { activeTox = v;        setChipActive('tox-chips', v);    renderGrid(); }
+function setQuizFilterGroup(el, v) { activeQuizGroup = v;  setChipActive('quiz-chips', v);   resetQuiz(); }
+function setQuizFilterLF(el, v)    { activeQuizLF = v;     setChipActive('quiz-lf-chips', v);resetQuiz(); }
+
+function clearAllFilters() {
+  activeGroup = ''; activeLF = ''; activeHab = ''; activeTox = '';
+  ['browse-chips','lf-chips','hab-chips','tox-chips'].forEach(id => setChipActive(id, ''));
+  document.getElementById('filter-family').value = '';
+  document.getElementById('filter-family-cz').value = '';
+  document.getElementById('filter-status').value = '';
+  document.getElementById('search').value = '';
+  renderGrid();
+}
+
+// Backwards compat for old setGroup calls
+function setGroup(el, tab) {
+  if (tab === 'browse') setFilterGroup(el, el.dataset.g || el.dataset.v || '');
+  else setQuizFilterGroup(el, el.dataset.g || el.dataset.v || '');
+}
+
+// keep LAT and CZ selects in sync (selecting one clears the other)
+function syncFamilyFromCz() {
+  document.getElementById('filter-family').value = '';
+}
+function syncFamilyFromLat() {
+  document.getElementById('filter-family-cz').value = '';
+}
+function syncQuizFamilyFromCz() {
+  document.getElementById('quiz-family').value = '';
+}
+function syncQuizFamilyFromLat() {
+  document.getElementById('quiz-family-cz').value = '';
+}
+
+// ── Stats ──
+function renderStats() {
+  let learned=0, review=0, flagged=0, photo=0, total=PLANTS.length;
+  PLANTS.forEach(p => {
+    const d = D(p.latin);
+    if (d.status==='learned') learned++;
+    if (d.status==='review') review++;
+    if (d.flagged) flagged++;
+    if (d.photo) photo++;
+  });
+  document.getElementById('statsbar').innerHTML =
+    `<div class="stat">Celkem: <b>${total}</b></div>
+     <div class="stat">Naučeno: <b>${learned}</b></div>
+     <div class="stat">K opakování: <b>${review}</b></div>
+     <div class="stat flagged">Nevím 🚩: <b>${flagged}</b></div>
+     <div class="stat">S fotkou: <b>${photo}</b></div>`;
+}
+
+// ── Card rendering ──
+function cardHTML(p) {
+  const d = D(p.latin);
+  const cls = d.flagged ? 'flagged-card' : d.status==='learned' ? 'learned' : d.status==='review' ? 'review' : '';
+  const badge = d.status==='learned' ? '<span class="badge b-learned">naučeno</span>'
+    : d.status==='review' ? '<span class="badge b-review">opakování</span>'
+    : '<span class="badge b-new">nové</span>';
+  const flag = d.flagged ? '<span class="flag-icon">🚩</span>' : '';
+  const img = d.photo
+    ? `<div class="card-img"><img src="${esc(d.photo)}" alt="" onerror="this.parentNode.innerHTML='bez fotky'"></div>`
+    : `<div class="card-img">bez fotky</div>`;
+  const safe = esc(p.latin);
+  const groupBadge = `<span class="badge" style="background:${GROUP_COLORS[p.group]||'#888'};color:#fff;margin-left:auto">${p.group||''}</span>`;
+  return `<div class="card ${cls}" onclick="openModal('${safe}')">
+    ${img}
+    <div class="card-body">
+      <div class="card-latin">${p.latin}</div>
+      <div class="card-czech">${p.czech}</div>
+      <div class="card-family">${p.family_cz} · <i>${p.family_lat}</i></div>
+      <div class="card-footer">${badge}${flag}${groupBadge}</div>
+    </div>
+  </div>`;
+}
+
+function filteredPlants(familySel, familyCzSel, statusSel, searchVal) {
+  const q = (searchVal||'').toLowerCase();
+  const fam = familySel||'';
+  const famCz = familyCzSel||'';
+  const st = statusSel||'';
+  const result = PLANTS.filter(p => {
+    const d = D(p.latin);
+    if (activeGroup && p.group !== activeGroup) return false;
+    if (activeLF && p.life_form !== activeLF) return false;
+    if (activeHab && !p.habitat.includes(activeHab)) return false;
+    if (activeTox && p.toxic !== activeTox) return false;
+    if (fam && p.family_lat !== fam) return false;
+    if (famCz && p.family_cz !== famCz) return false;
+    if (st==='new' && d.status!=='new') return false;
+    if (st==='review' && d.status!=='review') return false;
+    if (st==='learned' && d.status!=='learned') return false;
+    if (st==='flagged' && !d.flagged) return false;
+    if (st==='photo' && !d.photo) return false;
+    if (q) {
+      const searchIn = [p.latin, p.czech, p.family_cz, p.family_lat, p.habitat, p.life_form, ...(p.tags||[])].join(' ').toLowerCase();
+      if (!searchIn.includes(q)) return false;
+    }
+    return true;
+  });
+  // update summary
+  const active = [activeGroup, activeLF, activeHab, activeTox].filter(Boolean);
+  const sum = document.getElementById('filter-summary');
+  if (sum) sum.textContent = active.length ? `Filtr: ${active.join(' · ')} — zobrazeno ${result.length} rostlin` : `Zobrazeno ${result.length} rostlin`;
+  return result;
+}
+
+function renderGrid() {
+  const plants = filteredPlants(
+    document.getElementById('filter-family').value,
+    document.getElementById('filter-family-cz').value,
+    document.getElementById('filter-status').value,
+    document.getElementById('search').value
+  );
+  const g = document.getElementById('grid');
+  g.innerHTML = plants.length ? plants.map(cardHTML).join('') : '<div class="empty">Žádné výsledky.</div>';
+  renderStats();
+}
+
+function renderFlagged() {
+  const plants = PLANTS.filter(p => D(p.latin).flagged);
+  const g = document.getElementById('flagged-grid');
+  g.innerHTML = plants.length ? plants.map(cardHTML).join('') : '<div class="empty">Žádné rostliny označeny vlajkou. Otevři kartičku a klikni 🚩 Nevím.</div>';
+}
+
+function renderAll() { renderStats(); renderGrid(); renderFlagged(); renderQuiz(); }
+
+// ── Modal ──
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+function openModal(latin) {
+  const p = PLANTS.find(x=>x.latin===latin);
+  const d = D(latin);
+  const enc = encodeURIComponent(latin);
+  const sl = latin.replace(/'/g,"\\'");
+  const isBase64 = (d.photo||'').startsWith('data:');
+  const imgEl = d.photo
+    ? `<img class="modal-img" src="${isBase64 ? d.photo : esc(d.photo)}" onerror="this.style.display='none'">`
+    : `<div class="no-img">Zatím žádná fotka</div>`;
+  document.getElementById('modal-inner').innerHTML = `
+    <div class="modal-head">
+      <div>
+        <div style="font-size:16px;font-weight:600;font-style:italic;">${p.latin}</div>
+        <div style="font-size:13px;color:var(--text2);margin-top:2px;">${p.czech}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px;">${p.family_cz} · <i>${p.family_lat}</i></div>
+      </div>
+      <button class="btn-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="modal-img-wrap">${imgEl}</div>
+
+      <div class="photo-tabs">
+        <div class="photo-tab active" onclick="switchPhotoTab('file',this)">📁 Soubor / přetažení</div>
+        <div class="photo-tab" onclick="switchPhotoTab('paste',this)">📋 Vložit (Ctrl+V)</div>
+        <div class="photo-tab" onclick="switchPhotoTab('url',this)">🔗 URL odkaz</div>
+      </div>
+
+      <div id="pp-file" class="photo-panel active">
+        <div class="drop-zone" id="drop-zone"
+          ondragover="event.preventDefault();this.classList.add('over')"
+          ondragleave="this.classList.remove('over')"
+          ondrop="handleDrop(event,'${sl}')">
+          <input type="file" accept="image/*" onchange="handleFile(event,'${sl}')">
+          Klikni nebo přetáhni obrázek sem
+        </div>
+      </div>
+
+      <div id="pp-paste" class="photo-panel">
+        <div class="paste-zone" id="paste-zone" tabindex="0"
+          onpaste="handlePaste(event,'${sl}')"
+          onclick="this.focus()">
+          Klikni sem a pak stiskni Ctrl+V (nebo ⌘+V na Macu)
+        </div>
+      </div>
+
+      <div id="pp-url" class="photo-panel">
+        <input type="url" id="m-photo" value="${esc((isBase64?'':d.photo)||'')}" placeholder="https://upload.wikimedia.org/…" style="margin-top:6px;">
+        <div class="ext-links" style="margin-top:5px;">
+          <a class="ext-link" href="https://commons.wikimedia.org/w/index.php?search=${enc}&ns6=1" target="_blank">🔍 Wikimedia Commons</a>
+          <a class="ext-link" href="https://www.inaturalist.org/taxa/search?q=${enc}" target="_blank">🌿 iNaturalist</a>
+          <a class="ext-link" href="https://cs.wikipedia.org/w/index.php?search=${enc}" target="_blank">📖 Wikipedia</a>
+        </div>
+        <button class="btn" style="margin-top:8px;width:100%;" onclick="savePhotoUrl('${sl}')">Uložit URL</button>
+      </div>
+
+      <label style="margin-top:12px;">Zajímavost / poznámka</label>
+      <textarea id="m-fact" rows="3" placeholder="Přidejte zajímavost, tip k určení…">${esc(d.funfact||'')}</textarea>
+      <div class="action-row" style="margin-top:12px;">
+        <button class="btn amber" onclick="setStatus('${sl}','review')">🔄 Opakování</button>
+        <button class="btn green" onclick="setStatus('${sl}','learned')">✓ Naučeno</button>
+        <button class="btn red-flag${d.flagged?' active':''}" id="flag-btn" onclick="toggleFlag('${sl}')">🚩 Nevím</button>
+      </div>
+      <button class="btn btn-save" onclick="saveFunfact('${sl}')">Uložit poznámku</button>
+      ${d.photo ? `<button class="btn" style="width:100%;margin-top:5px;font-size:11px;color:#185FA5;border-color:#185FA5" onclick="analyzePhoto('${sl}')">🤖 AI analýza fotky</button><div id="ai-result" style="font-size:12px;color:var(--text2);margin-top:6px;line-height:1.6"></div>` : ''}
+    </div>`;
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function closeModal() { document.getElementById('modal').style.display = 'none'; }
+function modalBgClick(e) { if (e.target.id==='modal') closeModal(); }
+
+function switchPhotoTab(name, el) {
+  ['file','paste','url'].forEach(t => {
+    document.getElementById('pp-'+t).classList.toggle('active', t===name);
+  });
+  el.parentNode.querySelectorAll('.photo-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function dataUrlToBlob(dataUrl) {
+  const parts = dataUrl.split(',');
+  const meta = parts[0] || '';
+  const raw = atob(parts[1] || '');
+  const mime = meta.match(/:(.*?);/)?.[1] || 'image/jpeg';
+  const bytes = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+  return new Blob([bytes], {type: mime});
+}
+
+async function compressImage(file, maxSide = 1600, quality = 0.8) {
+  const inputDataUrl = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => resolve(e.target.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  const img = await new Promise((resolve, reject) => {
+    const i = new Image();
+    i.onload = () => resolve(i);
+    i.onerror = reject;
+    i.src = inputDataUrl;
+  });
+
+  const ratio = Math.min(1, maxSide / Math.max(img.width, img.height));
+  const w = Math.max(1, Math.round(img.width * ratio));
+  const h = Math.max(1, Math.round(img.height * ratio));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, w, h);
+
+  const dataUrl = canvas.toDataURL('image/jpeg', quality);
+  const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+  return {dataUrl, blob: blob || dataUrlToBlob(dataUrl)};
+}
+
+function latinToSlug(latin) {
+  return latin.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
+
+async function uploadPhotoToSupabase(file, latin) {
+  if (!hasSupabaseConfig()) return null;
+  const compressed = await compressImage(file);
+  const path = `${sbUserKey}/${latinToSlug(latin)}-${Date.now()}.jpg`;
+  const {error} = await sb.storage.from(SB_BUCKET).upload(path, compressed.blob, {
+    contentType: 'image/jpeg',
+    upsert: false
+  });
+  if (error) throw error;
+  const {data} = sb.storage.from(SB_BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+}
+
+async function imgToBase64(file, latin) {
+  try {
+    let data;
+    if (hasSupabaseConfig()) {
+      data = await uploadPhotoToSupabase(file, latin);
+    } else {
+      const compressed = await compressImage(file);
+      data = compressed.dataUrl;
+    }
+    setData(latin, {photo: data});
+    updateModalImg(data);
+    renderAll();
+  } catch (e) {
+    console.error('imgToBase64 failed:', e);
+    alert('Obrázek se nepodařilo zpracovat. Zkus jiný soubor nebo URL odkaz.');
+  }
+}
+
+function updateModalImg(src) {
+  const wrap = document.getElementById('modal-img-wrap');
+  if (wrap) wrap.innerHTML = `<img class="modal-img" src="${src.startsWith('data:') ? src : esc(src)}">`;
+}
+
+function handleFile(event, latin) {
+  const file = event.target.files[0];
+  if (file && file.type.startsWith('image/')) imgToBase64(file, latin);
+}
+
+function handleDrop(event, latin) {
+  event.preventDefault();
+  document.getElementById('drop-zone')?.classList.remove('over');
+  const file = event.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) imgToBase64(file, latin);
+  const url = event.dataTransfer.getData('text/uri-list') || event.dataTransfer.getData('text/plain');
+  if (!file && url && url.startsWith('http')) { setData(latin,{photo:url}); updateModalImg(url); renderAll(); }
+}
+
+function handlePaste(event, latin) {
+  const items = event.clipboardData?.items;
+  if (!items) return;
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      imgToBase64(item.getAsFile(), latin);
+      document.getElementById('paste-zone').textContent = '✓ Obrázek vložen!';
+      return;
+    }
+  }
+  const text = event.clipboardData.getData('text');
+  if (text && text.startsWith('http')) { setData(latin,{photo:text}); updateModalImg(text); renderAll(); }
+}
+
+function savePhotoUrl(latin) {
+  const url = document.getElementById('m-photo')?.value.trim();
+  if (url) { setData(latin, {photo: url}); updateModalImg(url); renderAll(); }
+}
+
+function saveFunfact(latin) {
+  const funfact = document.getElementById('m-fact')?.value || '';
+  setData(latin, {funfact});
+  closeModal(); renderAll();
+}
+
+function saveModal(latin) {
+  const photo = document.getElementById('m-photo')?.value.trim() || D(latin).photo;
+  const funfact = document.getElementById('m-fact')?.value || '';
+  setData(latin, {photo, funfact});
+  closeModal(); renderAll();
+}
+
+function setStatus(latin, status) {
+  const funfact = document.getElementById('m-fact')?.value || D(latin).funfact;
+  setData(latin, {status, funfact});
+  closeModal(); renderAll();
+}
+
+function toggleFlag(latin) {
+  const d = D(latin);
+  setData(latin, {flagged: !d.flagged});
+  const btn = document.getElementById('flag-btn');
+  if (btn) btn.classList.toggle('active', !d.flagged);
+  renderFlagged(); renderStats();
+}
+
+// ── Tabs ──
+function showTab(name) {
+  ['browse','quiz','match','flagged'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t===name ? '' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active',['browse','quiz','match','flagged'][i]===name));
+  if (name==='flagged') renderFlagged();
+  if (name==='quiz') renderQuiz();
+  if (name==='match') startMatch();
+}
+
+// ── Quiz ──
+function setQuizMode(m) {
+  quizMode = m;
+  ['foto','lat','cz','fam'].forEach(k => document.getElementById('qm-'+k).classList.toggle('active',k===m));
+  resetQuiz();
+}
+
+function getQuizPlants() {
+  const fam = document.getElementById('quiz-family').value;
+  const famCz = document.getElementById('quiz-family-cz').value;
+  const src = document.getElementById('quiz-source').value;
+  return PLANTS.filter(p => {
+    const d = D(p.latin);
+    if (activeQuizGroup && p.group !== activeQuizGroup) return false;
+    if (activeQuizLF && p.life_form !== activeQuizLF) return false;
+    if (fam && p.family_lat !== fam) return false;
+    if (famCz && p.family_cz !== famCz) return false;
+    if (src==='photo' && !d.photo) return false;
+    if (src==='flagged' && !d.flagged) return false;
+    if (src==='review' && d.status!=='review') return false;
+    return true;
+  });
+}
+
+function resetQuiz() {
+  quizList = getQuizPlants().sort(()=>Math.random()-0.5);
+  quizIdx = 0; quizFlipped = false;
+  renderQuiz();
+}
+
+function renderQuiz() {
+  const area = document.getElementById('quiz-area');
+  if (!quizList.length) {
+    const msg = quizMode==='foto'
+      ? 'Žádné kartičky s fotkou. Přidej fotky v záložce Kartičky.'
+      : 'Žádné kartičky pro tento filtr.';
+    area.innerHTML = `<div class="quiz-empty"><div style="font-size:14px;color:var(--text2);">${msg}</div><button class="btn green" onclick="resetQuiz()">Načíst znovu</button></div>`;
+    return;
+  }
+  const p = quizList[quizIdx];
+  const d = D(p.latin);
+  const pct = Math.round((quizIdx/quizList.length)*100);
+  const isB64 = d.photo && d.photo.startsWith('data:');
+  const photoSrc = isB64 ? d.photo : esc(d.photo||'');
+
+  let frontHTML = '', backHTML = '';
+
+  if (quizMode === 'foto') {
+    frontHTML = d.photo
+      ? `<img class="flip-img" style="max-height:170px;max-width:100%;object-fit:contain;border-radius:8px;" src="${photoSrc}" onerror="this.style.display='none'">`
+      : `<div style="font-size:13px;color:var(--text3);">bez fotky</div>`;
+    backHTML = `
+      ${d.photo ? `<img class="flip-img" style="max-height:80px;max-width:100%;object-fit:contain;border-radius:6px;" src="${photoSrc}" onerror="this.style.display='none'">` : ''}
+      <div class="flip-a">${p.czech}</div>
+      <div class="flip-a" style="font-size:14px;font-style:italic;">${p.latin}</div>
+      <div class="flip-family">${p.family_cz} · ${p.family_lat}</div>
+      ${d.funfact ? `<div class="flip-fact">${esc(d.funfact)}</div>` : ''}`;
+  } else {
+    let qText='', aText='', qCls='', aCls='';
+    if (quizMode==='lat') { qText=p.latin; aText=p.czech; qCls=''; aCls='cz'; }
+    else if (quizMode==='cz') { qText=p.czech; aText=p.latin; qCls='cz'; aCls=''; }
+    else { qText=p.latin; aText=p.family_cz+' ('+p.family_lat+')'; qCls=''; aCls='cz'; }
+    const hint = quizMode==='lat'?'Jaký je český název?':quizMode==='cz'?'Jaký je latinský název?':'Jaká je čeleď?';
+    frontHTML = `<div class="flip-hint">${hint}</div><div class="flip-q ${qCls}">${qText}</div><div class="flip-hint" style="margin-top:6px;">klepni pro odpověď</div>`;
+    backHTML = `
+      ${d.photo && quizFlipped ? `<img class="flip-img" src="${photoSrc}" onerror="this.style.display='none'">` : ''}
+      <div class="flip-a ${aCls}">${aText}</div>
+      <div class="flip-family">${p.family_cz} · ${p.family_lat}</div>
+      ${d.funfact && quizFlipped ? `<div class="flip-fact">${esc(d.funfact)}</div>` : ''}`;
+  }
+
+  const hintFront = quizMode==='foto' ? '<div class="flip-hint" style="margin-top:6px;">klepni pro odpověď</div>' : '';
+
+  area.innerHTML = `
+    <div class="quiz-meta">
+      <span>${quizIdx+1} / ${quizList.length}</span>
+      <span style="font-size:11px;color:var(--text3);">${p.family_cz}</span>
+    </div>
+    <div class="progress"><div class="progress-fill" style="width:${pct}%"></div></div>
+    <div class="flip-card${quizFlipped?' flipped':''}" id="qflip" onclick="flipQuiz()">
+      <div class="flip-inner">
+        <div class="flip-face">${frontHTML}${hintFront}</div>
+        <div class="flip-face flip-back">${backHTML}</div>
+      </div>
+    </div>
+    <div class="quiz-btns">
+      <button class="btn" onclick="qPrev()">← Zpět</button>
+      <button class="btn red-flag" onclick="qFlag()">🚩 Nevím</button>
+      <button class="btn amber" onclick="qReview()">Opakovat</button>
+      <button class="btn green" onclick="qLearned()">Umím ✓</button>
+    </div>
+    <div class="swipe-hint">← přejeď doleva = nevím &nbsp;|&nbsp; doprava = umím →</div>`;
+}
+
+function flipQuiz() {
+  quizFlipped = !quizFlipped;
+  document.getElementById('qflip')?.classList.toggle('flipped', quizFlipped);
+}
+
+function qNext() { quizIdx=(quizIdx+1)%quizList.length; quizFlipped=false; renderQuiz(); }
+function qPrev() { quizIdx=(quizIdx-1+quizList.length)%quizList.length; quizFlipped=false; renderQuiz(); }
+function qFlag()    { setData(quizList[quizIdx].latin,{flagged:true});  renderFlagged(); renderStats(); qNext(); }
+function qReview()  { setData(quizList[quizIdx].latin,{status:'review'}); renderStats(); qNext(); }
+function qLearned() { setData(quizList[quizIdx].latin,{status:'learned',flagged:false}); renderFlagged(); renderStats(); qNext(); }
+
+function startFlaggedQuiz() {
+  document.getElementById('quiz-source').value = 'flagged';
+  resetQuiz();
+  showTab('quiz');
+}
+
+// ── Matching quiz ──
+let matchMode = 'ptof'; // plant-to-family or family-to-plants
+let matchSelected = null;
+let matchCorrect = 0;
+let matchTotal = 0;
+let matchPairs = []; // [{plant, family_lat, family_cz}]
+
+function setMatchMode(m) {
+  matchMode = m;
+  ['ptof','ftop'].forEach(k => document.getElementById('mm-'+k).classList.toggle('active', k===m));
+  const dir = m==='ptof'
+    ? 'Klikni na rostlinu vlevo, pak na správnou čeleď vpravo.'
+    : 'Klikni na čeleď vlevo, pak na rostliny které do ní patří — postupně všechny.';
+  document.getElementById('match-dir').textContent = dir;
+  startMatch();
+}
+
+function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
+
+function startMatch() {
+  matchSelected = null;
+  matchCorrect = 0;
+
+  if (matchMode === 'ptof') {
+    // Pick 6 random plants from different families if possible
+    const families = [...new Set(PLANTS.map(p => p.family_lat))];
+    const pickedFams = shuffle(families).slice(0, 6);
+    matchPairs = pickedFams.map(fam => {
+      const opts = PLANTS.filter(p => p.family_lat === fam);
+      return shuffle(opts)[0];
+    });
+    matchTotal = matchPairs.length;
+    renderMatchPtoF();
+  } else {
+    // Pick 4 families, show 3 plants per family, match all
+    const families = [...new Set(PLANTS.map(p => p.family_lat))];
+    const pickedFams = shuffle(families).slice(0, 4);
+    matchPairs = pickedFams.map(fam => {
+      const plants = shuffle(PLANTS.filter(p => p.family_lat === fam)).slice(0, 3);
+      return { fam, plants, family_cz: plants[0].family_cz };
+    });
+    matchTotal = pickedFams.length * 3;
+    renderMatchFtoP();
+  }
+  updateMatchScore();
+}
+
+function updateMatchScore() {
+  document.getElementById('match-score').innerHTML =
+    `Správně: <b>${matchCorrect}</b> / <b>${matchTotal}</b>`;
+}
+
+function renderMatchPtoF() {
+  const plants = shuffle(matchPairs);
+  const families = shuffle(matchPairs.map(p => ({ lat: p.family_lat, cz: p.family_cz }))
+    .filter((f, i, a) => a.findIndex(x => x.lat === f.lat) === i));
+
+  const area = document.getElementById('match-area');
+  area.innerHTML = `
+    <div class="match-cols">
+      <div>
+        <div class="match-col-title">Rostliny</div>
+        ${plants.map(p => `
+          <div class="match-item" id="pl-${esc(p.latin)}" onclick="matchSelectPlant('${esc(p.latin)}')">
+            <i>${p.latin}</i><br><span style="font-size:11px;color:var(--text3)">${p.czech}</span>
+          </div>`).join('')}
+      </div>
+      <div>
+        <div class="match-col-title">Čeledi</div>
+        ${families.map(f => `
+          <div class="match-item" id="fam-${esc(f.lat)}" onclick="matchSelectFamily('${esc(f.lat)}')">
+            ${f.cz}<br><span style="font-size:11px;color:var(--text3);font-style:italic">${f.lat}</span>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function matchSelectPlant(latin) {
+  if (document.getElementById('pl-'+latin)?.classList.contains('correct')) return;
+  // deselect previous
+  document.querySelectorAll('.match-item.selected').forEach(el => el.classList.remove('selected'));
+  matchSelected = { type: 'plant', value: latin };
+  document.getElementById('pl-'+latin)?.classList.add('selected');
+}
+
+function matchSelectFamily(famLat) {
+  if (!matchSelected || matchSelected.type !== 'plant') {
+    // select family first, then wait for plant — or just highlight
+    document.querySelectorAll('.match-item.selected').forEach(el => el.classList.remove('selected'));
+    matchSelected = { type: 'family', value: famLat };
+    document.getElementById('fam-'+famLat)?.classList.add('selected');
+    return;
+  }
+  // check answer
+  const latin = matchSelected.type === 'plant' ? matchSelected.value : null;
+  if (!latin) return;
+  const plant = PLANTS.find(p => p.latin === latin);
+  const correct = plant?.family_lat === famLat;
+
+  if (correct) {
+    document.getElementById('pl-'+latin)?.classList.replace('selected','correct');
+    document.getElementById('fam-'+famLat)?.classList.add('correct');
+    matchCorrect++;
+    matchSelected = null;
+    updateMatchScore();
+    // check if all matched
+    if (matchCorrect === matchTotal) setTimeout(showMatchDone, 500);
+  } else {
+    const plEl = document.getElementById('pl-'+latin);
+    const fEl = document.getElementById('fam-'+famLat);
+    plEl?.classList.add('wrong'); fEl?.classList.add('wrong');
+    setTimeout(() => {
+      plEl?.classList.remove('wrong','selected');
+      fEl?.classList.remove('wrong');
+      matchSelected = null;
+    }, 600);
+  }
+}
+
+function renderMatchFtoP() {
+  // Left: family names. Right: shuffled plants from those families
+  const allPlants = shuffle(matchPairs.flatMap(f => f.plants));
+  const famItems = shuffle(matchPairs);
+
+  const area = document.getElementById('match-area');
+  area.innerHTML = `
+    <div class="match-cols">
+      <div>
+        <div class="match-col-title">Čeledi</div>
+        ${famItems.map(f => `
+          <div class="match-item" id="mfam-${esc(f.fam)}" onclick="matchFtoPSelectFam('${esc(f.fam)}')">
+            ${f.family_cz}<br><span style="font-size:11px;color:var(--text3);font-style:italic">${f.fam}</span>
+            <div style="font-size:10px;color:var(--text3);margin-top:3px" id="mfam-count-${esc(f.fam)}">0 / ${f.plants.length} přiřazeno</div>
+          </div>`).join('')}
+      </div>
+      <div>
+        <div class="match-col-title">Rostliny</div>
+        ${allPlants.map(p => `
+          <div class="match-item" id="mpl-${esc(p.latin)}" onclick="matchFtoPSelectPlant('${esc(p.latin)}')">
+            <i>${p.latin}</i><br><span style="font-size:11px;color:var(--text3)">${p.czech}</span>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  // track counts
+  window._matchFtoPCounts = {};
+  matchPairs.forEach(f => window._matchFtoPCounts[f.fam] = 0);
+}
+
+function matchFtoPSelectFam(fam) {
+  if (document.getElementById('mfam-'+fam)?.classList.contains('disabled')) return;
+  document.querySelectorAll('.match-item.selected').forEach(el => el.classList.remove('selected'));
+  matchSelected = { type: 'family', value: fam };
+  document.getElementById('mfam-'+fam)?.classList.add('selected');
+}
+
+function matchFtoPSelectPlant(latin) {
+  const plEl = document.getElementById('mpl-'+latin);
+  if (plEl?.classList.contains('correct') || plEl?.classList.contains('disabled')) return;
+
+  if (!matchSelected || matchSelected.type !== 'family') {
+    document.querySelectorAll('.match-item.selected').forEach(el => el.classList.remove('selected'));
+    matchSelected = { type: 'plant', value: latin };
+    plEl?.classList.add('selected');
+    return;
+  }
+
+  const fam = matchSelected.value;
+  const plant = PLANTS.find(p => p.latin === latin);
+  const correct = plant?.family_lat === fam;
+
+  if (correct) {
+    plEl?.classList.replace('selected','correct');
+    matchCorrect++;
+    window._matchFtoPCounts[fam]++;
+    const famData = matchPairs.find(f => f.fam === fam);
+    const count = window._matchFtoPCounts[fam];
+    const total = famData?.plants.length || 0;
+    const countEl = document.getElementById('mfam-count-'+fam);
+    if (countEl) countEl.textContent = `${count} / ${total} přiřazeno`;
+    if (count >= total) {
+      document.getElementById('mfam-'+fam)?.classList.add('correct');
+      document.getElementById('mfam-'+fam)?.classList.remove('selected');
+      matchSelected = null;
+    }
+    updateMatchScore();
+    if (matchCorrect === matchTotal) setTimeout(showMatchDone, 500);
+  } else {
+    plEl?.classList.add('wrong');
+    const famEl = document.getElementById('mfam-'+fam);
+    famEl?.classList.add('wrong');
+    setTimeout(() => {
+      plEl?.classList.remove('wrong','selected');
+      famEl?.classList.remove('wrong');
+      matchSelected = null;
+    }, 600);
+  }
+}
+
+function showMatchDone() {
+  const area = document.getElementById('match-area');
+  area.innerHTML = `
+    <div class="match-result">
+      <h2>🎉 Hotovo!</h2>
+      <p>Správně jsi přiřadil všechny rostliny do čeledí.</p>
+      <button class="btn green" onclick="startMatch()">Hrát znovu</button>
+    </div>`;
+}
+
+// ── AI photo analysis ──
+async function analyzePhoto(latin) {
+  const d = D(latin);
+  const p = PLANTS.find(x => x.latin === latin);
+  if (!d.photo) return;
+  const resultEl = document.getElementById('ai-result');
+  if (!resultEl) return;
+  resultEl.textContent = '🤖 Analyzuji fotku…';
+
+  try {
+    const isB64 = d.photo.startsWith('data:');
+    let imageContent;
+    if (isB64) {
+      const [meta, data] = d.photo.split(',');
+      const mediaType = meta.match(/:(.*?);/)?.[1] || 'image/jpeg';
+      imageContent = { type: 'image', source: { type: 'base64', media_type: mediaType, data } };
+    } else {
+      imageContent = { type: 'image', source: { type: 'url', url: d.photo } };
+    }
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: `Jsi botanický asistent. Analyzuješ fotografie rostlin a vracíš výsledek POUZE jako JSON (žádný markdown, žádný text mimo JSON). Věnuj se botanickým vlastnostem viditelným na fotce.`,
+        messages: [{
+          role: 'user',
+          content: [
+            imageContent,
+            { type: 'text', text: `Tato rostlina je ${p.latin} (${p.czech}), čeleď ${p.family_cz}. Analyzuj fotku a vrať JSON:
+{
+  "barva_kvetu": "hlavní barva nebo 'bez květu'",
+  "barva_listu": "barva listů",
+  "habitAt_tip": "jedno slovo: les/louka/mokřad/skalní/ruderál",
+  "zajimavost": "jedna zajímavá věta o této rostlině v češtině",
+  "tip_urceni": "co je nejlépe viditelný určovací znak na fotce"
+}` }
+          ]
+        }]
+      })
+    });
+
+    const data = await resp.json();
+    const text = data.content?.find(c => c.type === 'text')?.text || '';
+    let parsed;
+    try {
+      parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
+    } catch(e) {
+      resultEl.innerHTML = `<span style="color:var(--flag)">Nepodařilo se analyzovat.</span>`;
+      return;
+    }
+
+    resultEl.innerHTML = `
+      <div style="background:var(--surface2);border-radius:var(--radius);padding:8px 10px;margin-top:4px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px;margin-bottom:6px">
+          <span>🌸 Květ: <b>${parsed.barva_kvetu||'?'}</b></span>
+          <span>🌿 List: <b>${parsed.barva_listu||'?'}</b></span>
+          <span>📍 Biotop: <b>${parsed.habitAt_tip||'?'}</b></span>
+        </div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:4px">💡 <b>Tip k určení:</b> ${parsed.tip_urceni||'—'}</div>
+        <div style="font-size:11px;color:var(--text2)">✨ ${parsed.zajimavost||'—'}</div>
+        <button class="btn" style="margin-top:6px;font-size:10px;width:100%" onclick="saveAiResult('${latin.replace(/'/g,"\\'")}', \`${(parsed.zajimavost||'').replace(/`/g,'').replace(/'/g,"\\'")} — ${(parsed.tip_urceni||'').replace(/`/g,'').replace(/'/g,"\\'")}\`)">Uložit jako poznámku</button>
+      </div>`;
+  } catch(e) {
+    resultEl.innerHTML = `<span style="color:var(--flag)">Chyba při analýze: ${e.message}</span>`;
+  }
+}
+
+function saveAiResult(latin, text) {
+  const ta = document.getElementById('m-fact');
+  if (ta) ta.value = (ta.value ? ta.value + '\n' : '') + text;
+  document.getElementById('ai-result').innerHTML = '<span style="color:var(--green)">✓ Přidáno do poznámky</span>';
+}
+
+// ── Dark mode ──
+function toggleDark() {
+  const isDark = document.body.classList.toggle('dark');
+  localStorage.setItem('darkMode', isDark ? '1' : '0');
+  document.getElementById('dark-btn').textContent = isDark ? '☀️ Světlý' : '🌙 Tmavý';
+}
+if (localStorage.getItem('darkMode') === '1') {
+  document.body.classList.add('dark');
+  document.getElementById('dark-btn').textContent = '☀️ Světlý';
+}
+
+// ── Swipe on quiz card ──
+(function() {
+  let tx = 0, ty = 0;
+  document.addEventListener('touchstart', e => {
+    const card = e.target.closest('#qflip');
+    if (!card) return;
+    tx = e.touches[0].clientX;
+    ty = e.touches[0].clientY;
+  }, {passive: true});
+  document.addEventListener('touchend', e => {
+    const card = e.target.closest('#qflip');
+    if (!card) return;
+    const dx = e.changedTouches[0].clientX - tx;
+    const dy = Math.abs(e.changedTouches[0].clientY - ty);
+    if (Math.abs(dx) < 50 || dy > 80) return;
+    if (dx < 0) { qFlag(); }
+    else { qLearned(); }
+  }, {passive: true});
+})();
+</script>
+</body>
+</html>
