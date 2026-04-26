@@ -1116,10 +1116,10 @@ function renderQuiz() {
     const hint = quizMode==='lat'?'Jaký je český název?':quizMode==='cz'?'Jaký je latinský název?':'Jaká je čeleď?';
     frontHTML = `<div class="flip-hint">${hint}</div><div class="flip-q ${qCls}">${qText}</div><div class="flip-hint" style="margin-top:6px;">klepni pro odpověď</div>`;
     backHTML = `
-      ${photoSrc && quizFlipped ? `<img class="flip-img" src="${photoSrc}" onerror="this.style.display='none'">` : ''}
+      ${photoSrc ? `<img class="flip-img" src="${photoSrc}" onerror="this.style.display='none'">` : ''}
       <div class="flip-a ${aCls}">${aText}</div>
       <div class="flip-family">${p.family_cz} · ${p.family_lat}</div>
-      ${d.funfact && quizFlipped ? `<div class="flip-fact">${esc(d.funfact)}</div>` : ''}`;
+      ${d.funfact ? `<div class="flip-fact">${esc(d.funfact)}</div>` : ''}`;
   }
 
   const hintFront = quizMode==='foto' ? '<div class="flip-hint" style="margin-top:6px;">klepni pro odpověď</div>' : '';
