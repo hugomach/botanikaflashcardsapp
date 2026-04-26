@@ -492,7 +492,7 @@ const SB_BUCKET = 'botanika-photos';
 const SK = latin => 'p_' + latin.replace(/\s/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
 function D(latin) {
   const raw = userData[SK(latin)] || {};
-  const photos = raw.photos || (raw.photo ? [raw.photo] : []);
+  const photos = Array.isArray(raw.photos) ? raw.photos : (raw.photo ? [raw.photo] : []);
   return {status:'new', funfact:'', flagged:false, ...raw, photos};
 }
 
@@ -949,10 +949,6 @@ async function imgToBase64(file, latin) {
   }
 }
 
-function updateModalImg(src) {
-  const wrap = document.getElementById('modal-img-wrap');
-  if (wrap) wrap.innerHTML = `<img class="modal-img" src="${src.startsWith('data:') ? src : esc(src)}">`;
-}
 
 function buildGalleryHTML(latin) {
   const d = D(latin);
