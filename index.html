@@ -864,7 +864,6 @@ function openModal(latin) {
         <button class="btn red-flag${d.flagged?' active':''}" id="flag-btn" onclick="toggleFlag('${sl}')">🚩 Nevím</button>
       </div>
       <button class="btn btn-save" onclick="saveFunfact('${sl}')">Uložit poznámku</button>
-      ${d.photos.length ? `<button class="btn" style="width:100%;margin-top:5px;font-size:11px;color:#185FA5;border-color:#185FA5" onclick="analyzePhoto('${sl}')">🤖 AI analýza fotky</button><div id="ai-result" style="font-size:12px;color:var(--text2);margin-top:6px;line-height:1.6"></div>` : ''}
     </div>`;
   document.getElementById('modal').style.display = 'flex';
 }
@@ -1159,15 +1158,27 @@ function flipQuiz() {
 
 function qNext() { quizIdx=(quizIdx+1)%quizList.length; quizFlipped=false; renderQuiz(); }
 function qPrev() { quizIdx=(quizIdx-1+quizList.length)%quizList.length; quizFlipped=false; renderQuiz(); }
-function qFlag()    { setData(quizList[quizIdx].latin,{flagged:true});  renderFlagged(); renderStats(); qNext(); }
-function qReview()  { setData(quizList[quizIdx].latin,{status:'review'}); renderStats(); qNext(); }
-function qLearned() {
-  setData(quizList[quizIdx].latin,{status:'learned',flagged:false}); renderFlagged(); renderStats();
-  quizList.splice(quizIdx, 1);
-  if (!quizList.length) { renderQuiz(); return; }
-  if (quizIdx >= quizList.length) quizIdx = quizList.length - 1;
+
+// Anki/Quizlet style: re-insert "Nevím" card back soon (2-4 positions ahead)
+function qFlag() {
+  setData(quizList[quizIdx].latin,{flagged:true}); renderFlagged(); renderStats();
+  const card = quizList.splice(quizIdx, 1)[0];
+  const insertAt = Math.min(quizIdx + 2 + Math.floor(Math.random()*3), quizList.length);
+  quizList.splice(insertAt, 0, card);
+  if (quizIdx >= quizList.length) quizIdx = 0;
   quizFlipped = false; renderQuiz();
 }
+
+// Anki/Quizlet style: move "Opakovat" card to end of deck
+function qReview() {
+  setData(quizList[quizIdx].latin,{status:'review'}); renderStats();
+  const card = quizList.splice(quizIdx, 1)[0];
+  quizList.push(card);
+  if (quizIdx >= quizList.length) quizIdx = 0;
+  quizFlipped = false; renderQuiz();
+}
+
+function qLearned() { setData(quizList[quizIdx].latin,{status:'learned',flagged:false}); renderFlagged(); renderStats(); qNext(); }
 
 function startFlaggedQuiz() {
   document.getElementById('quiz-source').value = 'flagged';
@@ -1381,83 +1392,6 @@ function showMatchDone() {
       <p>Správně jsi přiřadil všechny rostliny do čeledí.</p>
       <button class="btn green" onclick="startMatch()">Hrát znovu</button>
     </div>`;
-}
-
-// ── AI photo analysis ──
-async function analyzePhoto(latin) {
-  const d = D(latin);
-  const p = PLANTS.find(x => x.latin === latin);
-  const photo = d.photos[0] || '';
-  if (!photo) return;
-  const resultEl = document.getElementById('ai-result');
-  if (!resultEl) return;
-  resultEl.textContent = '🤖 Analyzuji fotku…';
-
-  try {
-    const isB64 = photo.startsWith('data:');
-    let imageContent;
-    if (isB64) {
-      const [meta, data] = photo.split(',');
-      const mediaType = meta.match(/:(.*?);/)?.[1] || 'image/jpeg';
-      imageContent = { type: 'image', source: { type: 'base64', media_type: mediaType, data } };
-    } else {
-      imageContent = { type: 'image', source: { type: 'url', url: photo } };
-    }
-
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: `Jsi botanický asistent. Analyzuješ fotografie rostlin a vracíš výsledek POUZE jako JSON (žádný markdown, žádný text mimo JSON). Věnuj se botanickým vlastnostem viditelným na fotce.`,
-        messages: [{
-          role: 'user',
-          content: [
-            imageContent,
-            { type: 'text', text: `Tato rostlina je ${p.latin} (${p.czech}), čeleď ${p.family_cz}. Analyzuj fotku a vrať JSON:
-{
-  "barva_kvetu": "hlavní barva nebo 'bez květu'",
-  "barva_listu": "barva listů",
-  "habitAt_tip": "jedno slovo: les/louka/mokřad/skalní/ruderál",
-  "zajimavost": "jedna zajímavá věta o této rostlině v češtině",
-  "tip_urceni": "co je nejlépe viditelný určovací znak na fotce"
-}` }
-          ]
-        }]
-      })
-    });
-
-    const data = await resp.json();
-    const text = data.content?.find(c => c.type === 'text')?.text || '';
-    let parsed;
-    try {
-      parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
-    } catch(e) {
-      resultEl.innerHTML = `<span style="color:var(--flag)">Nepodařilo se analyzovat.</span>`;
-      return;
-    }
-
-    resultEl.innerHTML = `
-      <div style="background:var(--surface2);border-radius:var(--radius);padding:8px 10px;margin-top:4px">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px;margin-bottom:6px">
-          <span>🌸 Květ: <b>${parsed.barva_kvetu||'?'}</b></span>
-          <span>🌿 List: <b>${parsed.barva_listu||'?'}</b></span>
-          <span>📍 Biotop: <b>${parsed.habitAt_tip||'?'}</b></span>
-        </div>
-        <div style="font-size:11px;color:var(--text2);margin-bottom:4px">💡 <b>Tip k určení:</b> ${parsed.tip_urceni||'—'}</div>
-        <div style="font-size:11px;color:var(--text2)">✨ ${parsed.zajimavost||'—'}</div>
-        <button class="btn" style="margin-top:6px;font-size:10px;width:100%" onclick="saveAiResult('${latin.replace(/'/g,"\\'")}', \`${(parsed.zajimavost||'').replace(/`/g,'').replace(/'/g,"\\'")} — ${(parsed.tip_urceni||'').replace(/`/g,'').replace(/'/g,"\\'")}\`)">Uložit jako poznámku</button>
-      </div>`;
-  } catch(e) {
-    resultEl.innerHTML = `<span style="color:var(--flag)">Chyba při analýze: ${e.message}</span>`;
-  }
-}
-
-function saveAiResult(latin, text) {
-  const ta = document.getElementById('m-fact');
-  if (ta) ta.value = (ta.value ? ta.value + '\n' : '') + text;
-  document.getElementById('ai-result').innerHTML = '<span style="color:var(--green)">✓ Přidáno do poznámky</span>';
 }
 
 // ── Dark mode ──
