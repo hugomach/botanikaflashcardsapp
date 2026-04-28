@@ -234,6 +234,7 @@ textarea { resize: vertical; }
 .quiz-empty { text-align: center; padding: 3rem 1rem; color: var(--text3); }
 .quiz-empty .btn { margin-top: 12px; }
 .swipe-hint { text-align: center; font-size: 11px; color: var(--text3); margin-bottom: 6px; }
+.keyboard-hint { color: var(--text3); font-size: 10px; }
 
 /* Group filter chips */
 .filter-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 0.75rem; }
@@ -379,6 +380,9 @@ textarea { resize: vertical; }
       <option value="all">Všechny kartičky</option>
       <option value="flagged">Jen 🚩 Nevím</option>
       <option value="review">Jen k opakování</option>
+      <option value="flagged_review">🚩 Nevím + k opakování</option>
+      <option value="learned">Jen naučeno ✓</option>
+      <option value="not_new">Vše kromě nových</option>
     </select>
     <div class="quiz-mode-toggle">
       <button id="qm-foto" class="active" onclick="setQuizMode('foto')">Foto → název</button>
@@ -1071,6 +1075,9 @@ function getQuizPlants() {
     if (src==='photo' && !d.photos.length) return false;
     if (src==='flagged' && !d.flagged) return false;
     if (src==='review' && d.status!=='review') return false;
+    if (src==='flagged_review' && !d.flagged && d.status!=='review') return false;
+    if (src==='learned' && d.status!=='learned') return false;
+    if (src==='not_new' && !d.flagged && d.status!=='review' && d.status!=='learned') return false;
     return true;
   });
 }
@@ -1142,7 +1149,7 @@ function renderQuiz() {
       <button class="btn amber" onclick="qReview()">Opakovat</button>
       <button class="btn green" onclick="qLearned()">Umím ✓</button>
     </div>
-    <div class="swipe-hint">← přejeď doleva = nevím &nbsp;|&nbsp; doprava = umím →</div>`;
+    <div class="swipe-hint">← nevím &nbsp;|&nbsp; ↑ opakovat &nbsp;|&nbsp; umím →<br><span class="keyboard-hint">klávesy: ← → ↑ nebo mezerník = otočit</span></div>`;
 }
 
 function flipQuiz() {
@@ -1154,7 +1161,13 @@ function qNext() { quizIdx=(quizIdx+1)%quizList.length; quizFlipped=false; rende
 function qPrev() { quizIdx=(quizIdx-1+quizList.length)%quizList.length; quizFlipped=false; renderQuiz(); }
 function qFlag()    { setData(quizList[quizIdx].latin,{flagged:true});  renderFlagged(); renderStats(); qNext(); }
 function qReview()  { setData(quizList[quizIdx].latin,{status:'review'}); renderStats(); qNext(); }
-function qLearned() { setData(quizList[quizIdx].latin,{status:'learned',flagged:false}); renderFlagged(); renderStats(); qNext(); }
+function qLearned() {
+  setData(quizList[quizIdx].latin,{status:'learned',flagged:false}); renderFlagged(); renderStats();
+  quizList.splice(quizIdx, 1);
+  if (!quizList.length) { renderQuiz(); return; }
+  if (quizIdx >= quizList.length) quizIdx = quizList.length - 1;
+  quizFlipped = false; renderQuiz();
+}
 
 function startFlaggedQuiz() {
   document.getElementById('quiz-source').value = 'flagged';
@@ -1471,12 +1484,31 @@ if (localStorage.getItem('darkMode') === '1') {
     const card = e.target.closest('#qflip');
     if (!card) return;
     const dx = e.changedTouches[0].clientX - tx;
-    const dy = Math.abs(e.changedTouches[0].clientY - ty);
-    if (Math.abs(dx) < 50 || dy > 80) return;
-    if (dx < 0) { qFlag(); }
-    else { qLearned(); }
+    const dy = e.changedTouches[0].clientY - ty;
+    const adx = Math.abs(dx), ady = Math.abs(dy);
+    // Horizontal swipe takes priority when adx > ady; otherwise treat as vertical
+    if (adx > ady) {
+      if (adx < 50) return;
+      if (dx < 0) { qFlag(); } else { qLearned(); }
+    } else {
+      if (ady < 50) return;
+      if (dy < 0) { qReview(); }
+    }
   }, {passive: true});
 })();
+
+// ── Keyboard navigation in quiz ──
+document.addEventListener('keydown', e => {
+  if (document.getElementById('tab-quiz').style.display === 'none') return;
+  if (document.getElementById('modal').style.display !== 'none') return;
+  const tag = e.target.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  if (!quizList || !quizList.length) return;
+  if (e.key === 'ArrowLeft')  { e.preventDefault(); qFlag(); }
+  else if (e.key === 'ArrowRight') { e.preventDefault(); qLearned(); }
+  else if (e.key === 'ArrowUp')    { e.preventDefault(); qReview(); }
+  else if (e.key === ' ')          { e.preventDefault(); flipQuiz(); }
+});
 </script>
 </body>
 </html>
