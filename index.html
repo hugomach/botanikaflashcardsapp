@@ -234,6 +234,7 @@ textarea { resize: vertical; }
 .quiz-empty { text-align: center; padding: 3rem 1rem; color: var(--text3); }
 .quiz-empty .btn { margin-top: 12px; }
 .swipe-hint { text-align: center; font-size: 11px; color: var(--text3); margin-bottom: 6px; }
+.keyboard-hint { color: var(--text3); font-size: 10px; }
 
 /* Group filter chips */
 .filter-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 0.75rem; }
@@ -379,6 +380,9 @@ textarea { resize: vertical; }
       <option value="all">Všechny kartičky</option>
       <option value="flagged">Jen 🚩 Nevím</option>
       <option value="review">Jen k opakování</option>
+      <option value="flagged_review">🚩 Nevím + k opakování</option>
+      <option value="learned">Jen naučeno ✓</option>
+      <option value="not_new">Vše kromě nových</option>
     </select>
     <div class="quiz-mode-toggle">
       <button id="qm-foto" class="active" onclick="setQuizMode('foto')">Foto → název</button>
@@ -860,7 +864,6 @@ function openModal(latin) {
         <button class="btn red-flag${d.flagged?' active':''}" id="flag-btn" onclick="toggleFlag('${sl}')">🚩 Nevím</button>
       </div>
       <button class="btn btn-save" onclick="saveFunfact('${sl}')">Uložit poznámku</button>
-      ${d.photos.length ? `<button class="btn" style="width:100%;margin-top:5px;font-size:11px;color:#185FA5;border-color:#185FA5" onclick="analyzePhoto('${sl}')">🤖 AI analýza fotky</button><div id="ai-result" style="font-size:12px;color:var(--text2);margin-top:6px;line-height:1.6"></div>` : ''}
     </div>`;
   document.getElementById('modal').style.display = 'flex';
 }
@@ -1071,6 +1074,9 @@ function getQuizPlants() {
     if (src==='photo' && !d.photos.length) return false;
     if (src==='flagged' && !d.flagged) return false;
     if (src==='review' && d.status!=='review') return false;
+    if (src==='flagged_review' && !d.flagged && d.status!=='review') return false;
+    if (src==='learned' && d.status!=='learned') return false;
+    if (src==='not_new' && !d.flagged && d.status!=='review' && d.status!=='learned') return false;
     return true;
   });
 }
@@ -1142,7 +1148,7 @@ function renderQuiz() {
       <button class="btn amber" onclick="qReview()">Opakovat</button>
       <button class="btn green" onclick="qLearned()">Umím ✓</button>
     </div>
-    <div class="swipe-hint">← přejeď doleva = nevím &nbsp;|&nbsp; doprava = umím →</div>`;
+    <div class="swipe-hint">← nevím &nbsp;|&nbsp; ↑ opakovat &nbsp;|&nbsp; umím →<br><span class="keyboard-hint">klávesy: ← → ↑ nebo mezerník = otočit</span></div>`;
 }
 
 function flipQuiz() {
@@ -1152,8 +1158,26 @@ function flipQuiz() {
 
 function qNext() { quizIdx=(quizIdx+1)%quizList.length; quizFlipped=false; renderQuiz(); }
 function qPrev() { quizIdx=(quizIdx-1+quizList.length)%quizList.length; quizFlipped=false; renderQuiz(); }
-function qFlag()    { setData(quizList[quizIdx].latin,{flagged:true});  renderFlagged(); renderStats(); qNext(); }
-function qReview()  { setData(quizList[quizIdx].latin,{status:'review'}); renderStats(); qNext(); }
+
+// Anki/Quizlet style: re-insert "Nevím" card back soon (2-4 positions ahead)
+function qFlag() {
+  setData(quizList[quizIdx].latin,{flagged:true}); renderFlagged(); renderStats();
+  const card = quizList.splice(quizIdx, 1)[0];
+  const insertAt = Math.min(quizIdx + 2 + Math.floor(Math.random()*3), quizList.length);
+  quizList.splice(insertAt, 0, card);
+  if (quizIdx >= quizList.length) quizIdx = 0;
+  quizFlipped = false; renderQuiz();
+}
+
+// Anki/Quizlet style: move "Opakovat" card to end of deck
+function qReview() {
+  setData(quizList[quizIdx].latin,{status:'review'}); renderStats();
+  const card = quizList.splice(quizIdx, 1)[0];
+  quizList.push(card);
+  if (quizIdx >= quizList.length) quizIdx = 0;
+  quizFlipped = false; renderQuiz();
+}
+
 function qLearned() { setData(quizList[quizIdx].latin,{status:'learned',flagged:false}); renderFlagged(); renderStats(); qNext(); }
 
 function startFlaggedQuiz() {
@@ -1370,83 +1394,6 @@ function showMatchDone() {
     </div>`;
 }
 
-// ── AI photo analysis ──
-async function analyzePhoto(latin) {
-  const d = D(latin);
-  const p = PLANTS.find(x => x.latin === latin);
-  const photo = d.photos[0] || '';
-  if (!photo) return;
-  const resultEl = document.getElementById('ai-result');
-  if (!resultEl) return;
-  resultEl.textContent = '🤖 Analyzuji fotku…';
-
-  try {
-    const isB64 = photo.startsWith('data:');
-    let imageContent;
-    if (isB64) {
-      const [meta, data] = photo.split(',');
-      const mediaType = meta.match(/:(.*?);/)?.[1] || 'image/jpeg';
-      imageContent = { type: 'image', source: { type: 'base64', media_type: mediaType, data } };
-    } else {
-      imageContent = { type: 'image', source: { type: 'url', url: photo } };
-    }
-
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: `Jsi botanický asistent. Analyzuješ fotografie rostlin a vracíš výsledek POUZE jako JSON (žádný markdown, žádný text mimo JSON). Věnuj se botanickým vlastnostem viditelným na fotce.`,
-        messages: [{
-          role: 'user',
-          content: [
-            imageContent,
-            { type: 'text', text: `Tato rostlina je ${p.latin} (${p.czech}), čeleď ${p.family_cz}. Analyzuj fotku a vrať JSON:
-{
-  "barva_kvetu": "hlavní barva nebo 'bez květu'",
-  "barva_listu": "barva listů",
-  "habitAt_tip": "jedno slovo: les/louka/mokřad/skalní/ruderál",
-  "zajimavost": "jedna zajímavá věta o této rostlině v češtině",
-  "tip_urceni": "co je nejlépe viditelný určovací znak na fotce"
-}` }
-          ]
-        }]
-      })
-    });
-
-    const data = await resp.json();
-    const text = data.content?.find(c => c.type === 'text')?.text || '';
-    let parsed;
-    try {
-      parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
-    } catch(e) {
-      resultEl.innerHTML = `<span style="color:var(--flag)">Nepodařilo se analyzovat.</span>`;
-      return;
-    }
-
-    resultEl.innerHTML = `
-      <div style="background:var(--surface2);border-radius:var(--radius);padding:8px 10px;margin-top:4px">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px;margin-bottom:6px">
-          <span>🌸 Květ: <b>${parsed.barva_kvetu||'?'}</b></span>
-          <span>🌿 List: <b>${parsed.barva_listu||'?'}</b></span>
-          <span>📍 Biotop: <b>${parsed.habitAt_tip||'?'}</b></span>
-        </div>
-        <div style="font-size:11px;color:var(--text2);margin-bottom:4px">💡 <b>Tip k určení:</b> ${parsed.tip_urceni||'—'}</div>
-        <div style="font-size:11px;color:var(--text2)">✨ ${parsed.zajimavost||'—'}</div>
-        <button class="btn" style="margin-top:6px;font-size:10px;width:100%" onclick="saveAiResult('${latin.replace(/'/g,"\\'")}', \`${(parsed.zajimavost||'').replace(/`/g,'').replace(/'/g,"\\'")} — ${(parsed.tip_urceni||'').replace(/`/g,'').replace(/'/g,"\\'")}\`)">Uložit jako poznámku</button>
-      </div>`;
-  } catch(e) {
-    resultEl.innerHTML = `<span style="color:var(--flag)">Chyba při analýze: ${e.message}</span>`;
-  }
-}
-
-function saveAiResult(latin, text) {
-  const ta = document.getElementById('m-fact');
-  if (ta) ta.value = (ta.value ? ta.value + '\n' : '') + text;
-  document.getElementById('ai-result').innerHTML = '<span style="color:var(--green)">✓ Přidáno do poznámky</span>';
-}
-
 // ── Dark mode ──
 function toggleDark() {
   const isDark = document.body.classList.toggle('dark');
@@ -1471,12 +1418,31 @@ if (localStorage.getItem('darkMode') === '1') {
     const card = e.target.closest('#qflip');
     if (!card) return;
     const dx = e.changedTouches[0].clientX - tx;
-    const dy = Math.abs(e.changedTouches[0].clientY - ty);
-    if (Math.abs(dx) < 50 || dy > 80) return;
-    if (dx < 0) { qFlag(); }
-    else { qLearned(); }
+    const dy = e.changedTouches[0].clientY - ty;
+    const adx = Math.abs(dx), ady = Math.abs(dy);
+    // Horizontal swipe takes priority when adx > ady; otherwise treat as vertical
+    if (adx > ady) {
+      if (adx < 50) return;
+      if (dx < 0) { qFlag(); } else { qLearned(); }
+    } else {
+      if (ady < 50) return;
+      if (dy < 0) { qReview(); }
+    }
   }, {passive: true});
 })();
+
+// ── Keyboard navigation in quiz ──
+document.addEventListener('keydown', e => {
+  if (document.getElementById('tab-quiz').style.display === 'none') return;
+  if (document.getElementById('modal').style.display !== 'none') return;
+  const tag = e.target.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  if (!quizList || !quizList.length) return;
+  if (e.key === 'ArrowLeft')  { e.preventDefault(); qFlag(); }
+  else if (e.key === 'ArrowRight') { e.preventDefault(); qLearned(); }
+  else if (e.key === 'ArrowUp')    { e.preventDefault(); qReview(); }
+  else if (e.key === ' ')          { e.preventDefault(); flipQuiz(); }
+});
 </script>
 </body>
 </html>
