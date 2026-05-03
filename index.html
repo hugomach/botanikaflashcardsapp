@@ -9,7 +9,7 @@
   --green: #1D9E75; --green-dark: #0F6E56; --green-light: #E1F5EE;
   --amber: #EF9F27; --amber-light: #FAEEDA;
   --red-light: #fff3f3; --red: #a32d2d;
-  --bg: #fafaf8; --surface: #ffffff; --surface2: #f0efec;
+  --bg: #ffffff; --surface: #ffffff; --surface2: #f0efec;
   --border: #e2e0da; --border2: #ccc;
   --text: #1a1a18; --text2: #5a5a56; --text3: #9a9a96;
   --radius: 10px; --radius-lg: 14px;
@@ -129,7 +129,7 @@ textarea { resize: vertical; }
 :root {
   --green: #1D9E75; --green-dark: #0F6E56; --green-light: #E1F5EE;
   --amber: #EF9F27; --amber-light: #FAEEDA;
-  --bg: #fafaf8; --surface: #ffffff; --surface2: #f0efec;
+  --bg: #ffffff; --surface: #ffffff; --surface2: #f0efec;
   --border: #e2e0da; --border2: #ccc;
   --text: #1a1a18; --text2: #5a5a56; --text3: #9a9a96;
   --radius: 10px; --radius-lg: 14px; --flag: #e85d3c;
@@ -150,7 +150,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text3); }
 .sync-dot.ok { background: var(--green); }
 .sync-dot.err { background: var(--flag); }
-.dark-toggle { background: var(--surface2); border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px; font-size: 13px; cursor: pointer; color: var(--text2); }
+.theme-select { background: var(--surface2); border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px; font-size: 13px; cursor: pointer; color: var(--text2); appearance: none; -webkit-appearance: none; text-align: center; }
 
 .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; gap: 2px; }
 .tab { padding: 8px 16px; font-size: 14px; border: none; background: none; cursor: pointer; color: var(--text2); border-bottom: 2px solid transparent; margin-bottom: -1px; border-radius: var(--radius) var(--radius) 0 0; }
@@ -329,7 +329,11 @@ textarea { resize: vertical; }
     <div class="sync-dot" id="sync-dot"></div>
     <span id="sync-label">nepřipojeno</span>
   </div>
-  <button class="dark-toggle" id="dark-btn" onclick="toggleDark()">🌙 Tmavý</button>
+  <select class="theme-select" id="theme-select" onchange="setTheme(this.value)">
+    <option value="light">☀️ Bílý</option>
+    <option value="dark">🌙 Černý</option>
+    <option value="auto">⚙️ Auto</option>
+  </select>
   <button class="btn" onclick="showSetup()" style="font-size:12px;">⚙ Sync</button>
 </div>
 
@@ -1425,25 +1429,39 @@ function showMatchDone() {
 }
 
 // ── Dark mode ──
-function toggleDark() {
-  const isDark = document.body.classList.toggle('dark');
-  localStorage.setItem('darkMode', isDark ? '1' : '0');
-  document.getElementById('dark-btn').textContent = isDark ? '☀️ Světlý' : '🌙 Tmavý';
-}
-(function() {
-  const stored = localStorage.getItem('darkMode');
+function applyTheme(theme) {
   const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const isDark = stored !== null ? stored === '1' : prefersDark;
-  if (isDark) {
-    document.body.classList.add('dark');
-    document.getElementById('dark-btn').textContent = '☀️ Světlý';
+  const isDark = theme === 'dark' || (theme === 'auto' && prefersDark);
+  document.body.classList.toggle('dark', isDark);
+}
+
+function setTheme(theme) {
+  localStorage.setItem('theme', theme);
+  applyTheme(theme);
+}
+
+(function() {
+  const stored = localStorage.getItem('theme') || localStorage.getItem('darkMode');
+  let theme;
+  if (stored === '1') theme = 'dark';
+  else if (stored === '0') theme = 'light';
+  else if (stored === 'dark' || stored === 'light' || stored === 'auto') theme = stored;
+  else theme = 'auto';
+
+  // migrate old darkMode key to new theme key
+  if (stored === '0' || stored === '1') {
+    localStorage.setItem('theme', theme);
+    localStorage.removeItem('darkMode');
   }
+
+  const sel = document.getElementById('theme-select');
+  if (sel) sel.value = theme;
+  applyTheme(theme);
+
   if (window.matchMedia) {
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-      if (localStorage.getItem('darkMode') === null) {
-        document.body.classList.toggle('dark', e.matches);
-        document.getElementById('dark-btn').textContent = e.matches ? '☀️ Světlý' : '🌙 Tmavý';
-      }
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      const current = localStorage.getItem('theme') || 'auto';
+      if (current === 'auto') applyTheme('auto');
     });
   }
 })();
