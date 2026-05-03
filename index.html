@@ -238,8 +238,17 @@ textarea { resize: vertical; }
 
 /* Group filter chips */
 .filter-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 0.75rem; }
-.filter-row-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text3); margin-bottom: 4px; }
-.group-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 0.25rem; }
+.filter-all-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; padding: 2px 0; margin-bottom: 4px; }
+.filter-all-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text3); }
+.filter-group-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; padding: 3px 0; margin-top: 6px; }
+.filter-group-header:first-of-type { margin-top: 0; }
+.filter-row-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text3); margin-bottom: 0; }
+.filter-arrow { font-size: 11px; color: var(--text3); display: inline-block; transition: transform 0.2s ease; }
+.filter-arrow.collapsed { transform: rotate(-90deg); }
+.filter-body { margin-bottom: 0.25rem; }
+.filter-body.hidden { display: none; }
+#all-filters-body.hidden { display: none; }
+.group-chips { display: flex; gap: 6px; flex-wrap: wrap; padding-top: 4px; margin-bottom: 0.25rem; }
 .chip { padding: 4px 12px; font-size: 12px; border-radius: 999px; border: 1px solid var(--border2); background: var(--surface); color: var(--text2); cursor: pointer; transition: background 0.12s, color 0.12s, border-color 0.12s; white-space: nowrap; }
 .chip:hover { border-color: var(--green); color: var(--text); }
 .chip.on { color: #fff; background: var(--chip-color, var(--green)); border-color: var(--chip-color, var(--green)); }
@@ -336,14 +345,35 @@ textarea { resize: vertical; }
   <div class="statsbar" id="statsbar"></div>
 
   <div class="filter-section">
-    <div class="filter-row-label">Evoluční linie</div>
-    <div class="group-chips" id="browse-chips"></div>
-    <div class="filter-row-label" style="margin-top:6px">Životní forma</div>
-    <div class="group-chips" id="lf-chips"></div>
-    <div class="filter-row-label" style="margin-top:6px">Biotop</div>
-    <div class="group-chips" id="hab-chips"></div>
-    <div class="filter-row-label" style="margin-top:6px">Toxicita</div>
-    <div class="group-chips" id="tox-chips"></div>
+    <div class="filter-all-header" onclick="toggleAllFilters()" onkeydown="onFilterKey(event,toggleAllFilters)" tabindex="0" role="button" aria-expanded="true" aria-controls="all-filters-body">
+      <span class="filter-all-label">🔍 Filtry</span>
+      <span class="filter-arrow" id="arrow-all-filters">▼</span>
+    </div>
+    <div id="all-filters-body">
+      <div class="filter-group-header" onclick="toggleFilterGroup('fgrp-browse','farrow-browse')" onkeydown="onFilterKey(event,toggleFilterGroup,'fgrp-browse','farrow-browse')" tabindex="0" role="button" aria-expanded="true" aria-controls="fgrp-browse">
+        <span class="filter-row-label">Evoluční linie</span>
+        <span class="filter-arrow" id="farrow-browse">▼</span>
+      </div>
+      <div id="fgrp-browse" class="filter-body"><div class="group-chips" id="browse-chips"></div></div>
+
+      <div class="filter-group-header" onclick="toggleFilterGroup('fgrp-lf','farrow-lf')" onkeydown="onFilterKey(event,toggleFilterGroup,'fgrp-lf','farrow-lf')" tabindex="0" role="button" aria-expanded="true" aria-controls="fgrp-lf">
+        <span class="filter-row-label">Životní forma</span>
+        <span class="filter-arrow" id="farrow-lf">▼</span>
+      </div>
+      <div id="fgrp-lf" class="filter-body"><div class="group-chips" id="lf-chips"></div></div>
+
+      <div class="filter-group-header" onclick="toggleFilterGroup('fgrp-hab','farrow-hab')" onkeydown="onFilterKey(event,toggleFilterGroup,'fgrp-hab','farrow-hab')" tabindex="0" role="button" aria-expanded="true" aria-controls="fgrp-hab">
+        <span class="filter-row-label">Biotop</span>
+        <span class="filter-arrow" id="farrow-hab">▼</span>
+      </div>
+      <div id="fgrp-hab" class="filter-body"><div class="group-chips" id="hab-chips"></div></div>
+
+      <div class="filter-group-header" onclick="toggleFilterGroup('fgrp-tox','farrow-tox')" onkeydown="onFilterKey(event,toggleFilterGroup,'fgrp-tox','farrow-tox')" tabindex="0" role="button" aria-expanded="true" aria-controls="fgrp-tox">
+        <span class="filter-row-label">Toxicita</span>
+        <span class="filter-arrow" id="farrow-tox">▼</span>
+      </div>
+      <div id="fgrp-tox" class="filter-body"><div class="group-chips" id="tox-chips"></div></div>
+    </div>
   </div>
 
   <div class="filterbar" style="margin-top:0.5rem">
@@ -1400,9 +1430,46 @@ function toggleDark() {
   localStorage.setItem('darkMode', isDark ? '1' : '0');
   document.getElementById('dark-btn').textContent = isDark ? '☀️ Světlý' : '🌙 Tmavý';
 }
-if (localStorage.getItem('darkMode') === '1') {
-  document.body.classList.add('dark');
-  document.getElementById('dark-btn').textContent = '☀️ Světlý';
+(function() {
+  const stored = localStorage.getItem('darkMode');
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const isDark = stored !== null ? stored === '1' : prefersDark;
+  if (isDark) {
+    document.body.classList.add('dark');
+    document.getElementById('dark-btn').textContent = '☀️ Světlý';
+  }
+  if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+      if (localStorage.getItem('darkMode') === null) {
+        document.body.classList.toggle('dark', e.matches);
+        document.getElementById('dark-btn').textContent = e.matches ? '☀️ Světlý' : '🌙 Tmavý';
+      }
+    });
+  }
+})();
+
+// ── Collapsible filter sections ──
+function onFilterKey(event, fn) {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    fn.apply(null, Array.prototype.slice.call(arguments, 2));
+  }
+}
+function toggleFilterGroup(bodyId, arrowId) {
+  const body = document.getElementById(bodyId);
+  const arrow = document.getElementById(arrowId);
+  const hidden = body.classList.toggle('hidden');
+  arrow.classList.toggle('collapsed', hidden);
+  const btn = document.querySelector('[aria-controls="' + CSS.escape(bodyId) + '"]');
+  if (btn) btn.setAttribute('aria-expanded', String(!hidden));
+}
+function toggleAllFilters() {
+  const body = document.getElementById('all-filters-body');
+  const arrow = document.getElementById('arrow-all-filters');
+  const hidden = body.classList.toggle('hidden');
+  arrow.classList.toggle('collapsed', hidden);
+  const btn = document.querySelector('[aria-controls="all-filters-body"]');
+  if (btn) btn.setAttribute('aria-expanded', String(!hidden));
 }
 
 // ── Swipe on quiz card ──
