@@ -318,6 +318,15 @@ textarea { resize: vertical; }
 .photo-delete-btn { position: absolute; top: 3px; right: 3px; background: rgba(0,0,0,0.55); color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 11px; cursor: pointer; padding: 0; line-height: 20px; text-align: center; }
 .photo-delete-btn:hover { background: var(--flag); }
 .photo-count-badge { position: absolute; bottom: 5px; right: 5px; background: rgba(0,0,0,0.6); color: #fff; font-size: 10px; padding: 1px 5px; border-radius: 999px; pointer-events: none; }
+
+/* Review-card visual indicator in quiz */
+.flip-card.review-card .flip-face:not(.flip-back) { border-color: var(--amber); background: var(--amber-light); }
+.repeat-section { margin-top: 12px; background: var(--surface2); border-radius: var(--radius); padding: 10px 12px; }
+.repeat-section-label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+.repeat-stats { font-size: 11px; color: var(--text2); margin-bottom: 8px; }
+.repeat-freq-btns { display: flex; gap: 5px; flex-wrap: wrap; }
+.repeat-freq-btns .btn { font-size: 11px; padding: 5px 9px; }
+.repeat-freq-btns .btn.active { background: var(--green); color: #fff; border-color: var(--green); }
 </style>
 </head>
 <body>
@@ -531,7 +540,7 @@ const SK = latin => 'p_' + latin.replace(/\s/g,'_').replace(/[^a-zA-Z0-9_]/g,'')
 function D(latin) {
   const raw = userData[SK(latin)] || {};
   const photos = Array.isArray(raw.photos) ? raw.photos : (raw.photo ? [raw.photo] : []);
-  return {status:'new', funfact:'', flagged:false, ...raw, photos};
+  return {status:'new', funfact:'', flagged:false, repeatFreq:'auto', wrongCount:0, correctStreak:0, ...raw, photos};
 }
 
 // ── Init ──
@@ -898,6 +907,11 @@ function openModal(latin) {
         <button class="btn red-flag${d.flagged?' active':''}" id="flag-btn" onclick="toggleFlag('${sl}')">🚩 Nevím</button>
       </div>
       <button class="btn btn-save" onclick="saveFunfact('${sl}')">Uložit poznámku</button>
+      <div class="repeat-section">
+        <div class="repeat-section-label">Opakování</div>
+        <div class="repeat-stats">Chyby: <b style="color:var(--flag)">${d.wrongCount||0}×</b> &nbsp;·&nbsp; Po sobě správně: <b style="color:var(--green)">${d.correctStreak||0}×</b></div>
+        <div class="repeat-freq-btns" id="repeat-btns">${buildRepeatBtnsHTML(latin)}</div>
+      </div>
     </div>`;
   document.getElementById('modal').style.display = 'flex';
 }
@@ -1132,7 +1146,7 @@ function renderQuiz() {
   }
   const p = quizList[quizIdx];
   const d = D(p.latin);
-  const pct = Math.round((quizIdx/quizList.length)*100);
+  const pct = Math.round(((quizIdx+1)/quizList.length)*100);
   const photo = d.photos[0] || '';
   const photoSrc = photo ? (photo.startsWith('data:') ? photo : esc(photo)) : '';
 
@@ -1170,7 +1184,7 @@ function renderQuiz() {
       <span style="font-size:11px;color:var(--text3);">${p.family_cz}</span>
     </div>
     <div class="progress"><div class="progress-fill" style="width:${pct}%"></div></div>
-    <div class="flip-card${quizFlipped?' flipped':''}" id="qflip" onclick="flipQuiz()">
+    <div class="flip-card${quizFlipped?' flipped':''}${d.status==='review'?' review-card':''}" id="qflip" onclick="flipQuiz()">
       <div class="flip-inner">
         <div class="flip-face">${frontHTML}${hintFront}</div>
         <div class="flip-face flip-back">${backHTML}</div>
@@ -1179,10 +1193,10 @@ function renderQuiz() {
     <div class="quiz-btns">
       <button class="btn" onclick="qPrev()">← Zpět</button>
       <button class="btn red-flag" onclick="qFlag()">🚩 Nevím</button>
-      <button class="btn amber" onclick="qReview()">Opakovat</button>
+      <button class="btn amber" onclick="qMarkReview()">🔁 Opakovat</button>
       <button class="btn green" onclick="qLearned()">Umím ✓</button>
     </div>
-    <div class="swipe-hint">← nevím &nbsp;|&nbsp; ↑ opakovat &nbsp;|&nbsp; umím →<br><span class="keyboard-hint">klávesy: ← → ↑ nebo mezerník = otočit</span></div>`;
+    <div class="swipe-hint">← opakovat &nbsp;|&nbsp; ↑ nevím 🚩 &nbsp;|&nbsp; umím →<br><span class="keyboard-hint">klávesy: ← = opakovat, → = další, ↑ = nevím 🚩, mezerník = otočit</span></div>`;
 }
 
 function flipQuiz() {
@@ -1195,7 +1209,10 @@ function qPrev() { quizIdx=(quizIdx-1+quizList.length)%quizList.length; quizFlip
 
 // Anki/Quizlet style: re-insert "Nevím" card back soon (2-4 positions ahead)
 function qFlag() {
-  setData(quizList[quizIdx].latin,{flagged:true}); renderFlagged(); renderStats();
+  const latin = quizList[quizIdx].latin;
+  const d = D(latin);
+  setData(latin, {flagged:true, wrongCount:(d.wrongCount||0)+1, correctStreak:0});
+  renderFlagged(); renderStats();
   const card = quizList.splice(quizIdx, 1)[0];
   const insertAt = Math.min(quizIdx + 2 + Math.floor(Math.random()*3), quizList.length);
   quizList.splice(insertAt, 0, card);
@@ -1212,7 +1229,67 @@ function qReview() {
   quizFlipped = false; renderQuiz();
 }
 
-function qLearned() { setData(quizList[quizIdx].latin,{status:'learned',flagged:false}); renderFlagged(); renderStats(); qNext(); }
+// Intelligent repeat: reinsert based on frequency setting and auto-tracking
+function qMarkReview() {
+  const latin = quizList[quizIdx].latin;
+  const d = D(latin);
+  const newWrongCount = (d.wrongCount || 0) + 1;
+  setData(latin, {status:'review', wrongCount: newWrongCount, correctStreak: 0});
+  renderStats();
+
+  const freq = d.repeatFreq || 'auto';
+  let insertOffset;
+  if (freq === 'once') {
+    const card = quizList.splice(quizIdx, 1)[0];
+    quizList.push(card);
+    if (quizIdx >= quizList.length) quizIdx = 0;
+    quizFlipped = false; renderQuiz();
+    return;
+  } else if (freq === 'more') {
+    insertOffset = 2;
+  } else if (freq === 'less') {
+    insertOffset = 20;
+  } else if (freq === 'auto') {
+    insertOffset = newWrongCount >= 3 ? 2 : 5;
+  } else { // normal
+    insertOffset = 10;
+  }
+
+  const card = quizList.splice(quizIdx, 1)[0];
+  const insertAt = Math.min(quizIdx + insertOffset, quizList.length);
+  quizList.splice(insertAt, 0, card);
+  if (quizIdx >= quizList.length) quizIdx = 0;
+  quizFlipped = false; renderQuiz();
+}
+
+function qLearned() {
+  const latin = quizList[quizIdx].latin;
+  const d = D(latin);
+  const newStreak = (d.correctStreak || 0) + 1;
+  setData(latin, {status:'learned', flagged:false, correctStreak: newStreak, wrongCount: 0});
+  renderFlagged(); renderStats(); qNext();
+}
+
+function buildRepeatBtnsHTML(latin) {
+  const d = D(latin);
+  const sl = latin.replace(/'/g,"\\'");
+  const freqs = [
+    {k:'more',   label:'Více 🔁🔁'},
+    {k:'normal', label:'Normálně'},
+    {k:'less',   label:'Méně'},
+    {k:'once',   label:'Jednou'},
+    {k:'auto',   label:'🤖 Auto'},
+  ];
+  return freqs.map(f =>
+    `<button class="btn${(d.repeatFreq||'auto')===f.k?' active':''}" onclick="setRepeatFreq('${sl}','${f.k}')">${f.label}</button>`
+  ).join('');
+}
+
+function setRepeatFreq(latin, freq) {
+  setData(latin, {repeatFreq: freq});
+  const container = document.getElementById('repeat-btns');
+  if (container) container.innerHTML = buildRepeatBtnsHTML(latin);
+}
 
 function startFlaggedQuiz() {
   document.getElementById('quiz-source').value = 'flagged';
@@ -1508,10 +1585,10 @@ function toggleAllFilters() {
     // Horizontal swipe takes priority when adx > ady; otherwise treat as vertical
     if (adx > ady) {
       if (adx < 50) return;
-      if (dx < 0) { qFlag(); } else { qLearned(); }
+      if (dx < 0) { qMarkReview(); } else { qNext(); }
     } else {
       if (ady < 50) return;
-      if (dy < 0) { qReview(); }
+      if (dy < 0) { qFlag(); }
     }
   }, {passive: true});
 })();
@@ -1523,9 +1600,9 @@ document.addEventListener('keydown', e => {
   const tag = e.target.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
   if (!quizList || !quizList.length) return;
-  if (e.key === 'ArrowLeft')  { e.preventDefault(); qFlag(); }
-  else if (e.key === 'ArrowRight') { e.preventDefault(); qLearned(); }
-  else if (e.key === 'ArrowUp')    { e.preventDefault(); qReview(); }
+  if (e.key === 'ArrowLeft')  { e.preventDefault(); qMarkReview(); }
+  else if (e.key === 'ArrowRight') { e.preventDefault(); qNext(); }
+  else if (e.key === 'ArrowUp')    { e.preventDefault(); qFlag(); }
   else if (e.key === ' ')          { e.preventDefault(); flipQuiz(); }
 });
 </script>
