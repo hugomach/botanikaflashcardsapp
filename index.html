@@ -587,6 +587,7 @@ window.onload = async () => {
   sbAnonKey = localStorage.getItem('sb_anon_key');
   sbUserKey = localStorage.getItem('sb_user_key');
   populateSelects();
+  syncQuizFilterAriaState();
   if (initSupabaseClient()) {
     await loadFromSupabase();
   }
@@ -1629,6 +1630,13 @@ function toggleQuizFilters() {
   arrow.classList.toggle('collapsed', hidden);
   const btn = document.querySelector('[aria-controls="quiz-filters-body"]');
   if (btn) btn.setAttribute('aria-expanded', String(!hidden));
+}
+function syncQuizFilterAriaState() {
+  ['quiz-filters-body','fgrp-quiz-group','fgrp-quiz-lf','fgrp-quiz-hab','fgrp-quiz-tox'].forEach(bodyId => {
+    const body = document.getElementById(bodyId);
+    const btn = document.querySelector('[aria-controls="' + CSS.escape(bodyId) + '"]');
+    if (body && btn) btn.setAttribute('aria-expanded', String(!body.classList.contains('hidden')));
+  });
 }
 
 // ── Swipe on quiz card ──
