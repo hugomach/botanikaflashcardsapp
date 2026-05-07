@@ -224,7 +224,7 @@ textarea { resize: vertical; }
 .flip-back { transform: rotateY(180deg); background: var(--green-light); border-color: #9FE1CB; }
 .flip-card.foto-large { height: 420px; }
 .flip-card.foto-large .flip-face { padding: 1.1rem; }
-.flip-card.foto-large .flip-img { max-height: 320px !important; }
+.flip-card.foto-large .flip-face .flip-img { max-height: 320px; }
 .flip-hint { font-size: 11px; color: var(--text3); }
 .flip-q { font-size: 22px; font-weight: 600; font-style: italic; text-align: center; color: var(--text); line-height: 1.3; }
 .flip-q.cz { font-style: normal; font-size: 20px; }
@@ -417,30 +417,30 @@ textarea { resize: vertical; }
 <!-- QUIZ TAB -->
 <div id="tab-quiz" style="display:none;">
   <div class="filter-section">
-    <div class="filter-all-header" onclick="toggleQuizFilters()" onkeydown="onFilterKey(event,toggleQuizFilters)" tabindex="0" role="button" aria-expanded="true" aria-controls="quiz-filters-body">
+    <div class="filter-all-header" onclick="toggleQuizFilters()" onkeydown="onFilterKey(event,toggleQuizFilters)" tabindex="0" role="button" aria-label="Zobrazit nebo skrýt filtry v kvízu" aria-expanded="true" aria-controls="quiz-filters-body">
       <span class="filter-all-label">🔍 Filtry</span>
       <span class="filter-arrow" id="arrow-quiz-filters">▼</span>
     </div>
     <div id="quiz-filters-body">
-      <div class="filter-group-header" onclick="toggleFilterGroup('fgrp-quiz-group','farrow-quiz-group')" onkeydown="onFilterKey(event,toggleFilterGroup,'fgrp-quiz-group','farrow-quiz-group')" tabindex="0" role="button" aria-expanded="true" aria-controls="fgrp-quiz-group">
+      <div class="filter-group-header" onclick="toggleFilterGroup('fgrp-quiz-group','farrow-quiz-group')" onkeydown="onFilterKey(event,toggleFilterGroup,'fgrp-quiz-group','farrow-quiz-group')" tabindex="0" role="button" aria-label="Zobrazit nebo skrýt filtr Evoluční linie" aria-expanded="true" aria-controls="fgrp-quiz-group">
         <span class="filter-row-label">Evoluční linie</span>
         <span class="filter-arrow" id="farrow-quiz-group">▼</span>
       </div>
       <div id="fgrp-quiz-group" class="filter-body"><div class="group-chips" id="quiz-chips"></div></div>
 
-      <div class="filter-group-header" onclick="toggleFilterGroup('fgrp-quiz-lf','farrow-quiz-lf')" onkeydown="onFilterKey(event,toggleFilterGroup,'fgrp-quiz-lf','farrow-quiz-lf')" tabindex="0" role="button" aria-expanded="true" aria-controls="fgrp-quiz-lf">
+      <div class="filter-group-header" onclick="toggleFilterGroup('fgrp-quiz-lf','farrow-quiz-lf')" onkeydown="onFilterKey(event,toggleFilterGroup,'fgrp-quiz-lf','farrow-quiz-lf')" tabindex="0" role="button" aria-label="Zobrazit nebo skrýt filtr Životní forma" aria-expanded="true" aria-controls="fgrp-quiz-lf">
         <span class="filter-row-label">Životní forma</span>
         <span class="filter-arrow" id="farrow-quiz-lf">▼</span>
       </div>
       <div id="fgrp-quiz-lf" class="filter-body"><div class="group-chips" id="quiz-lf-chips"></div></div>
 
-      <div class="filter-group-header" onclick="toggleFilterGroup('fgrp-quiz-hab','farrow-quiz-hab')" onkeydown="onFilterKey(event,toggleFilterGroup,'fgrp-quiz-hab','farrow-quiz-hab')" tabindex="0" role="button" aria-expanded="true" aria-controls="fgrp-quiz-hab">
+      <div class="filter-group-header" onclick="toggleFilterGroup('fgrp-quiz-hab','farrow-quiz-hab')" onkeydown="onFilterKey(event,toggleFilterGroup,'fgrp-quiz-hab','farrow-quiz-hab')" tabindex="0" role="button" aria-label="Zobrazit nebo skrýt filtr Biotop" aria-expanded="true" aria-controls="fgrp-quiz-hab">
         <span class="filter-row-label">Biotop</span>
         <span class="filter-arrow" id="farrow-quiz-hab">▼</span>
       </div>
       <div id="fgrp-quiz-hab" class="filter-body"><div class="group-chips" id="quiz-hab-chips"></div></div>
 
-      <div class="filter-group-header" onclick="toggleFilterGroup('fgrp-quiz-tox','farrow-quiz-tox')" onkeydown="onFilterKey(event,toggleFilterGroup,'fgrp-quiz-tox','farrow-quiz-tox')" tabindex="0" role="button" aria-expanded="true" aria-controls="fgrp-quiz-tox">
+      <div class="filter-group-header" onclick="toggleFilterGroup('fgrp-quiz-tox','farrow-quiz-tox')" onkeydown="onFilterKey(event,toggleFilterGroup,'fgrp-quiz-tox','farrow-quiz-tox')" tabindex="0" role="button" aria-label="Zobrazit nebo skrýt filtr Toxicita" aria-expanded="true" aria-controls="fgrp-quiz-tox">
         <span class="filter-row-label">Toxicita</span>
         <span class="filter-arrow" id="farrow-quiz-tox">▼</span>
       </div>
@@ -465,9 +465,9 @@ textarea { resize: vertical; }
       <button id="qm-cz" onclick="setQuizMode('cz')">CZ → LAT</button>
       <button id="qm-fam" onclick="setQuizMode('fam')">Čeleď</button>
     </div>
-    <div class="quiz-photo-size-toggle" id="quiz-photo-size-toggle">
-      <button id="qps-compact" class="active" onclick="setQuizPhotoSize('compact')">Kompaktní</button>
-      <button id="qps-large" onclick="setQuizPhotoSize('large')">Větší foto</button>
+    <div class="quiz-photo-size-toggle" id="quiz-photo-size-toggle" role="group" aria-label="Velikost kartičky ve foto kvízu">
+      <button id="qps-compact" class="active" aria-pressed="true" onclick="setQuizPhotoSize('compact')">Kompaktní</button>
+      <button id="qps-large" aria-pressed="false" onclick="setQuizPhotoSize('large')">Větší foto</button>
     </div>
   </div>
   <div class="quiz-area" id="quiz-area"></div>
@@ -1155,7 +1155,11 @@ function setQuizMode(m) {
 
 function setQuizPhotoSize(size) {
   quizPhotoSize = size;
-  ['compact','large'].forEach(k => document.getElementById('qps-'+k).classList.toggle('active', k===size));
+  ['compact','large'].forEach(k => {
+    const btn = document.getElementById('qps-'+k);
+    btn.classList.toggle('active', k===size);
+    btn.setAttribute('aria-pressed', String(k===size));
+  });
   renderQuiz();
 }
 
