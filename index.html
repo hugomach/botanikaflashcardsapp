@@ -1529,7 +1529,7 @@ function showTab(name) {
   const tabs = ['browse','table','quiz','match','flagged'];
   if (name === 'quiz') {
     if (activeTab !== 'quiz') {
-      lastNonQuizTab = activeTab === 'quiz' ? lastNonQuizTab : activeTab;
+      lastNonQuizTab = activeTab;
       lastFocusedBeforeQuiz = document.activeElement;
     }
   } else {
@@ -1553,7 +1553,7 @@ function showTab(name) {
 function closeQuizOverlay() {
   const targetTab = lastNonQuizTab && lastNonQuizTab !== 'quiz' ? lastNonQuizTab : 'browse';
   showTab(targetTab);
-  if (lastFocusedBeforeQuiz?.focus) lastFocusedBeforeQuiz.focus();
+  lastFocusedBeforeQuiz?.focus();
   lastFocusedBeforeQuiz = null;
 }
 
