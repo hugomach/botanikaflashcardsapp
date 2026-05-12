@@ -222,6 +222,9 @@ textarea { resize: vertical; }
 .flip-card.flipped .flip-inner { transform: rotateY(180deg); }
 .flip-face { position: absolute; inset: 0; backface-visibility: hidden; background: var(--surface2); border-radius: var(--radius-lg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 1.5rem; border: 1px solid var(--border); overflow: hidden; }
 .flip-back { transform: rotateY(180deg); background: var(--green-light); border-color: #9FE1CB; }
+.flip-card.foto-large { height: 420px; }
+.flip-card.foto-large .flip-face { padding: 1.1rem; }
+.flip-card.foto-large .flip-face .flip-img { max-height: 320px; }
 .flip-hint { font-size: 11px; color: var(--text3); }
 .flip-q { font-size: 22px; font-weight: 600; font-style: italic; text-align: center; color: var(--text); line-height: 1.3; }
 .flip-q.cz { font-style: normal; font-size: 20px; }
@@ -248,10 +251,14 @@ textarea { resize: vertical; }
 .filter-body { margin-bottom: 0.25rem; }
 .filter-body.hidden { display: none; }
 #all-filters-body.hidden { display: none; }
+#quiz-filters-body.hidden { display: none; }
 .group-chips { display: flex; gap: 6px; flex-wrap: wrap; padding-top: 4px; margin-bottom: 0.25rem; }
 .chip { padding: 4px 12px; font-size: 12px; border-radius: 999px; border: 1px solid var(--border2); background: var(--surface); color: var(--text2); cursor: pointer; transition: background 0.12s, color 0.12s, border-color 0.12s; white-space: nowrap; }
 .chip:hover { border-color: var(--green); color: var(--text); }
 .chip.on { color: #fff; background: var(--chip-color, var(--green)); border-color: var(--chip-color, var(--green)); }
+.quiz-photo-size-toggle { display: inline-flex; background: var(--surface2); border-radius: var(--radius); padding: 3px; gap: 2px; border: 1px solid var(--border); }
+.quiz-photo-size-toggle button { padding: 5px 10px; font-size: 12px; border: none; background: none; border-radius: 7px; cursor: pointer; color: var(--text2); }
+.quiz-photo-size-toggle button.active { background: var(--surface); color: var(--green); font-weight: 500; }
 .chip[data-g="přesličky"].on    { background: #5F5E5A; border-color: #5F5E5A; }
 .chip[data-g="kapradiny"].on    { background: #3B6D11; border-color: #3B6D11; }
 .chip[data-g="nahosemenné"].on  { background: #085041; border-color: #085041; }
@@ -410,10 +417,35 @@ textarea { resize: vertical; }
 <!-- QUIZ TAB -->
 <div id="tab-quiz" style="display:none;">
   <div class="filter-section">
-    <div class="filter-row-label">Evoluční linie</div>
-    <div class="group-chips" id="quiz-chips"></div>
-    <div class="filter-row-label" style="margin-top:4px">Životní forma</div>
-    <div class="group-chips" id="quiz-lf-chips"></div>
+    <div class="filter-all-header" onclick="toggleQuizFilters()" onkeydown="onFilterKey(event,toggleQuizFilters)" tabindex="0" role="button" aria-label="Zobrazit nebo skrýt filtry v kvízu" aria-expanded="true" aria-controls="quiz-filters-body">
+      <span class="filter-all-label">🔍 Filtry</span>
+      <span class="filter-arrow" id="arrow-quiz-filters">▼</span>
+    </div>
+    <div id="quiz-filters-body">
+      <div class="filter-group-header" onclick="toggleFilterGroup('fgrp-quiz-group','farrow-quiz-group')" onkeydown="onFilterKey(event,toggleFilterGroup,'fgrp-quiz-group','farrow-quiz-group')" tabindex="0" role="button" aria-label="Zobrazit nebo skrýt filtr Evoluční linie" aria-expanded="true" aria-controls="fgrp-quiz-group">
+        <span class="filter-row-label">Evoluční linie</span>
+        <span class="filter-arrow" id="farrow-quiz-group">▼</span>
+      </div>
+      <div id="fgrp-quiz-group" class="filter-body"><div class="group-chips" id="quiz-chips"></div></div>
+
+      <div class="filter-group-header" onclick="toggleFilterGroup('fgrp-quiz-lf','farrow-quiz-lf')" onkeydown="onFilterKey(event,toggleFilterGroup,'fgrp-quiz-lf','farrow-quiz-lf')" tabindex="0" role="button" aria-label="Zobrazit nebo skrýt filtr Životní forma" aria-expanded="true" aria-controls="fgrp-quiz-lf">
+        <span class="filter-row-label">Životní forma</span>
+        <span class="filter-arrow" id="farrow-quiz-lf">▼</span>
+      </div>
+      <div id="fgrp-quiz-lf" class="filter-body"><div class="group-chips" id="quiz-lf-chips"></div></div>
+
+      <div class="filter-group-header" onclick="toggleFilterGroup('fgrp-quiz-hab','farrow-quiz-hab')" onkeydown="onFilterKey(event,toggleFilterGroup,'fgrp-quiz-hab','farrow-quiz-hab')" tabindex="0" role="button" aria-label="Zobrazit nebo skrýt filtr Biotop" aria-expanded="true" aria-controls="fgrp-quiz-hab">
+        <span class="filter-row-label">Biotop</span>
+        <span class="filter-arrow" id="farrow-quiz-hab">▼</span>
+      </div>
+      <div id="fgrp-quiz-hab" class="filter-body"><div class="group-chips" id="quiz-hab-chips"></div></div>
+
+      <div class="filter-group-header" onclick="toggleFilterGroup('fgrp-quiz-tox','farrow-quiz-tox')" onkeydown="onFilterKey(event,toggleFilterGroup,'fgrp-quiz-tox','farrow-quiz-tox')" tabindex="0" role="button" aria-label="Zobrazit nebo skrýt filtr Toxicita" aria-expanded="true" aria-controls="fgrp-quiz-tox">
+        <span class="filter-row-label">Toxicita</span>
+        <span class="filter-arrow" id="farrow-quiz-tox">▼</span>
+      </div>
+      <div id="fgrp-quiz-tox" class="filter-body"><div class="group-chips" id="quiz-tox-chips"></div></div>
+    </div>
   </div>
   <div class="filterbar" style="margin-bottom:0.75rem;margin-top:0.5rem;">
     <select id="quiz-family-cz" onchange="syncQuizFamilyFromCz();resetQuiz()"><option value="">Všechny čeledi (CZ)</option></select>
@@ -432,6 +464,10 @@ textarea { resize: vertical; }
       <button id="qm-lat" onclick="setQuizMode('lat')">LAT → CZ</button>
       <button id="qm-cz" onclick="setQuizMode('cz')">CZ → LAT</button>
       <button id="qm-fam" onclick="setQuizMode('fam')">Čeleď</button>
+    </div>
+    <div class="quiz-photo-size-toggle" id="quiz-photo-size-toggle" role="group" aria-label="Velikost kartičky ve foto kvízu">
+      <button id="qps-compact" class="active" aria-pressed="true" onclick="setQuizPhotoSize('compact')">Kompaktní</button>
+      <button id="qps-large" aria-pressed="false" onclick="setQuizPhotoSize('large')">Větší foto</button>
     </div>
   </div>
   <div class="quiz-area" id="quiz-area"></div>
@@ -524,7 +560,7 @@ let sbAnonKey = null;
 let sbUserKey = null;
 let sb = null;
 let syncTimer = null;
-let quizList = [], quizIdx = 0, quizFlipped = false, quizMode = 'foto';
+let quizList = [], quizIdx = 0, quizFlipped = false, quizMode = 'foto', quizPhotoSize = 'compact';
 let dirty = false;
 let activeGroup = '';
 let activeQuizGroup = '';
@@ -532,6 +568,8 @@ let activeLF = '';       // life form filter
 let activeHab = '';      // habitat filter
 let activeTox = '';      // toxicity filter
 let activeQuizLF = '';   // quiz life form filter
+let activeQuizHab = '';  // quiz habitat filter
+let activeQuizTox = '';  // quiz toxicity filter
 const SB_TABLE = 'botanika_sync';
 const SB_BUCKET = 'botanika-photos';
 
@@ -549,6 +587,7 @@ window.onload = async () => {
   sbAnonKey = localStorage.getItem('sb_anon_key');
   sbUserKey = localStorage.getItem('sb_user_key');
   populateSelects();
+  syncQuizFilterAriaState();
   if (initSupabaseClient()) {
     await loadFromSupabase();
   }
@@ -706,6 +745,8 @@ function populateSelects() {
   // Quiz chips
   makeChips('quiz-chips',    GROUP_ORDER, GROUP_COLORS, 'activeQuizGroup', 'setQuizFilterGroup');
   makeChips('quiz-lf-chips', LF_ORDER,    LF_COLORS,    'activeQuizLF',    'setQuizFilterLF');
+  makeChips('quiz-hab-chips', HAB_ORDER,  HAB_COLORS,   'activeQuizHab',   'setQuizFilterHab');
+  makeChips('quiz-tox-chips', TOX_ORDER,  TOX_COLORS,   'activeQuizTox',   'setQuizFilterTox');
 }
 
 function setChipActive(containerId, val) {
@@ -718,6 +759,8 @@ function setFilterHab(el, v)       { activeHab = v;        setChipActive('hab-ch
 function setFilterTox(el, v)       { activeTox = v;        setChipActive('tox-chips', v);    renderGrid(); }
 function setQuizFilterGroup(el, v) { activeQuizGroup = v;  setChipActive('quiz-chips', v);   resetQuiz(); }
 function setQuizFilterLF(el, v)    { activeQuizLF = v;     setChipActive('quiz-lf-chips', v);resetQuiz(); }
+function setQuizFilterHab(el, v)   { activeQuizHab = v;    setChipActive('quiz-hab-chips', v); resetQuiz(); }
+function setQuizFilterTox(el, v)   { activeQuizTox = v;    setChipActive('quiz-tox-chips', v); resetQuiz(); }
 
 function clearAllFilters() {
   activeGroup = ''; activeLF = ''; activeHab = ''; activeTox = '';
@@ -1106,7 +1149,19 @@ function showTab(name) {
 function setQuizMode(m) {
   quizMode = m;
   ['foto','lat','cz','fam'].forEach(k => document.getElementById('qm-'+k).classList.toggle('active',k===m));
+  const photoSizeToggle = document.getElementById('quiz-photo-size-toggle');
+  if (photoSizeToggle) photoSizeToggle.style.display = m === 'foto' ? 'inline-flex' : 'none';
   resetQuiz();
+}
+
+function setQuizPhotoSize(size) {
+  quizPhotoSize = size;
+  ['compact','large'].forEach(k => {
+    const btn = document.getElementById('qps-'+k);
+    btn.classList.toggle('active', k===size);
+    btn.setAttribute('aria-pressed', String(k===size));
+  });
+  renderQuiz();
 }
 
 function getQuizPlants() {
@@ -1117,6 +1172,8 @@ function getQuizPlants() {
     const d = D(p.latin);
     if (activeQuizGroup && p.group !== activeQuizGroup) return false;
     if (activeQuizLF && p.life_form !== activeQuizLF) return false;
+    if (activeQuizHab && !p.habitat.includes(activeQuizHab)) return false;
+    if (activeQuizTox && p.toxic !== activeQuizTox) return false;
     if (fam && p.family_lat !== fam) return false;
     if (famCz && p.family_cz !== famCz) return false;
     if (src==='photo' && !d.photos.length) return false;
@@ -1184,7 +1241,7 @@ function renderQuiz() {
       <span style="font-size:11px;color:var(--text3);">${p.family_cz}</span>
     </div>
     <div class="progress"><div class="progress-fill" style="width:${pct}%"></div></div>
-    <div class="flip-card${quizFlipped?' flipped':''}${d.status==='review'?' review-card':''}" id="qflip" onclick="flipQuiz()">
+    <div class="flip-card${quizFlipped?' flipped':''}${d.status==='review'?' review-card':''}${quizMode==='foto' && quizPhotoSize==='large' ? ' foto-large' : ''}" id="qflip" onclick="flipQuiz()">
       <div class="flip-inner">
         <div class="flip-face">${frontHTML}${hintFront}</div>
         <div class="flip-face flip-back">${backHTML}</div>
@@ -1565,6 +1622,21 @@ function toggleAllFilters() {
   arrow.classList.toggle('collapsed', hidden);
   const btn = document.querySelector('[aria-controls="all-filters-body"]');
   if (btn) btn.setAttribute('aria-expanded', String(!hidden));
+}
+function toggleQuizFilters() {
+  const body = document.getElementById('quiz-filters-body');
+  const arrow = document.getElementById('arrow-quiz-filters');
+  const hidden = body.classList.toggle('hidden');
+  arrow.classList.toggle('collapsed', hidden);
+  const btn = document.querySelector('[aria-controls="quiz-filters-body"]');
+  if (btn) btn.setAttribute('aria-expanded', String(!hidden));
+}
+function syncQuizFilterAriaState() {
+  ['quiz-filters-body','fgrp-quiz-group','fgrp-quiz-lf','fgrp-quiz-hab','fgrp-quiz-tox'].forEach(bodyId => {
+    const body = document.getElementById(bodyId);
+    const btn = document.querySelector('[aria-controls="' + CSS.escape(bodyId) + '"]');
+    if (body && btn) btn.setAttribute('aria-expanded', String(!body.classList.contains('hidden')));
+  });
 }
 
 // ── Swipe on quiz card ──
