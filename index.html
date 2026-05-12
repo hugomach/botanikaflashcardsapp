@@ -454,7 +454,7 @@ body.quiz-open { overflow: hidden; }
     <div class="quiz-overlay-head">
       <div>
         <div class="quiz-overlay-title" id="quiz-overlay-title">Kvíz</div>
-        <div class="quiz-overlay-subtitle">Studium v samostatném okně, připravené i pro mobil.</div>
+        <div class="quiz-overlay-subtitle">Samostatné studijní okno optimalizované pro mobil.</div>
       </div>
       <button class="btn-close quiz-overlay-close" id="quiz-close-btn" onclick="closeQuizOverlay()" aria-label="Zavřít kvíz">✕</button>
     </div>
@@ -1554,7 +1554,9 @@ function closeQuizOverlay() {
   const targetTab = lastNonQuizTab || 'browse';
   showTab(targetTab);
   if (lastFocusedBeforeQuiz?.isConnected) {
-    lastFocusedBeforeQuiz.focus();
+    try {
+      lastFocusedBeforeQuiz.focus();
+    } catch (_) {}
   }
   lastFocusedBeforeQuiz = null;
 }
@@ -2101,7 +2103,7 @@ document.addEventListener('keydown', e => {
     closeQuizOverlay();
     return;
   }
-  if (document.getElementById('tab-quiz').style.display === 'none') return;
+  if (activeTab !== 'quiz') return;
   if (document.getElementById('modal').style.display !== 'none' || document.getElementById('settings-modal').style.display !== 'none') return;
   const tag = e.target.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
