@@ -76,8 +76,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .modal-img { width: 100%; max-height: 200px; object-fit: cover; border-radius: var(--radius); margin: 10px 0; }
 .no-img { height: 80px; background: var(--surface2); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--text3); margin: 10px 0; }
 label { font-size: 11px; color: var(--text3); display: block; margin-top: 10px; margin-bottom: 3px; }
-input[type=url], textarea { width: 100%; font-size: 13px; padding: 7px 9px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); outline: none; font-family: inherit; }
-input[type=url]:focus, textarea:focus { border-color: var(--green); }
+input[type=url], input[type=text], input[type=email], input[type=password], textarea, #tab-settings select { width: 100%; font-size: 13px; padding: 7px 9px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); outline: none; font-family: inherit; }
+input[type=url]:focus, input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, textarea:focus, #tab-settings select:focus { border-color: var(--green); }
 textarea { resize: vertical; }
 .ext-links { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 5px; }
 .ext-link { font-size: 11px; color: #185FA5; text-decoration: none; }
@@ -196,8 +196,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .modal-img { width: 100%; max-height: 220px; object-fit: cover; border-radius: var(--radius); margin: 10px 0; }
 .no-img { height: 80px; background: var(--surface2); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--text3); margin: 10px 0; }
 label { font-size: 11px; color: var(--text3); display: block; margin-top: 10px; margin-bottom: 3px; }
-input[type=url], textarea { width: 100%; font-size: 13px; padding: 7px 9px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); outline: none; font-family: inherit; }
-input[type=url]:focus, textarea:focus { border-color: var(--green); }
+input[type=url], input[type=text], input[type=email], input[type=password], textarea, #tab-settings select { width: 100%; font-size: 13px; padding: 7px 9px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); outline: none; font-family: inherit; }
+input[type=url]:focus, input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, textarea:focus, #tab-settings select:focus { border-color: var(--green); }
 textarea { resize: vertical; }
 .ext-links { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 5px; }
 .ext-link { font-size: 11px; color: #3b8de0; text-decoration: none; }
@@ -304,13 +304,18 @@ textarea { resize: vertical; }
 .drop-zone { border: 2px dashed var(--border2); border-radius: var(--radius); padding: 14px 10px; text-align: center; font-size: 12px; color: var(--text3); cursor: pointer; transition: border-color 0.15s, background 0.15s; margin: 8px 0 4px; position: relative; }
 .drop-zone:hover, .drop-zone.over { border-color: var(--green); background: var(--green-light); color: var(--green-dark); }
 .drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-.photo-tabs { display: flex; gap: 4px; margin-top: 10px; }
-.photo-tab { flex: 1; padding: 5px; font-size: 12px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface2); color: var(--text2); cursor: pointer; text-align: center; }
-.photo-tab.active { background: var(--green); color: #fff; border-color: var(--green); }
-.photo-panel { display: none; }
-.photo-panel.active { display: block; }
 .paste-zone { border: 2px dashed var(--border2); border-radius: var(--radius); padding: 14px 10px; text-align: center; font-size: 12px; color: var(--text3); cursor: pointer; outline: none; }
 .paste-zone:focus { border-color: var(--green); }
+.settings-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px; margin-bottom: 12px; }
+.settings-section h3 { font-size: 14px; margin-bottom: 8px; }
+.settings-grid { display: grid; gap: 8px; }
+.settings-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.table-wrap { overflow: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.plants-table { width: 100%; border-collapse: collapse; min-width: 860px; }
+.plants-table th, .plants-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 12px; text-align: left; }
+.plants-table th { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.04em; background: var(--surface2); position: sticky; top: 0; }
+.plants-table tbody tr { cursor: pointer; }
+.plants-table tbody tr:hover { background: var(--surface2); }
 @media (max-width: 500px) {
   .quiz-btns { grid-template-columns: 1fr 1fr; }
   .action-row { grid-template-columns: 1fr 1fr; }
@@ -345,19 +350,15 @@ textarea { resize: vertical; }
     <div class="sync-dot" id="sync-dot"></div>
     <span id="sync-label">nepřipojeno</span>
   </div>
-  <select class="theme-select" id="theme-select" onchange="setTheme(this.value)">
-    <option value="light">☀️ Bílý</option>
-    <option value="dark">🌙 Černý</option>
-    <option value="auto">⚙️ Auto</option>
-  </select>
-  <button class="btn" onclick="showSetup()" style="font-size:12px;">⚙ Sync</button>
 </div>
 
 <div class="tabs">
   <button class="tab active" onclick="showTab('browse')">Kartičky</button>
+  <button class="tab" onclick="showTab('table')">Tabulka</button>
   <button class="tab" onclick="showTab('quiz')">Kvíz</button>
   <button class="tab" onclick="showTab('match')">Čeledi</button>
   <button class="tab" onclick="showTab('flagged')">Nevím 🚩</button>
+  <button class="tab" onclick="showTab('settings')">Nastavení</button>
 </div>
 
 <!-- BROWSE TAB -->
@@ -498,38 +499,122 @@ textarea { resize: vertical; }
   <div class="grid" id="flagged-grid"></div>
 </div>
 
-</div><!-- /app -->
-
-<!-- MODAL -->
-<div class="modal-wrap" id="modal" style="display:none;" onclick="modalBgClick(event)">
-  <div class="modal" id="modal-inner"></div>
+<!-- TABLE TAB -->
+<div id="tab-table" style="display:none;">
+  <div class="table-wrap">
+    <table class="plants-table">
+      <thead>
+        <tr>
+          <th>LAT</th>
+          <th>CZ</th>
+          <th>Čeleď (CZ)</th>
+          <th>Čeleď (LAT)</th>
+          <th>Skupina</th>
+          <th>Biotop</th>
+          <th>Forma</th>
+          <th>Toxicita</th>
+          <th>Stav</th>
+        </tr>
+      </thead>
+      <tbody id="plants-table-body"></tbody>
+    </table>
+  </div>
 </div>
 
-<!-- SETUP MODAL -->
-<div class="modal-wrap" id="setup-modal" style="display:none;" onclick="if(event.target===this)this.style.display='none'">
-  <div class="modal">
-    <div class="modal-head">
-      <div style="font-size:15px;font-weight:600;">Cloud sync nastavení</div>
-      <button class="btn-close" onclick="document.getElementById('setup-modal').style.display='none'">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="setup-box" style="border:none;padding:0;max-width:100%;">
-        <p><b>Doporučeno:</b> Supabase (lepší pro hodně fotek). Fotky půjdou do Storage, data do DB, a budou se synchronizovat mezi iPhone/iPad/Mac.</p>
-        <label>Supabase URL</label>
-        <input type="url" id="sb-url" placeholder="https://xxxxx.supabase.co" autocomplete="off">
-        <label>Supabase anon key</label>
-        <input type="password" id="sb-key" placeholder="eyJ..." autocomplete="off">
-        <label>Sync klíč (stejný na všech zařízeních)</label>
-        <input type="text" id="sb-user-key" placeholder="napr. botanika-hugo" autocomplete="off">
-        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
-          <button class="btn green" onclick="saveSupabaseConfig()">Připojit Supabase</button>
-          <button class="btn" onclick="clearSupabaseConfig()">Odpojit Supabase</button>
-        </div>
-        <div id="sb-status" style="font-size:12px;color:var(--text3);margin-top:6px;"></div>
+<!-- SETTINGS TAB -->
+<div id="tab-settings" style="display:none;">
+  <div class="settings-section">
+    <h3>Vzhled</h3>
+    <label>Motiv</label>
+    <select class="theme-select" id="theme-select" onchange="setTheme(this.value)">
+      <option value="light">☀️ Bílý</option>
+      <option value="dark">🌙 Černý</option>
+      <option value="auto">⚙️ Auto</option>
+    </select>
+  </div>
 
-        <div style="margin-top:12px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2);font-size:12px;color:var(--text2);line-height:1.6;">
-          SQL (spusť jednou v Supabase SQL Editoru):<br>
-          <code style="white-space:pre-wrap;display:block;margin-top:6px;font-size:11px;">create table if not exists botanika_sync (
+  <div class="settings-section">
+    <h3>Přihlášení / Profil</h3>
+    <div id="auth-profile" style="font-size:12px;color:var(--text2);margin-bottom:8px;">Anonymní režim</div>
+    <div class="settings-actions">
+      <button class="btn" onclick="signInWithProvider('google')">Google</button>
+      <button class="btn" onclick="signInWithProvider('apple')">Apple</button>
+      <button class="btn" onclick="signOutAuth()">Odhlásit</button>
+    </div>
+    <div class="settings-grid" style="margin-top:10px;">
+      <label>Jméno</label>
+      <input type="text" id="auth-name" placeholder="Např. Hugo" autocomplete="name">
+      <label>Email</label>
+      <input type="email" id="auth-email" placeholder="name@email.cz" autocomplete="email">
+      <label>Heslo</label>
+      <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div class="settings-actions">
+      <button class="btn" onclick="signUpWithEmail()">Registrovat</button>
+      <button class="btn green" onclick="signInWithEmail()">Přihlásit email</button>
+    </div>
+    <div id="auth-status" style="font-size:12px;color:var(--text3);margin-top:6px;"></div>
+  </div>
+
+  <div class="settings-section">
+    <h3>Přidat novou rostlinu</h3>
+    <div class="settings-grid">
+      <label>Latinský název *</label>
+      <input type="text" id="new-latin" placeholder="Acer platanoides">
+      <label>Český název *</label>
+      <input type="text" id="new-czech" placeholder="javor mléč">
+      <label>Čeleď LAT *</label>
+      <input type="text" id="new-family-lat" placeholder="Sapindaceae">
+      <label>Čeleď CZ *</label>
+      <input type="text" id="new-family-cz" placeholder="mýdelníkovité">
+      <label>Evoluční skupina</label>
+      <select id="new-group">
+        <option value="dvouděložné">dvouděložné</option>
+        <option value="jednoděložné">jednoděložné</option>
+        <option value="stromy a keře">stromy a keře</option>
+        <option value="trávy">trávy</option>
+        <option value="nahosemenné">nahosemenné</option>
+        <option value="kapradiny">kapradiny</option>
+        <option value="přesličky">přesličky</option>
+      </select>
+      <label>Biotop</label>
+      <input type="text" id="new-habitat" placeholder="les">
+      <label>Životní forma</label>
+      <input type="text" id="new-life-form" placeholder="strom">
+      <label>Toxicita</label>
+      <select id="new-toxic">
+        <option value="ne">ne</option>
+        <option value="mírně">mírně</option>
+        <option value="jedovatý">jedovatý</option>
+        <option value="silně jedovatý">silně jedovatý</option>
+      </select>
+      <label>Tagy (oddělené čárkou)</label>
+      <input type="text" id="new-tags" placeholder="okrasný, listnatý">
+    </div>
+    <div class="settings-actions">
+      <button class="btn green" onclick="addNewPlantFromForm()">Přidat rostlinu</button>
+    </div>
+    <div id="new-plant-status" style="font-size:12px;color:var(--text3);margin-top:6px;"></div>
+  </div>
+
+  <div class="settings-section">
+    <h3>Cloud sync (Supabase)</h3>
+    <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:0.75rem;"><b>Doporučeno:</b> Supabase (lepší pro hodně fotek). Fotky půjdou do Storage, data do DB, a budou se synchronizovat mezi iPhone/iPad/Mac.</p>
+    <label>Supabase URL</label>
+    <input type="url" id="sb-url" placeholder="https://xxxxx.supabase.co" autocomplete="off">
+    <label>Supabase anon key</label>
+    <input type="password" id="sb-key" placeholder="eyJ..." autocomplete="off">
+    <label>Sync klíč (volitelný, stejný na všech zařízeních)</label>
+    <input type="text" id="sb-user-key" placeholder="napr. botanika-hugo" autocomplete="off">
+    <div class="settings-actions">
+      <button class="btn green" onclick="saveSupabaseConfig()">Připojit Supabase</button>
+      <button class="btn" onclick="clearSupabaseConfig()">Odpojit Supabase</button>
+    </div>
+    <div id="sb-status" style="font-size:12px;color:var(--text3);margin-top:6px;"></div>
+
+    <div style="margin-top:12px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2);font-size:12px;color:var(--text2);line-height:1.6;">
+      SQL (spusť jednou v Supabase SQL Editoru):<br>
+      <code style="white-space:pre-wrap;display:block;margin-top:6px;font-size:11px;">create table if not exists botanika_sync (
   user_key text primary key,
   data jsonb not null default '{}'::jsonb,
   updated_at timestamptz not null default now()
@@ -539,14 +624,19 @@ alter table botanika_sync enable row level security;
 create policy if not exists "anon read botanika_sync" on botanika_sync for select to anon using (true);
 create policy if not exists "anon upsert botanika_sync" on botanika_sync for insert to anon with check (true);
 create policy if not exists "anon update botanika_sync" on botanika_sync for update to anon using (true) with check (true);</code>
-        </div>
+    </div>
 
-        <div style="margin-top:12px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2);font-size:12px;color:var(--text2);line-height:1.6;">
-          Storage bucket vytvoř v Supabase jako public bucket jménem <b>botanika-photos</b>.
-        </div>
-      </div>
+    <div style="margin-top:12px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2);font-size:12px;color:var(--text2);line-height:1.6;">
+      Storage bucket vytvoř v Supabase jako public bucket jménem <b>botanika-photos</b>.
     </div>
   </div>
+</div>
+
+</div><!-- /app -->
+
+<!-- MODAL -->
+<div class="modal-wrap" id="modal" style="display:none;" onclick="modalBgClick(event)">
+  <div class="modal" id="modal-inner"></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -572,6 +662,29 @@ let activeQuizHab = '';  // quiz habitat filter
 let activeQuizTox = '';  // quiz toxicity filter
 const SB_TABLE = 'botanika_sync';
 const SB_BUCKET = 'botanika-photos';
+const LOCAL_USERDATA_KEY = 'botanika_user_data_v1';
+const LOCAL_AUTH_PROFILE_KEY = 'botanika_auth_profile_v1';
+
+function getCustomPlants() {
+  return Array.isArray(userData.__customPlants) ? userData.__customPlants : [];
+}
+
+function getAllPlants() {
+  return [...PLANTS, ...getCustomPlants()];
+}
+
+function saveLocalData() {
+  try { localStorage.setItem(LOCAL_USERDATA_KEY, JSON.stringify(userData)); } catch {}
+}
+
+function loadLocalData() {
+  try {
+    const raw = localStorage.getItem(LOCAL_USERDATA_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object') userData = parsed;
+  } catch {}
+}
 
 // ── Storage key helpers ──
 const SK = latin => 'p_' + latin.replace(/\s/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
@@ -583,6 +696,7 @@ function D(latin) {
 
 // ── Init ──
 window.onload = async () => {
+  loadLocalData();
   sbUrl = localStorage.getItem('sb_url');
   sbAnonKey = localStorage.getItem('sb_anon_key');
   sbUserKey = localStorage.getItem('sb_user_key');
@@ -590,8 +704,12 @@ window.onload = async () => {
   syncQuizFilterAriaState();
   if (initSupabaseClient()) {
     await loadFromSupabase();
+    await refreshAuthProfile();
+  } else {
+    refreshAuthProfileFromStorage();
   }
   renderAll();
+  renderTable();
   if (hasSupabaseConfig()) syncStatus('ok','cloud synced');
 };
 
@@ -601,7 +719,9 @@ function hasSupabaseConfig() {
 
 function initSupabaseClient() {
   if (!sbUrl || !sbAnonKey || !window.supabase?.createClient) return false;
-  sb = window.supabase.createClient(sbUrl, sbAnonKey, {auth:{persistSession:false}});
+  sb = window.supabase.createClient(sbUrl, sbAnonKey, {
+    auth: {persistSession: true, autoRefreshToken: true, detectSessionInUrl: true}
+  });
   return true;
 }
 
@@ -612,6 +732,8 @@ async function loadFromSupabase() {
     const {data, error} = await sb.from(SB_TABLE).select('data').eq('user_key', sbUserKey).maybeSingle();
     if (error && error.code !== 'PGRST116') throw error;
     if (data?.data && typeof data.data === 'object') userData = data.data;
+    saveLocalData();
+    populateSelects();
     syncStatus('ok','cloud synced');
   } catch (e) {
     syncStatus('err','chyba cloud načtení');
@@ -640,6 +762,7 @@ async function saveRemoteData() {
 
 function scheduleSave() {
   dirty = true;
+  saveLocalData();
   clearTimeout(syncTimer);
   syncTimer = setTimeout(saveRemoteData, 1200);
 }
@@ -649,34 +772,30 @@ function syncStatus(state, label) {
   document.getElementById('sync-label').textContent = label;
 }
 
-function showSetup() {
-  const su = document.getElementById('sb-url');
-  const sk = document.getElementById('sb-key');
-  const suk = document.getElementById('sb-user-key');
-  if (su) su.value = sbUrl || '';
-  if (sk) sk.value = sbAnonKey || '';
-  if (suk) suk.value = sbUserKey || '';
-  document.getElementById('setup-modal').style.display = 'flex';
-}
-
 async function saveSupabaseConfig() {
   const url = document.getElementById('sb-url').value.trim();
   const key = document.getElementById('sb-key').value.trim();
   const userKey = document.getElementById('sb-user-key').value.trim();
-  if (!url || !key || !userKey) return;
+  if (!url || !key) return;
 
   sbUrl = url;
   sbAnonKey = key;
-  sbUserKey = userKey;
+  sbUserKey = userKey || '';
   localStorage.setItem('sb_url', sbUrl);
   localStorage.setItem('sb_anon_key', sbAnonKey);
-  localStorage.setItem('sb_user_key', sbUserKey);
+  if (sbUserKey) localStorage.setItem('sb_user_key', sbUserKey);
+  else localStorage.removeItem('sb_user_key');
   initSupabaseClient();
+  await refreshAuthProfile();
 
   document.getElementById('sb-status').textContent = 'Připojuji…';
-  await loadFromSupabase();
-  if (!Object.keys(userData).length) await saveToSupabase();
-  document.getElementById('sb-status').textContent = 'Připojeno k Supabase ✓';
+  if (sbUserKey) {
+    await loadFromSupabase();
+    if (!Object.keys(userData).length) await saveToSupabase();
+    document.getElementById('sb-status').textContent = 'Připojeno k Supabase ✓';
+  } else {
+    document.getElementById('sb-status').textContent = 'Připojeno k Supabase (bez sync klíče)';
+  }
   renderAll();
 }
 
@@ -690,6 +809,142 @@ function clearSupabaseConfig() {
   localStorage.removeItem('sb_user_key');
   document.getElementById('sb-status').textContent = 'Supabase odpojeno';
   syncStatus('','nepřipojeno');
+  refreshAuthProfileFromStorage();
+}
+
+function setAuthStatus(msg) {
+  const el = document.getElementById('auth-status');
+  if (el) el.textContent = msg || '';
+}
+
+function saveAuthProfile(profile) {
+  try { localStorage.setItem(LOCAL_AUTH_PROFILE_KEY, JSON.stringify(profile || null)); } catch {}
+}
+
+function renderAuthProfile(profile) {
+  const el = document.getElementById('auth-profile');
+  if (!el) return;
+  if (!profile) {
+    el.textContent = 'Anonymní režim';
+    return;
+  }
+  el.innerHTML = `<b>${esc(profile.name || 'Bez jména')}</b><br>${esc(profile.email || 'bez emailu')} · ${esc(profile.provider || 'unknown')}`;
+}
+
+function refreshAuthProfileFromStorage() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(LOCAL_AUTH_PROFILE_KEY) || 'null');
+    renderAuthProfile(parsed);
+  } catch {
+    renderAuthProfile(null);
+  }
+}
+
+async function refreshAuthProfile() {
+  if (!sb?.auth) return refreshAuthProfileFromStorage();
+  const {data, error} = await sb.auth.getUser();
+  if (error || !data?.user) {
+    saveAuthProfile(null);
+    renderAuthProfile(null);
+    return;
+  }
+  const u = data.user;
+  const provider = u.app_metadata?.provider || u.identities?.[0]?.provider || 'email';
+  const name = u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split('@')[0] || '';
+  const profile = {name, email: u.email || '', provider};
+  saveAuthProfile(profile);
+  renderAuthProfile(profile);
+}
+
+async function signInWithProvider(provider) {
+  if (!sb?.auth) {
+    setAuthStatus('Nejprve nastav Supabase URL + anon key.');
+    return;
+  }
+  const {error} = await sb.auth.signInWithOAuth({
+    provider,
+    options: {redirectTo: window.location.href.split('#')[0]}
+  });
+  if (error) setAuthStatus('OAuth chyba: ' + error.message);
+}
+
+async function signUpWithEmail() {
+  if (!sb?.auth) {
+    setAuthStatus('Nejprve nastav Supabase URL + anon key.');
+    return;
+  }
+  const email = document.getElementById('auth-email')?.value.trim();
+  const password = document.getElementById('auth-password')?.value || '';
+  const name = document.getElementById('auth-name')?.value.trim();
+  if (!email || !password || !name) return setAuthStatus('Vyplň jméno, email i heslo.');
+  const {error} = await sb.auth.signUp({
+    email,
+    password,
+    options: {data: {full_name: name, name}}
+  });
+  if (error) return setAuthStatus('Registrace selhala: ' + error.message);
+  setAuthStatus('Registrace odeslána. Potvrď email (pokud je vyžadováno).');
+  await refreshAuthProfile();
+}
+
+async function signInWithEmail() {
+  if (!sb?.auth) {
+    setAuthStatus('Nejprve nastav Supabase URL + anon key.');
+    return;
+  }
+  const email = document.getElementById('auth-email')?.value.trim();
+  const password = document.getElementById('auth-password')?.value || '';
+  if (!email || !password) return setAuthStatus('Vyplň email a heslo.');
+  const {error} = await sb.auth.signInWithPassword({email, password});
+  if (error) return setAuthStatus('Přihlášení selhalo: ' + error.message);
+  setAuthStatus('Přihlášeno ✓');
+  await refreshAuthProfile();
+}
+
+async function signOutAuth() {
+  if (sb?.auth) {
+    const {error} = await sb.auth.signOut();
+    if (error) return setAuthStatus('Odhlášení selhalo: ' + error.message);
+  }
+  saveAuthProfile(null);
+  renderAuthProfile(null);
+  setAuthStatus('Odhlášeno');
+}
+
+function addNewPlantFromForm() {
+  const latin = document.getElementById('new-latin')?.value.trim();
+  const czech = document.getElementById('new-czech')?.value.trim();
+  const family_lat = document.getElementById('new-family-lat')?.value.trim();
+  const family_cz = document.getElementById('new-family-cz')?.value.trim();
+  const group = document.getElementById('new-group')?.value || 'dvouděložné';
+  const habitat = document.getElementById('new-habitat')?.value.trim() || '';
+  const life_form = document.getElementById('new-life-form')?.value.trim() || '';
+  const toxic = document.getElementById('new-toxic')?.value || 'ne';
+  const tagsRaw = document.getElementById('new-tags')?.value.trim() || '';
+  const status = document.getElementById('new-plant-status');
+
+  if (!latin || !czech || !family_lat || !family_cz) {
+    if (status) status.textContent = 'Vyplň povinná pole označená *.';
+    return;
+  }
+  const exists = getAllPlants().some(p => p.latin.toLowerCase() === latin.toLowerCase());
+  if (exists) {
+    if (status) status.textContent = 'Rostlina s tímto LAT názvem už existuje.';
+    return;
+  }
+  const tags = tagsRaw ? tagsRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+  const plant = {latin, czech, family_lat, family_cz, group, habitat, life_form, toxic, tags};
+  const custom = getCustomPlants();
+  custom.push(plant);
+  userData.__customPlants = custom;
+  scheduleSave();
+  populateSelects();
+  renderAll();
+  ['new-latin','new-czech','new-family-lat','new-family-cz','new-habitat','new-life-form','new-tags'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  if (status) status.textContent = 'Rostlina přidána ✓';
 }
 
 // ── Data helpers ──
@@ -725,8 +980,19 @@ function makeChips(containerId, order, colors, activeVar, handler) {
 }
 
 function populateSelects() {
-  const famLat = [...new Set(PLANTS.map(p=>p.family_lat))].sort();
-  const famCz  = [...new Set(PLANTS.map(p=>p.family_cz))].sort((a,b)=>a.localeCompare(b,'cs'));
+  const allPlants = getAllPlants();
+  const famLat = [...new Set(allPlants.map(p=>p.family_lat))].sort();
+  const famCz  = [...new Set(allPlants.map(p=>p.family_cz))].sort((a,b)=>a.localeCompare(b,'cs'));
+  const defaults = {
+    'filter-family': '<option value="">Všechny čeledi (LAT)</option>',
+    'quiz-family': '<option value="">Všechny čeledi (LAT)</option>',
+    'filter-family-cz': '<option value="">Všechny čeledi (CZ)</option>',
+    'quiz-family-cz': '<option value="">Všechny čeledi (CZ)</option>',
+  };
+  Object.entries(defaults).forEach(([id, html]) => {
+    const sel = document.getElementById(id);
+    if (sel) sel.innerHTML = html;
+  });
   ['filter-family','quiz-family'].forEach(id => {
     const sel = document.getElementById(id);
     famLat.forEach(f => { const o=document.createElement('option'); o.value=f; o.textContent=f; sel.appendChild(o); });
@@ -794,8 +1060,9 @@ function syncQuizFamilyFromLat() {
 
 // ── Stats ──
 function renderStats() {
-  let learned=0, review=0, flagged=0, photo=0, total=PLANTS.length;
-  PLANTS.forEach(p => {
+  const allPlants = getAllPlants();
+  let learned=0, review=0, flagged=0, photo=0, total=allPlants.length;
+  allPlants.forEach(p => {
     const d = D(p.latin);
     if (d.status==='learned') learned++;
     if (d.status==='review') review++;
@@ -842,7 +1109,7 @@ function filteredPlants(familySel, familyCzSel, statusSel, searchVal) {
   const fam = familySel||'';
   const famCz = familyCzSel||'';
   const st = statusSel||'';
-  const result = PLANTS.filter(p => {
+  const result = getAllPlants().filter(p => {
     const d = D(p.latin);
     if (activeGroup && p.group !== activeGroup) return false;
     if (activeLF && p.life_form !== activeLF) return false;
@@ -881,18 +1148,45 @@ function renderGrid() {
 }
 
 function renderFlagged() {
-  const plants = PLANTS.filter(p => D(p.latin).flagged);
+  const plants = getAllPlants().filter(p => D(p.latin).flagged);
   const g = document.getElementById('flagged-grid');
   g.innerHTML = plants.length ? plants.map(cardHTML).join('') : '<div class="empty">Žádné rostliny označeny vlajkou. Otevři kartičku a klikni 🚩 Nevím.</div>';
 }
 
-function renderAll() { renderStats(); renderGrid(); renderFlagged(); renderQuiz(); }
+function renderTable() {
+  const body = document.getElementById('plants-table-body');
+  if (!body) return;
+  const plants = getAllPlants().slice().sort((a,b)=>a.latin.localeCompare(b.latin,'la'));
+  if (!plants.length) {
+    body.innerHTML = `<tr><td colspan="9" style="color:var(--text3)">Žádná data.</td></tr>`;
+    return;
+  }
+  body.innerHTML = plants.map(p => {
+    const sl = p.latin.replace(/'/g,"\\'");
+    const d = D(p.latin);
+    const status = d.flagged ? '🚩 Nevím' : d.status==='learned' ? 'Naučeno' : d.status==='review' ? 'Opakování' : 'Nové';
+    return `<tr onclick="openModal('${sl}')">
+      <td><i>${esc(p.latin)}</i></td>
+      <td>${esc(p.czech)}</td>
+      <td>${esc(p.family_cz)}</td>
+      <td>${esc(p.family_lat)}</td>
+      <td>${esc(p.group||'')}</td>
+      <td>${esc(p.habitat||'')}</td>
+      <td>${esc(p.life_form||'')}</td>
+      <td>${esc(p.toxic||'')}</td>
+      <td>${status}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderAll() { renderStats(); renderGrid(); renderFlagged(); renderQuiz(); renderTable(); }
 
 // ── Modal ──
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
 function openModal(latin) {
-  const p = PLANTS.find(x=>x.latin===latin);
+  const p = getAllPlants().find(x=>x.latin===latin);
+  if (!p) return;
   const d = D(latin);
   const enc = encodeURIComponent(latin);
   const sl = latin.replace(/'/g,"\\'");
@@ -908,39 +1202,27 @@ function openModal(latin) {
     <div class="modal-body">
       <div id="modal-img-wrap">${buildGalleryHTML(latin)}</div>
 
-      <div class="photo-tabs">
-        <div class="photo-tab active" onclick="switchPhotoTab('file',this)">📁 Soubor / přetažení</div>
-        <div class="photo-tab" onclick="switchPhotoTab('paste',this)">📋 Vložit (Ctrl+V)</div>
-        <div class="photo-tab" onclick="switchPhotoTab('url',this)">🔗 URL odkaz</div>
+      <div class="drop-zone" id="drop-zone"
+        ondragover="event.preventDefault();this.classList.add('over')"
+        ondragleave="this.classList.remove('over')"
+        ondrop="handleDrop(event,'${sl}')">
+        <input type="file" accept="image/*" onchange="handleFile(event,'${sl}')">
+        Klikni nebo přetáhni obrázek sem
       </div>
 
-      <div id="pp-file" class="photo-panel active">
-        <div class="drop-zone" id="drop-zone"
-          ondragover="event.preventDefault();this.classList.add('over')"
-          ondragleave="this.classList.remove('over')"
-          ondrop="handleDrop(event,'${sl}')">
-          <input type="file" accept="image/*" onchange="handleFile(event,'${sl}')">
-          Klikni nebo přetáhni obrázek sem
-        </div>
+      <div class="paste-zone" id="paste-zone" tabindex="0"
+        onpaste="handlePaste(event,'${sl}')"
+        onclick="this.focus()">
+        Klikni sem a pak stiskni Ctrl+V (nebo ⌘+V na Macu)
       </div>
 
-      <div id="pp-paste" class="photo-panel">
-        <div class="paste-zone" id="paste-zone" tabindex="0"
-          onpaste="handlePaste(event,'${sl}')"
-          onclick="this.focus()">
-          Klikni sem a pak stiskni Ctrl+V (nebo ⌘+V na Macu)
-        </div>
+      <input type="url" id="m-photo" value="" placeholder="https://upload.wikimedia.org/…" style="margin-top:8px;">
+      <div class="ext-links" style="margin-top:5px;">
+        <a class="ext-link" href="https://commons.wikimedia.org/w/index.php?search=${enc}&ns6=1" target="_blank">🔍 Wikimedia Commons</a>
+        <a class="ext-link" href="https://www.inaturalist.org/taxa/search?q=${enc}" target="_blank">🌿 iNaturalist</a>
+        <a class="ext-link" href="https://cs.wikipedia.org/w/index.php?search=${enc}" target="_blank">📖 Wikipedia</a>
       </div>
-
-      <div id="pp-url" class="photo-panel">
-        <input type="url" id="m-photo" value="" placeholder="https://upload.wikimedia.org/…" style="margin-top:6px;">
-        <div class="ext-links" style="margin-top:5px;">
-          <a class="ext-link" href="https://commons.wikimedia.org/w/index.php?search=${enc}&ns6=1" target="_blank">🔍 Wikimedia Commons</a>
-          <a class="ext-link" href="https://www.inaturalist.org/taxa/search?q=${enc}" target="_blank">🌿 iNaturalist</a>
-          <a class="ext-link" href="https://cs.wikipedia.org/w/index.php?search=${enc}" target="_blank">📖 Wikipedia</a>
-        </div>
-        <button class="btn" style="margin-top:8px;width:100%;" onclick="savePhotoUrl('${sl}')">Přidat URL</button>
-      </div>
+      <button class="btn" style="margin-top:8px;width:100%;" onclick="savePhotoUrl('${sl}')">Přidat URL</button>
 
       <label style="margin-top:12px;">Zajímavost / poznámka</label>
       <textarea id="m-fact" rows="3" placeholder="Přidejte zajímavost, tip k určení…">${esc(d.funfact||'')}</textarea>
@@ -961,14 +1243,6 @@ function openModal(latin) {
 
 function closeModal() { document.getElementById('modal').style.display = 'none'; }
 function modalBgClick(e) { if (e.target.id==='modal') closeModal(); }
-
-function switchPhotoTab(name, el) {
-  ['file','paste','url'].forEach(t => {
-    document.getElementById('pp-'+t).classList.toggle('active', t===name);
-  });
-  el.parentNode.querySelectorAll('.photo-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-}
 
 function dataUrlToBlob(dataUrl) {
   const parts = dataUrl.split(',');
@@ -1136,13 +1410,15 @@ function toggleFlag(latin) {
 
 // ── Tabs ──
 function showTab(name) {
-  ['browse','quiz','match','flagged'].forEach(t => {
+  const tabs = ['browse','table','quiz','match','flagged','settings'];
+  tabs.forEach(t => {
     document.getElementById('tab-'+t).style.display = t===name ? '' : 'none';
   });
-  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active',['browse','quiz','match','flagged'][i]===name));
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active',tabs[i]===name));
   if (name==='flagged') renderFlagged();
   if (name==='quiz') renderQuiz();
   if (name==='match') startMatch();
+  if (name==='table') renderTable();
 }
 
 // ── Quiz ──
@@ -1168,7 +1444,7 @@ function getQuizPlants() {
   const fam = document.getElementById('quiz-family').value;
   const famCz = document.getElementById('quiz-family-cz').value;
   const src = document.getElementById('quiz-source').value;
-  return PLANTS.filter(p => {
+  return getAllPlants().filter(p => {
     const d = D(p.latin);
     if (activeQuizGroup && p.group !== activeQuizGroup) return false;
     if (activeQuizLF && p.life_form !== activeQuizLF) return false;
@@ -1376,23 +1652,24 @@ function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
 function startMatch() {
   matchSelected = null;
   matchCorrect = 0;
+  const allPlants = getAllPlants();
 
   if (matchMode === 'ptof') {
     // Pick 6 random plants from different families if possible
-    const families = [...new Set(PLANTS.map(p => p.family_lat))];
+    const families = [...new Set(allPlants.map(p => p.family_lat))];
     const pickedFams = shuffle(families).slice(0, 6);
     matchPairs = pickedFams.map(fam => {
-      const opts = PLANTS.filter(p => p.family_lat === fam);
+      const opts = allPlants.filter(p => p.family_lat === fam);
       return shuffle(opts)[0];
     });
     matchTotal = matchPairs.length;
     renderMatchPtoF();
   } else {
     // Pick 4 families, show 3 plants per family, match all
-    const families = [...new Set(PLANTS.map(p => p.family_lat))];
+    const families = [...new Set(allPlants.map(p => p.family_lat))];
     const pickedFams = shuffle(families).slice(0, 4);
     matchPairs = pickedFams.map(fam => {
-      const plants = shuffle(PLANTS.filter(p => p.family_lat === fam)).slice(0, 3);
+      const plants = shuffle(allPlants.filter(p => p.family_lat === fam)).slice(0, 3);
       return { fam, plants, family_cz: plants[0].family_cz };
     });
     matchTotal = pickedFams.length * 3;
@@ -1450,7 +1727,7 @@ function matchSelectFamily(famLat) {
   // check answer
   const latin = matchSelected.type === 'plant' ? matchSelected.value : null;
   if (!latin) return;
-  const plant = PLANTS.find(p => p.latin === latin);
+  const plant = getAllPlants().find(p => p.latin === latin);
   const correct = plant?.family_lat === famLat;
 
   if (correct) {
@@ -1521,7 +1798,7 @@ function matchFtoPSelectPlant(latin) {
   }
 
   const fam = matchSelected.value;
-  const plant = PLANTS.find(p => p.latin === latin);
+  const plant = getAllPlants().find(p => p.latin === latin);
   const correct = plant?.family_lat === fam;
 
   if (correct) {
