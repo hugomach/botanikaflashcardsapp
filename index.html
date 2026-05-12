@@ -639,7 +639,7 @@ create policy if not exists "anon update botanika_sync" on botanika_sync for upd
 
 <!-- MODAL -->
 <div class="modal-wrap" id="modal" style="display:none;">
-  <div class="modal" id="modal-inner"></div>
+  <div class="modal" id="modal-inner" role="dialog" aria-modal="true" aria-labelledby="modal-title"></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1214,7 +1214,7 @@ function openModal(latin) {
   document.getElementById('modal-inner').innerHTML = `
     <div class="modal-head">
       <div>
-        <div style="font-size:16px;font-weight:600;font-style:italic;">${p.latin}</div>
+        <div id="modal-title" style="font-size:16px;font-weight:600;font-style:italic;">${p.latin}</div>
         <div style="font-size:13px;color:var(--text2);margin-top:2px;">${p.czech}</div>
         <div style="font-size:11px;color:var(--text3);margin-top:2px;">${p.family_cz} · <i>${p.family_lat}</i></div>
       </div>
