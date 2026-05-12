@@ -645,7 +645,7 @@ create policy if not exists "anon update botanika_sync" on botanika_sync for upd
 </div><!-- /app -->
 
 <!-- MODAL -->
-<div class="modal-wrap" id="modal" style="display:none;" onclick="modalBgClick(event)">
+<div class="modal-wrap" id="modal" style="display:none;">
   <div class="modal" id="modal-inner"></div>
 </div>
 
@@ -1270,7 +1270,6 @@ function openModal(latin) {
 }
 
 function closeModal() { document.getElementById('modal').style.display = 'none'; }
-function modalBgClick(e) { return; }
 function openSettingsModal() { document.getElementById('settings-modal').style.display = 'flex'; }
 function closeSettingsModal() { document.getElementById('settings-modal').style.display = 'none'; }
 function settingsModalBgClick(e) { if (e.target.id==='settings-modal') closeSettingsModal(); }
