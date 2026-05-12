@@ -76,8 +76,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .modal-img { width: 100%; max-height: 200px; object-fit: cover; border-radius: var(--radius); margin: 10px 0; }
 .no-img { height: 80px; background: var(--surface2); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--text3); margin: 10px 0; }
 label { font-size: 11px; color: var(--text3); display: block; margin-top: 10px; margin-bottom: 3px; }
-input[type=url], input[type=text], input[type=email], input[type=password], textarea, #tab-settings select { width: 100%; font-size: 13px; padding: 7px 9px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); outline: none; font-family: inherit; }
-input[type=url]:focus, input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, textarea:focus, #tab-settings select:focus { border-color: var(--green); }
+input[type=url], input[type=text], input[type=email], input[type=password], textarea, .settings-section select { width: 100%; font-size: 13px; padding: 7px 9px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); outline: none; font-family: inherit; }
+input[type=url]:focus, input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, textarea:focus, .settings-section select:focus { border-color: var(--green); }
 textarea { resize: vertical; }
 .ext-links { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 5px; }
 .ext-link { font-size: 11px; color: #185FA5; text-decoration: none; }
@@ -196,8 +196,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .modal-img { width: 100%; max-height: 220px; object-fit: cover; border-radius: var(--radius); margin: 10px 0; }
 .no-img { height: 80px; background: var(--surface2); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--text3); margin: 10px 0; }
 label { font-size: 11px; color: var(--text3); display: block; margin-top: 10px; margin-bottom: 3px; }
-input[type=url], input[type=text], input[type=email], input[type=password], textarea, #tab-settings select { width: 100%; font-size: 13px; padding: 7px 9px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); outline: none; font-family: inherit; }
-input[type=url]:focus, input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, textarea:focus, #tab-settings select:focus { border-color: var(--green); }
+input[type=url], input[type=text], input[type=email], input[type=password], textarea, .settings-section select { width: 100%; font-size: 13px; padding: 7px 9px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); outline: none; font-family: inherit; }
+input[type=url]:focus, input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, textarea:focus, .settings-section select:focus { border-color: var(--green); }
 textarea { resize: vertical; }
 .ext-links { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 5px; }
 .ext-link { font-size: 11px; color: #3b8de0; text-decoration: none; }
@@ -310,6 +310,9 @@ textarea { resize: vertical; }
 .settings-section h3 { font-size: 14px; margin-bottom: 8px; }
 .settings-grid { display: grid; gap: 8px; }
 .settings-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.settings-icon-btn { border: 1px solid var(--border); background: var(--surface); color: var(--text2); border-radius: 999px; width: 34px; height: 34px; font-size: 16px; cursor: pointer; line-height: 1; }
+.settings-icon-btn:hover { background: var(--surface2); color: var(--text); }
+.settings-modal { max-width: 720px; }
 .table-wrap { overflow: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
 .plants-table { width: 100%; border-collapse: collapse; min-width: 860px; }
 .plants-table th, .plants-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 12px; text-align: left; }
@@ -350,6 +353,7 @@ textarea { resize: vertical; }
     <div class="sync-dot" id="sync-dot"></div>
     <span id="sync-label">nepřipojeno</span>
   </div>
+  <button class="settings-icon-btn" type="button" onclick="openSettingsModal()" aria-label="Otevřít nastavení" title="Nastavení">⚙️</button>
 </div>
 
 <div class="tabs">
@@ -358,7 +362,6 @@ textarea { resize: vertical; }
   <button class="tab" onclick="showTab('quiz')">Kvíz</button>
   <button class="tab" onclick="showTab('match')">Čeledi</button>
   <button class="tab" onclick="showTab('flagged')">Nevím 🚩</button>
-  <button class="tab" onclick="showTab('settings')">Nastavení</button>
 </div>
 
 <!-- BROWSE TAB -->
@@ -501,61 +504,6 @@ textarea { resize: vertical; }
 
 <!-- TABLE TAB -->
 <div id="tab-table" style="display:none;">
-  <div class="table-wrap">
-    <table class="plants-table">
-      <thead>
-        <tr>
-          <th>LAT</th>
-          <th>CZ</th>
-          <th>Čeleď (CZ)</th>
-          <th>Čeleď (LAT)</th>
-          <th>Skupina</th>
-          <th>Biotop</th>
-          <th>Forma</th>
-          <th>Toxicita</th>
-          <th>Stav</th>
-        </tr>
-      </thead>
-      <tbody id="plants-table-body"></tbody>
-    </table>
-  </div>
-</div>
-
-<!-- SETTINGS TAB -->
-<div id="tab-settings" style="display:none;">
-  <div class="settings-section">
-    <h3>Vzhled</h3>
-    <label>Motiv</label>
-    <select class="theme-select" id="theme-select" onchange="setTheme(this.value)">
-      <option value="light">☀️ Bílý</option>
-      <option value="dark">🌙 Černý</option>
-      <option value="auto">⚙️ Auto</option>
-    </select>
-  </div>
-
-  <div class="settings-section">
-    <h3>Přihlášení / Profil</h3>
-    <div id="auth-profile" style="font-size:12px;color:var(--text2);margin-bottom:8px;">Anonymní režim</div>
-    <div class="settings-actions">
-      <button class="btn" onclick="signInWithProvider('google')">Google</button>
-      <button class="btn" onclick="signInWithProvider('apple')">Apple</button>
-      <button class="btn" onclick="signOutAuth()">Odhlásit</button>
-    </div>
-    <div class="settings-grid" style="margin-top:10px;">
-      <label>Jméno</label>
-      <input type="text" id="auth-name" placeholder="Např. Hugo" autocomplete="name">
-      <label>Email</label>
-      <input type="email" id="auth-email" placeholder="name@email.cz" autocomplete="email">
-      <label>Heslo</label>
-      <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password">
-    </div>
-    <div class="settings-actions">
-      <button class="btn" onclick="signUpWithEmail()">Registrovat</button>
-      <button class="btn green" onclick="signInWithEmail()">Přihlásit email</button>
-    </div>
-    <div id="auth-status" style="font-size:12px;color:var(--text3);margin-top:6px;"></div>
-  </div>
-
   <div class="settings-section">
     <h3>Přidat novou rostlinu</h3>
     <div class="settings-grid">
@@ -596,25 +544,85 @@ textarea { resize: vertical; }
     </div>
     <div id="new-plant-status" style="font-size:12px;color:var(--text3);margin-top:6px;"></div>
   </div>
+  <div class="table-wrap">
+    <table class="plants-table">
+      <thead>
+        <tr>
+          <th>LAT</th>
+          <th>CZ</th>
+          <th>Čeleď (CZ)</th>
+          <th>Čeleď (LAT)</th>
+          <th>Skupina</th>
+          <th>Biotop</th>
+          <th>Forma</th>
+          <th>Toxicita</th>
+          <th>Stav</th>
+        </tr>
+      </thead>
+      <tbody id="plants-table-body"></tbody>
+    </table>
+  </div>
+</div>
 
-  <div class="settings-section">
-    <h3>Cloud sync (Supabase)</h3>
-    <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:0.75rem;"><b>Doporučeno:</b> Supabase (lepší pro hodně fotek). Fotky půjdou do Storage, data do DB, a budou se synchronizovat mezi iPhone/iPad/Mac.</p>
-    <label>Supabase URL</label>
-    <input type="url" id="sb-url" placeholder="https://xxxxx.supabase.co" autocomplete="off">
-    <label>Supabase anon key</label>
-    <input type="password" id="sb-key" placeholder="eyJ..." autocomplete="off">
-    <label>Sync klíč (volitelný, stejný na všech zařízeních)</label>
-    <input type="text" id="sb-user-key" placeholder="napr. botanika-hugo" autocomplete="off">
-    <div class="settings-actions">
-      <button class="btn green" onclick="saveSupabaseConfig()">Připojit Supabase</button>
-      <button class="btn" onclick="clearSupabaseConfig()">Odpojit Supabase</button>
+<!-- SETTINGS MODAL -->
+<div class="modal-wrap" id="settings-modal" style="display:none;" onclick="settingsModalBgClick(event)">
+  <div class="modal settings-modal">
+    <div class="modal-head">
+      <div style="font-size:16px;font-weight:600;">Nastavení</div>
+      <button class="btn-close" onclick="closeSettingsModal()">✕</button>
     </div>
-    <div id="sb-status" style="font-size:12px;color:var(--text3);margin-top:6px;"></div>
+    <div class="modal-body">
+      <div class="settings-section">
+        <h3>Vzhled</h3>
+        <label>Motiv</label>
+        <select class="theme-select" id="theme-select" onchange="setTheme(this.value)">
+          <option value="light">☀️ Bílý</option>
+          <option value="dark">🌙 Černý</option>
+          <option value="auto">⚙️ Auto</option>
+        </select>
+      </div>
 
-    <div style="margin-top:12px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2);font-size:12px;color:var(--text2);line-height:1.6;">
-      SQL (spusť jednou v Supabase SQL Editoru):<br>
-      <code style="white-space:pre-wrap;display:block;margin-top:6px;font-size:11px;">create table if not exists botanika_sync (
+      <div class="settings-section">
+        <h3>Přihlášení / Profil</h3>
+        <div id="auth-profile" style="font-size:12px;color:var(--text2);margin-bottom:8px;">Anonymní režim</div>
+        <div class="settings-actions">
+          <button class="btn" onclick="signInWithProvider('google')">Google</button>
+          <button class="btn" onclick="signInWithProvider('apple')">Apple</button>
+          <button class="btn" onclick="signOutAuth()">Odhlásit</button>
+        </div>
+        <div class="settings-grid" style="margin-top:10px;">
+          <label>Jméno</label>
+          <input type="text" id="auth-name" placeholder="Např. Hugo" autocomplete="name">
+          <label>Email</label>
+          <input type="email" id="auth-email" placeholder="name@email.cz" autocomplete="email">
+          <label>Heslo</label>
+          <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <div class="settings-actions">
+          <button class="btn" onclick="signUpWithEmail()">Registrovat</button>
+          <button class="btn green" onclick="signInWithEmail()">Přihlásit email</button>
+        </div>
+        <div id="auth-status" style="font-size:12px;color:var(--text3);margin-top:6px;"></div>
+      </div>
+
+      <div class="settings-section">
+        <h3>Cloud sync (Supabase)</h3>
+        <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:0.75rem;"><b>Doporučeno:</b> Supabase (lepší pro hodně fotek). Fotky půjdou do Storage, data do DB, a budou se synchronizovat mezi iPhone/iPad/Mac.</p>
+        <label>Supabase URL</label>
+        <input type="url" id="sb-url" placeholder="https://xxxxx.supabase.co" autocomplete="off">
+        <label>Supabase anon key</label>
+        <input type="password" id="sb-key" placeholder="eyJ..." autocomplete="off">
+        <label>Sync klíč (volitelný, stejný na všech zařízeních)</label>
+        <input type="text" id="sb-user-key" placeholder="napr. botanika-hugo" autocomplete="off">
+        <div class="settings-actions">
+          <button class="btn green" onclick="saveSupabaseConfig()">Připojit Supabase</button>
+          <button class="btn" onclick="clearSupabaseConfig()">Odpojit Supabase</button>
+        </div>
+        <div id="sb-status" style="font-size:12px;color:var(--text3);margin-top:6px;"></div>
+
+        <div style="margin-top:12px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2);font-size:12px;color:var(--text2);line-height:1.6;">
+          SQL (spusť jednou v Supabase SQL Editoru):<br>
+          <code style="white-space:pre-wrap;display:block;margin-top:6px;font-size:11px;">create table if not exists botanika_sync (
   user_key text primary key,
   data jsonb not null default '{}'::jsonb,
   updated_at timestamptz not null default now()
@@ -624,10 +632,12 @@ alter table botanika_sync enable row level security;
 create policy if not exists "anon read botanika_sync" on botanika_sync for select to anon using (true);
 create policy if not exists "anon upsert botanika_sync" on botanika_sync for insert to anon with check (true);
 create policy if not exists "anon update botanika_sync" on botanika_sync for update to anon using (true) with check (true);</code>
-    </div>
+        </div>
 
-    <div style="margin-top:12px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2);font-size:12px;color:var(--text2);line-height:1.6;">
-      Storage bucket vytvoř v Supabase jako public bucket jménem <b>botanika-photos</b>.
+        <div style="margin-top:12px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2);font-size:12px;color:var(--text2);line-height:1.6;">
+          Storage bucket vytvoř v Supabase jako public bucket jménem <b>botanika-photos</b>.
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -1261,6 +1271,9 @@ function openModal(latin) {
 
 function closeModal() { document.getElementById('modal').style.display = 'none'; }
 function modalBgClick(e) { if (e.target.id==='modal') closeModal(); }
+function openSettingsModal() { document.getElementById('settings-modal').style.display = 'flex'; }
+function closeSettingsModal() { document.getElementById('settings-modal').style.display = 'none'; }
+function settingsModalBgClick(e) { if (e.target.id==='settings-modal') closeSettingsModal(); }
 
 function dataUrlToBlob(dataUrl) {
   const parts = dataUrl.split(',');
@@ -1428,7 +1441,7 @@ function toggleFlag(latin) {
 
 // ── Tabs ──
 function showTab(name) {
-  const tabs = ['browse','table','quiz','match','flagged','settings'];
+  const tabs = ['browse','table','quiz','match','flagged'];
   tabs.forEach(t => {
     document.getElementById('tab-'+t).style.display = t===name ? '' : 'none';
   });
@@ -1962,8 +1975,12 @@ function syncQuizFilterAriaState() {
 
 // ── Keyboard navigation in quiz ──
 document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('settings-modal').style.display !== 'none') {
+    closeSettingsModal();
+    return;
+  }
   if (document.getElementById('tab-quiz').style.display === 'none') return;
-  if (document.getElementById('modal').style.display !== 'none') return;
+  if (document.getElementById('modal').style.display !== 'none' || document.getElementById('settings-modal').style.display !== 'none') return;
   const tag = e.target.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
   if (!quizList || !quizList.length) return;
