@@ -1323,14 +1323,20 @@ function latinToSlug(latin) {
 function getOrCreateAnonStorageOwnerKey() {
   const existing = localStorage.getItem(LOCAL_ANON_STORAGE_OWNER_KEY);
   if (existing) return existing;
-  const generated = (window.crypto?.randomUUID?.() || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`);
+  let generated = window.crypto?.randomUUID?.();
+  if (!generated && window.crypto?.getRandomValues) {
+    const bytes = new Uint8Array(16);
+    window.crypto.getRandomValues(bytes);
+    generated = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+  }
+  if (!generated) generated = `${Date.now().toString(36)}-fallback`;
   const key = `anon-${generated}`;
   localStorage.setItem(LOCAL_ANON_STORAGE_OWNER_KEY, key);
   return key;
 }
 
 async function getStorageOwnerKey() {
-  const fallback = (sbUserKey || '').trim().replace(/^\/+|\/+$/g, '') || getOrCreateAnonStorageOwnerKey();
+  const fallback = (sbUserKey || '').trim().replace(/^\/+|\/+$/, '') || getOrCreateAnonStorageOwnerKey();
   if (!sb?.auth?.getUser) return fallback;
   try {
     const {data, error} = await sb.auth.getUser();
@@ -1342,9 +1348,8 @@ async function getStorageOwnerKey() {
   return fallback;
 }
 
-async function uploadPhotoToSupabase(file, latin) {
+async function uploadPhotoToSupabase(compressed, latin) {
   if (!hasSupabaseConfig()) return null;
-  const compressed = await compressImage(file);
   const ownerKey = await getStorageOwnerKey();
   const path = `${ownerKey}/${latinToSlug(latin)}-${Date.now()}.jpg`;
   const {error} = await sb.storage.from(SB_BUCKET).upload(path, compressed.blob, {
@@ -1358,17 +1363,16 @@ async function uploadPhotoToSupabase(file, latin) {
 
 async function imgToBase64(file, latin) {
   try {
+    const compressed = await compressImage(file);
     let data;
     if (hasSupabaseConfig()) {
       try {
-        data = await uploadPhotoToSupabase(file, latin);
+        data = await uploadPhotoToSupabase(compressed, latin);
       } catch (storageError) {
         console.warn('uploadPhotoToSupabase failed, falling back to local photo:', storageError);
-        const compressed = await compressImage(file);
         data = compressed.dataUrl;
       }
     } else {
-      const compressed = await compressImage(file);
       data = compressed.dataUrl;
     }
     addPhoto(latin, data);
