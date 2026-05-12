@@ -1319,10 +1319,22 @@ function latinToSlug(latin) {
   return latin.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
 
+async function getStorageOwnerKey() {
+  const fallback = (sbUserKey || '').trim().replace(/^\/+|\/+$/g, '') || 'anon';
+  if (!sb?.auth?.getUser) return fallback;
+  try {
+    const {data, error} = await sb.auth.getUser();
+    const uid = data?.user?.id;
+    if (!error && uid) return uid;
+  } catch {}
+  return fallback;
+}
+
 async function uploadPhotoToSupabase(file, latin) {
   if (!hasSupabaseConfig()) return null;
   const compressed = await compressImage(file);
-  const path = `${sbUserKey}/${latinToSlug(latin)}-${Date.now()}.jpg`;
+  const ownerKey = await getStorageOwnerKey();
+  const path = `${ownerKey}/${latinToSlug(latin)}-${Date.now()}.jpg`;
   const {error} = await sb.storage.from(SB_BUCKET).upload(path, compressed.blob, {
     contentType: 'image/jpeg',
     upsert: false
@@ -1336,7 +1348,13 @@ async function imgToBase64(file, latin) {
   try {
     let data;
     if (hasSupabaseConfig()) {
-      data = await uploadPhotoToSupabase(file, latin);
+      try {
+        data = await uploadPhotoToSupabase(file, latin);
+      } catch (storageError) {
+        console.warn('uploadPhotoToSupabase failed, falling back to local photo:', storageError);
+        const compressed = await compressImage(file);
+        data = compressed.dataUrl;
+      }
     } else {
       const compressed = await compressImage(file);
       data = compressed.dataUrl;
