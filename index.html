@@ -1986,6 +1986,10 @@ document.addEventListener('keydown', e => {
     closeSettingsModal();
     return;
   }
+  if (e.key === 'Escape' && document.getElementById('modal').style.display !== 'none') {
+    closeModal();
+    return;
+  }
   if (document.getElementById('tab-quiz').style.display === 'none') return;
   if (document.getElementById('modal').style.display !== 'none' || document.getElementById('settings-modal').style.display !== 'none') return;
   const tag = e.target.tagName;
