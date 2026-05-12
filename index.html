@@ -674,7 +674,6 @@ const SB_TABLE = 'botanika_sync';
 const SB_BUCKET = 'botanika-photos';
 const LOCAL_USERDATA_KEY = 'botanika_user_data_v1';
 const LOCAL_AUTH_PROFILE_KEY = 'botanika_auth_profile_v1';
-const LOCAL_ANON_STORAGE_OWNER_KEY = 'botanika_anon_storage_owner_v1';
 
 function getCustomPlants() {
   return Array.isArray(userData.__customPlants) ? userData.__customPlants : [];
@@ -1320,25 +1319,9 @@ function latinToSlug(latin) {
   return latin.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
 
-function getOrCreateAnonStorageOwnerKey() {
-  const existing = localStorage.getItem(LOCAL_ANON_STORAGE_OWNER_KEY);
-  if (existing) return existing;
-  let generated = window.crypto?.randomUUID?.();
-  if (!generated && window.crypto?.getRandomValues) {
-    const bytes = new Uint8Array(16);
-    window.crypto.getRandomValues(bytes);
-    generated = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
-  }
-  if (!generated) generated = `ts-${Date.now()}`;
-  const key = `anon-${generated}`;
-  localStorage.setItem(LOCAL_ANON_STORAGE_OWNER_KEY, key);
-  return key;
-}
-
 async function getStorageOwnerKey() {
-  const manualOwnerKey = (sbUserKey || '').trim().replace(/^\/+|\/+$/, '');
-  const fallback = manualOwnerKey || getOrCreateAnonStorageOwnerKey();
-  if (!sb?.auth?.getUser) return fallback;
+  const configuredOwnerKey = (sbUserKey || '').trim().replace(/^\/+|\/+$/, '');
+  if (!sb?.auth?.getUser) return configuredOwnerKey;
   try {
     const {data, error} = await sb.auth.getUser();
     const uid = data?.user?.id;
@@ -1346,7 +1329,7 @@ async function getStorageOwnerKey() {
   } catch (e) {
     console.warn('getStorageOwnerKey auth lookup failed:', e);
   }
-  return fallback;
+  return configuredOwnerKey;
 }
 
 async function uploadPhotoToSupabase(compressed, latin) {
@@ -1370,7 +1353,7 @@ async function imgToBase64(file, latin) {
       try {
         data = await uploadPhotoToSupabase(compressed, latin);
       } catch (storageError) {
-        console.warn('uploadPhotoToSupabase failed, falling back to local photo:', storageError);
+        console.warn('uploadPhotoToSupabase failed, falling back to localStorage data URL photo:', storageError);
         data = compressed.dataUrl;
       }
     } else {
