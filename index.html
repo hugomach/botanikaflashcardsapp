@@ -1329,14 +1329,15 @@ function getOrCreateAnonStorageOwnerKey() {
     window.crypto.getRandomValues(bytes);
     generated = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
   }
-  if (!generated) generated = `${Date.now().toString(36)}-fallback`;
+  if (!generated) generated = `ts-${Date.now()}`;
   const key = `anon-${generated}`;
   localStorage.setItem(LOCAL_ANON_STORAGE_OWNER_KEY, key);
   return key;
 }
 
 async function getStorageOwnerKey() {
-  const fallback = (sbUserKey || '').trim().replace(/^\/+|\/+$/, '') || getOrCreateAnonStorageOwnerKey();
+  const manualOwnerKey = (sbUserKey || '').trim().replace(/^\/+|\/+$/, '');
+  const fallback = manualOwnerKey || getOrCreateAnonStorageOwnerKey();
   if (!sb?.auth?.getUser) return fallback;
   try {
     const {data, error} = await sb.auth.getUser();
