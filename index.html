@@ -1391,17 +1391,32 @@ function handleDrop(event, latin) {
 }
 
 function handlePaste(event, latin) {
-  const items = event.clipboardData?.items;
-  if (!items) return;
-  for (const item of items) {
-    if (item.type.startsWith('image/')) {
-      imgToBase64(item.getAsFile(), latin);
-      document.getElementById('paste-zone').textContent = '✓ Obrázek vložen!';
-      return;
+  const clipboard = event.clipboardData;
+  if (!clipboard) return;
+
+  const directFile = clipboard.files?.[0];
+  if (directFile && directFile.type.startsWith('image/')) {
+    imgToBase64(directFile, latin);
+    document.getElementById('paste-zone').textContent = '✓ Obrázek vložen!';
+    return;
+  }
+
+  const items = clipboard.items;
+  if (items) {
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) {
+          imgToBase64(file, latin);
+          document.getElementById('paste-zone').textContent = '✓ Obrázek vložen!';
+          return;
+        }
+      }
     }
   }
-  const text = event.clipboardData.getData('text');
-  if (text && text.startsWith('http')) addPhoto(latin, text);
+
+  const text = clipboard.getData('text');
+  if (text && (text.startsWith('http') || text.startsWith('data:image/'))) addPhoto(latin, text);
 }
 
 function savePhotoUrl(latin) {
