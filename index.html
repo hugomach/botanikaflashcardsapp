@@ -1270,12 +1270,12 @@ function openModal(latin) {
       </div>
     </div>`;
   document.getElementById('modal').style.display = 'flex';
-  setTimeout(() => document.getElementById('modal-close-btn')?.focus(), 0);
+  requestAnimationFrame(() => document.getElementById('modal-close-btn')?.focus());
 }
 
 function closeModal() {
   document.getElementById('modal').style.display = 'none';
-  if (lastFocusedBeforeModal && typeof lastFocusedBeforeModal.focus === 'function') {
+  if (lastFocusedBeforeModal) {
     lastFocusedBeforeModal.focus();
   }
   lastFocusedBeforeModal = null;
