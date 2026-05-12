@@ -318,6 +318,9 @@ textarea { resize: vertical; }
   .flip-q { font-size: 17px; }
   .quiz-mode-toggle button { padding: 4px 7px; font-size: 11px; }
 }
+@media (max-width: 900px) {
+  .photo-thumb { width: 150px; height: 115px; }
+}
 @media (max-width: 700px) {
   .modal { max-width: 100%; }
   .modal-img { max-height: 300px; }
@@ -668,6 +671,7 @@ let activeTox = '';      // toxicity filter
 let activeQuizLF = '';   // quiz life form filter
 let activeQuizHab = '';  // quiz habitat filter
 let activeQuizTox = '';  // quiz toxicity filter
+let lastFocusedBeforeModal = null;
 const SB_TABLE = 'botanika_sync';
 const SB_BUCKET = 'botanika-photos';
 const LOCAL_USERDATA_KEY = 'botanika_user_data_v1';
@@ -1216,6 +1220,7 @@ function openModal(latin) {
   const d = D(latin);
   const enc = encodeURIComponent(latin);
   const sl = latin.replace(/'/g,"\\'");
+  lastFocusedBeforeModal = document.activeElement;
   document.getElementById('modal-inner').innerHTML = `
     <div class="modal-head">
       <div>
@@ -1223,7 +1228,7 @@ function openModal(latin) {
         <div style="font-size:13px;color:var(--text2);margin-top:2px;">${p.czech}</div>
         <div style="font-size:11px;color:var(--text3);margin-top:2px;">${p.family_cz} · <i>${p.family_lat}</i></div>
       </div>
-      <button class="btn-close" onclick="closeModal()">✕</button>
+      <button class="btn-close" id="modal-close-btn" aria-label="Zavřít detail rostliny" onclick="closeModal()">✕</button>
     </div>
     <div class="modal-body">
       <div id="modal-img-wrap">${buildGalleryHTML(latin)}</div>
@@ -1265,9 +1270,16 @@ function openModal(latin) {
       </div>
     </div>`;
   document.getElementById('modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('modal-close-btn')?.focus(), 0);
 }
 
-function closeModal() { document.getElementById('modal').style.display = 'none'; }
+function closeModal() {
+  document.getElementById('modal').style.display = 'none';
+  if (lastFocusedBeforeModal && typeof lastFocusedBeforeModal.focus === 'function') {
+    lastFocusedBeforeModal.focus();
+  }
+  lastFocusedBeforeModal = null;
+}
 function openSettingsModal() { document.getElementById('settings-modal').style.display = 'flex'; }
 function closeSettingsModal() { document.getElementById('settings-modal').style.display = 'none'; }
 function settingsModalBgClick(e) { if (e.target.id==='settings-modal') closeSettingsModal(); }
