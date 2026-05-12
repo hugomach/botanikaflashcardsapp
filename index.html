@@ -1353,7 +1353,7 @@ async function imgToBase64(file, latin) {
       try {
         data = await uploadPhotoToSupabase(compressed, latin);
       } catch (storageError) {
-        console.warn('uploadPhotoToSupabase failed, falling back to localStorage data URL photo:', storageError);
+        console.warn('uploadPhotoToSupabase failed, falling back to local data URL photo:', storageError);
         data = compressed.dataUrl;
       }
     } else {
