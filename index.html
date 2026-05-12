@@ -674,6 +674,7 @@ const SB_TABLE = 'botanika_sync';
 const SB_BUCKET = 'botanika-photos';
 const LOCAL_USERDATA_KEY = 'botanika_user_data_v1';
 const LOCAL_AUTH_PROFILE_KEY = 'botanika_auth_profile_v1';
+const LOCAL_ANON_STORAGE_OWNER_KEY = 'botanika_anon_storage_owner_v1';
 
 function getCustomPlants() {
   return Array.isArray(userData.__customPlants) ? userData.__customPlants : [];
@@ -1319,14 +1320,25 @@ function latinToSlug(latin) {
   return latin.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
 
+function getOrCreateAnonStorageOwnerKey() {
+  const existing = localStorage.getItem(LOCAL_ANON_STORAGE_OWNER_KEY);
+  if (existing) return existing;
+  const generated = (window.crypto?.randomUUID?.() || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`);
+  const key = `anon-${generated}`;
+  localStorage.setItem(LOCAL_ANON_STORAGE_OWNER_KEY, key);
+  return key;
+}
+
 async function getStorageOwnerKey() {
-  const fallback = (sbUserKey || '').trim().replace(/^\/+|\/+$/g, '') || 'anon';
+  const fallback = (sbUserKey || '').trim().replace(/^\/+|\/+$/g, '') || getOrCreateAnonStorageOwnerKey();
   if (!sb?.auth?.getUser) return fallback;
   try {
     const {data, error} = await sb.auth.getUser();
     const uid = data?.user?.id;
     if (!error && uid) return uid;
-  } catch {}
+  } catch (e) {
+    console.warn('getStorageOwnerKey auth lookup failed:', e);
+  }
   return fallback;
 }
 
