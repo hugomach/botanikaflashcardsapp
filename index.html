@@ -1551,9 +1551,11 @@ function showTab(name) {
 }
 
 function closeQuizOverlay() {
-  const targetTab = lastNonQuizTab && lastNonQuizTab !== 'quiz' ? lastNonQuizTab : 'browse';
+  const targetTab = lastNonQuizTab || 'browse';
   showTab(targetTab);
-  lastFocusedBeforeQuiz?.focus();
+  if (lastFocusedBeforeQuiz?.isConnected) {
+    lastFocusedBeforeQuiz.focus();
+  }
   lastFocusedBeforeQuiz = null;
 }
 
