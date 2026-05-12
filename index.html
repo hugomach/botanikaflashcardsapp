@@ -320,6 +320,7 @@ textarea { resize: vertical; }
 }
 @media (max-width: 700px) {
   .modal { max-width: 100%; }
+  .modal-img { max-height: 300px; }
   .photo-thumb { width: 130px; height: 100px; }
 }
 
@@ -1986,12 +1987,12 @@ function syncQuizFilterAriaState() {
 
 // ── Keyboard navigation in quiz ──
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && document.getElementById('settings-modal').style.display !== 'none') {
-    closeSettingsModal();
-    return;
-  }
   if (e.key === 'Escape' && document.getElementById('modal').style.display !== 'none') {
     closeModal();
+    return;
+  }
+  if (e.key === 'Escape' && document.getElementById('settings-modal').style.display !== 'none') {
+    closeSettingsModal();
     return;
   }
   if (document.getElementById('tab-quiz').style.display === 'none') return;
