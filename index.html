@@ -696,6 +696,7 @@ function D(latin) {
 
 // ── Init ──
 window.onload = async () => {
+  clearAuthUrlFragment();
   loadLocalData();
   sbUrl = localStorage.getItem('sb_url');
   sbAnonKey = localStorage.getItem('sb_anon_key');
@@ -723,6 +724,14 @@ function initSupabaseClient() {
     auth: {persistSession: true, autoRefreshToken: true, detectSessionInUrl: true}
   });
   return true;
+}
+
+function clearAuthUrlFragment() {
+  const hash = window.location.hash || '';
+  if (!hash) return;
+  if (hash.includes('access_token=') || hash.includes('refresh_token=') || hash.includes('error=')) {
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
 }
 
 async function loadFromSupabase() {
@@ -776,7 +785,10 @@ async function saveSupabaseConfig() {
   const url = document.getElementById('sb-url').value.trim();
   const key = document.getElementById('sb-key').value.trim();
   const userKey = document.getElementById('sb-user-key').value.trim();
-  if (!url || !key) return;
+  if (!url || !key) {
+    document.getElementById('sb-status').textContent = 'Vyplňte Supabase URL a anon key.';
+    return;
+  }
 
   sbUrl = url;
   sbAnonKey = key;
@@ -828,7 +840,7 @@ function renderAuthProfile(profile) {
     el.textContent = 'Anonymní režim';
     return;
   }
-  el.innerHTML = `<b>${esc(profile.name || 'Bez jména')}</b><br>${esc(profile.email || 'bez emailu')} · ${esc(profile.provider || 'unknown')}`;
+  el.innerHTML = `<b>${esc(profile.name || 'Bez jména')}</b><br>${esc(profile.email || 'bez e-mailu')} · ${esc(profile.provider || 'neznámý')}`;
 }
 
 function refreshAuthProfileFromStorage() {
@@ -858,7 +870,7 @@ async function refreshAuthProfile() {
 
 async function signInWithProvider(provider) {
   if (!sb?.auth) {
-    setAuthStatus('Nejprve nastav Supabase URL + anon key.');
+    setAuthStatus('Nejprve nastavte Supabase URL + anon key.');
     return;
   }
   const {error} = await sb.auth.signInWithOAuth({
@@ -870,13 +882,13 @@ async function signInWithProvider(provider) {
 
 async function signUpWithEmail() {
   if (!sb?.auth) {
-    setAuthStatus('Nejprve nastav Supabase URL + anon key.');
+    setAuthStatus('Nejprve nastavte Supabase URL + anon key.');
     return;
   }
   const email = document.getElementById('auth-email')?.value.trim();
   const password = document.getElementById('auth-password')?.value || '';
   const name = document.getElementById('auth-name')?.value.trim();
-  if (!email || !password || !name) return setAuthStatus('Vyplň jméno, email i heslo.');
+  if (!email || !password || !name) return setAuthStatus('Vyplňte jméno, email a heslo.');
   const {error} = await sb.auth.signUp({
     email,
     password,
@@ -889,12 +901,12 @@ async function signUpWithEmail() {
 
 async function signInWithEmail() {
   if (!sb?.auth) {
-    setAuthStatus('Nejprve nastav Supabase URL + anon key.');
+    setAuthStatus('Nejprve nastavte Supabase URL + anon key.');
     return;
   }
   const email = document.getElementById('auth-email')?.value.trim();
   const password = document.getElementById('auth-password')?.value || '';
-  if (!email || !password) return setAuthStatus('Vyplň email a heslo.');
+  if (!email || !password) return setAuthStatus('Vyplňte email a heslo.');
   const {error} = await sb.auth.signInWithPassword({email, password});
   if (error) return setAuthStatus('Přihlášení selhalo: ' + error.message);
   setAuthStatus('Přihlášeno ✓');
@@ -924,7 +936,7 @@ function addNewPlantFromForm() {
   const status = document.getElementById('new-plant-status');
 
   if (!latin || !czech || !family_lat || !family_cz) {
-    if (status) status.textContent = 'Vyplň povinná pole označená *.';
+    if (status) status.textContent = 'Vyplňte povinná pole označená *.';
     return;
   }
   const exists = getAllPlants().some(p => p.latin.toLowerCase() === latin.toLowerCase());
@@ -1162,10 +1174,10 @@ function renderTable() {
     return;
   }
   body.innerHTML = plants.map(p => {
-    const sl = p.latin.replace(/'/g,"\\'");
+    const latinEnc = encodeURIComponent(p.latin);
     const d = D(p.latin);
     const status = d.flagged ? '🚩 Nevím' : d.status==='learned' ? 'Naučeno' : d.status==='review' ? 'Opakování' : 'Nové';
-    return `<tr onclick="openModal('${sl}')">
+    return `<tr class="table-row" data-latin="${latinEnc}">
       <td><i>${esc(p.latin)}</i></td>
       <td>${esc(p.czech)}</td>
       <td>${esc(p.family_cz)}</td>
@@ -1177,6 +1189,9 @@ function renderTable() {
       <td>${status}</td>
     </tr>`;
   }).join('');
+  body.querySelectorAll('.table-row').forEach(row => {
+    row.addEventListener('click', () => openModal(decodeURIComponent(row.dataset.latin || '')));
+  });
 }
 
 function renderAll() { renderStats(); renderGrid(); renderFlagged(); renderQuiz(); renderTable(); }
@@ -1186,7 +1201,10 @@ function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').re
 
 function openModal(latin) {
   const p = getAllPlants().find(x=>x.latin===latin);
-  if (!p) return;
+  if (!p) {
+    console.warn('Rostlina nenalezena v openModal:', latin);
+    return;
+  }
   const d = D(latin);
   const enc = encodeURIComponent(latin);
   const sl = latin.replace(/'/g,"\\'");
