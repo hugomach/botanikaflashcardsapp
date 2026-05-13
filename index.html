@@ -1674,7 +1674,7 @@ function renderQuiz() {
         <button class="btn amber" onclick="qMarkReview()">🔁 Opakovat</button>
         <button class="btn green" onclick="qLearned()">Umím ✓</button>
       </div>
-      <div class="swipe-hint quiz-actions-note">← opakovat &nbsp;|&nbsp; ↑ nevím 🚩 &nbsp;|&nbsp; umím →<br><span class="keyboard-hint">klávesy: ← = opakovat, → = další, ↑ = nevím 🚩, mezerník = otočit</span></div>
+      <div class="swipe-hint quiz-actions-note">← opakovat &nbsp;|&nbsp; ↑ nevím 🚩 &nbsp;|&nbsp; umím →<br><span class="keyboard-hint">klávesy: ← = opakovat, → = umím, ↑ = nevím 🚩, mezerník = otočit</span></div>
     </div>
   `;
 }
@@ -2081,7 +2081,7 @@ function syncQuizFilterAriaState() {
     // Horizontal swipe takes priority when adx > ady; otherwise treat as vertical
     if (adx > ady) {
       if (adx < 50) return;
-      if (dx < 0) { qMarkReview(); } else { qNext(); }
+      if (dx < 0) { qMarkReview(); } else { qLearned(); }
     } else {
       if (ady < 50) return;
       if (dy < 0) { qFlag(); }
@@ -2109,7 +2109,7 @@ document.addEventListener('keydown', e => {
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
   if (!quizList || !quizList.length) return;
   if (e.key === 'ArrowLeft')  { e.preventDefault(); qMarkReview(); }
-  else if (e.key === 'ArrowRight') { e.preventDefault(); qNext(); }
+  else if (e.key === 'ArrowRight') { e.preventDefault(); qLearned(); }
   else if (e.key === 'ArrowUp')    { e.preventDefault(); qFlag(); }
   else if (e.key === ' ')          { e.preventDefault(); flipQuiz(); }
 });
