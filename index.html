@@ -210,12 +210,12 @@ textarea { resize: vertical; }
 .quiz-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px; color: var(--text2); }
 .progress { background: var(--surface2); border-radius: 999px; height: 5px; margin-bottom: 1rem; overflow: hidden; }
 .progress-fill { background: var(--green); height: 100%; border-radius: 999px; transition: width 0.3s; }
-.flip-card { perspective: 900px; height: 260px; margin: 0.5rem 0 1rem; cursor: pointer; user-select: none; touch-action: pan-y; }
+.flip-card { perspective: 900px; height: 260px; margin: 0.5rem 0 1rem; cursor: pointer; user-select: none; }
 .flip-inner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.4s ease; }
 .flip-card.flipped .flip-inner { transform: rotateY(180deg); }
 .flip-face { position: absolute; inset: 0; backface-visibility: hidden; background: var(--surface2); border-radius: var(--radius-lg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 1.5rem; border: 1px solid var(--border); overflow: hidden; }
 .flip-back { transform: rotateY(180deg); background: var(--green-light); border-color: #9FE1CB; }
-.flip-card.foto-large { height: 420px; }
+.flip-card.foto-large { height: 520px; }
 .flip-card.foto-large .flip-face { padding: 1.1rem; }
 .flip-card.foto-large .flip-face .flip-img { max-height: 320px; }
 .flip-hint { font-size: 11px; color: var(--text3); }
@@ -229,7 +229,7 @@ textarea { resize: vertical; }
 .quiz-btns { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; }
 .quiz-empty { text-align: center; padding: 3rem 1rem; color: var(--text3); }
 .quiz-empty .btn { margin-top: 12px; }
-.swipe-hint { text-align: center; font-size: 11px; color: var(--text3); margin-bottom: 6px; }
+.quiz-hint { text-align: center; font-size: 11px; color: var(--text3); margin-bottom: 6px; }
 .keyboard-hint { color: var(--text3); font-size: 10px; }
 body.quiz-open { overflow: hidden; }
 .quiz-overlay { position: fixed; inset: 0; z-index: 220; padding: 12px; background: rgba(0,0,0,0.55); }
@@ -238,7 +238,7 @@ body.quiz-open { overflow: hidden; }
 .quiz-overlay-title { font-size: 18px; font-weight: 700; }
 .quiz-overlay-subtitle { font-size: 12px; color: var(--text3); margin-top: 2px; }
 .quiz-overlay-close { width: 40px; height: 40px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); display: inline-flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
-.quiz-overlay-body { flex: 1; overflow-y: auto; padding: 14px 18px 20px; }
+.quiz-overlay-body { flex: 1; overflow: hidden; padding: 14px 18px 20px; }
 .quiz-overlay-body .filterbar { align-items: stretch; }
 .quiz-stage { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 14px; box-shadow: 0 10px 24px rgba(0,0,0,0.06); }
 .quiz-stage .progress { margin-bottom: 0.85rem; }
@@ -350,7 +350,7 @@ body.quiz-open { overflow: hidden; }
   .quiz-stage { padding: 12px; border-radius: 16px; }
   .quiz-area { max-width: 100%; }
   .flip-card { height: 240px; }
-  .flip-card.foto-large { height: 380px; }
+  .flip-card.foto-large { height: 430px; }
   .flip-face { padding: 1rem; }
   .quiz-btns .btn { min-height: 50px; }
   .quiz-overlay-body .filterbar > select,
@@ -1634,11 +1634,16 @@ function renderQuiz() {
   let frontHTML = '', backHTML = '';
 
   if (quizMode === 'foto') {
+    const largePhotoMode = quizPhotoSize === 'large';
+    const frontMaxHeight = largePhotoMode ? 340 : 170;
+    const backMaxHeight = largePhotoMode ? 150 : 80;
+    const frontRadius = largePhotoMode ? 10 : 8;
+    const backRadius = largePhotoMode ? 8 : 6;
     frontHTML = photoSrc
-      ? `<img class="flip-img" style="max-height:170px;max-width:100%;object-fit:contain;border-radius:8px;" src="${photoSrc}" onerror="this.style.display='none'">`
+      ? `<img class="flip-img" style="max-height:${frontMaxHeight}px;max-width:100%;object-fit:contain;border-radius:${frontRadius}px;" src="${photoSrc}" onerror="this.style.display='none'">`
       : `<div style="font-size:13px;color:var(--text3);">bez fotky</div>`;
     backHTML = `
-      ${photoSrc ? `<img class="flip-img" style="max-height:80px;max-width:100%;object-fit:contain;border-radius:6px;" src="${photoSrc}" onerror="this.style.display='none'">` : ''}
+      ${photoSrc ? `<img class="flip-img" style="max-height:${backMaxHeight}px;max-width:100%;object-fit:contain;border-radius:${backRadius}px;" src="${photoSrc}" onerror="this.style.display='none'">` : ''}
       <div class="flip-a">${p.czech}</div>
       <div class="flip-a" style="font-size:14px;font-style:italic;">${p.latin}</div>
       <div class="flip-family">${p.family_cz} · ${p.family_lat}</div>
@@ -1678,7 +1683,7 @@ function renderQuiz() {
         <button class="btn amber" onclick="qMarkReview()">🔁 Opakovat</button>
         <button class="btn green" onclick="qLearned()">Umím ✓</button>
       </div>
-      <div class="swipe-hint quiz-actions-note">← opakovat &nbsp;|&nbsp; ↑ nevím 🚩 &nbsp;|&nbsp; umím →<br><span class="keyboard-hint">klávesy: ← = opakovat, → = umím, ↑ = nevím 🚩, mezerník = otočit</span></div>
+      <div class="quiz-hint quiz-actions-note">Tip: používej tlačítka pod kartou.<br><span class="keyboard-hint">klávesy: ← = opakovat, → = další, ↑ = nevím 🚩, mezerník = otočit</span></div>
     </div>
   `;
 }
@@ -2066,32 +2071,6 @@ function syncQuizFilterAriaState() {
     if (body && btn) btn.setAttribute('aria-expanded', String(!body.classList.contains('hidden')));
   });
 }
-
-// ── Swipe on quiz card ──
-(function() {
-  let tx = 0, ty = 0;
-  document.addEventListener('touchstart', e => {
-    const card = e.target.closest('#qflip');
-    if (!card) return;
-    tx = e.touches[0].clientX;
-    ty = e.touches[0].clientY;
-  }, {passive: true});
-  document.addEventListener('touchend', e => {
-    const card = e.target.closest('#qflip');
-    if (!card) return;
-    const dx = e.changedTouches[0].clientX - tx;
-    const dy = e.changedTouches[0].clientY - ty;
-    const adx = Math.abs(dx), ady = Math.abs(dy);
-    // Horizontal swipe takes priority when adx > ady; otherwise treat as vertical
-    if (adx > ady) {
-      if (adx < 50) return;
-      if (dx < 0) { qMarkReview(); } else { qLearned(); }
-    } else {
-      if (ady < 50) return;
-      if (dy < 0) { qFlag(); }
-    }
-  }, {passive: true});
-})();
 
 // ── Keyboard navigation in quiz ──
 document.addEventListener('keydown', e => {
