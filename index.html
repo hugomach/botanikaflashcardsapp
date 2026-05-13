@@ -335,6 +335,10 @@ body.quiz-open { overflow: hidden; }
 @media (max-width: 900px) {
   .photo-thumb { width: 150px; height: 115px; }
 }
+@media (min-width: 701px) {
+  .quiz-overlay { padding: 0; background: var(--bg); }
+  .quiz-overlay-shell { width: 100%; max-height: 100dvh; border-radius: 0; box-shadow: none; }
+}
 @media (max-width: 700px) {
   .modal { max-width: 100%; }
   .modal-img { max-height: 300px; }
