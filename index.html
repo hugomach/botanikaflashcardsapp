@@ -1636,14 +1636,11 @@ function renderQuiz() {
   if (quizMode === 'foto') {
     const largePhotoMode = quizPhotoSize === 'large';
     const frontMaxHeight = largePhotoMode ? 340 : 170;
-    const backMaxHeight = largePhotoMode ? 150 : 80;
     const frontRadius = largePhotoMode ? 10 : 8;
-    const backRadius = largePhotoMode ? 8 : 6;
     frontHTML = photoSrc
       ? `<img class="flip-img" style="max-height:${frontMaxHeight}px;max-width:100%;object-fit:contain;border-radius:${frontRadius}px;" src="${photoSrc}" onerror="this.style.display='none'">`
       : `<div style="font-size:13px;color:var(--text3);">bez fotky</div>`;
     backHTML = `
-      ${photoSrc ? `<img class="flip-img" style="max-height:${backMaxHeight}px;max-width:100%;object-fit:contain;border-radius:${backRadius}px;" src="${photoSrc}" onerror="this.style.display='none'">` : ''}
       <div class="flip-a">${p.czech}</div>
       <div class="flip-a" style="font-size:14px;font-style:italic;">${p.latin}</div>
       <div class="flip-family">${p.family_cz} · ${p.family_lat}</div>
