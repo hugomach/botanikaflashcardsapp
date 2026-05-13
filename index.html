@@ -335,6 +335,10 @@ body.quiz-open { overflow: hidden; }
 @media (max-width: 900px) {
   .photo-thumb { width: 150px; height: 115px; }
 }
+@media (min-width: 701px) {
+  .quiz-overlay { padding: 0; background: var(--bg); }
+  .quiz-overlay-shell { width: 100%; max-height: 100dvh; border-radius: 0; box-shadow: none; }
+}
 @media (max-width: 700px) {
   .modal { max-width: 100%; }
   .modal-img { max-height: 300px; }
@@ -2088,7 +2092,7 @@ document.addEventListener('keydown', e => {
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
   if (!quizList || !quizList.length) return;
   if (e.key === 'ArrowLeft')  { e.preventDefault(); qMarkReview(); }
-  else if (e.key === 'ArrowRight') { e.preventDefault(); qNext(); }
+  else if (e.key === 'ArrowRight') { e.preventDefault(); qLearned(); }
   else if (e.key === 'ArrowUp')    { e.preventDefault(); qFlag(); }
   else if (e.key === ' ')          { e.preventDefault(); flipQuiz(); }
 });
