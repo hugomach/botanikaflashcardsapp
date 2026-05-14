@@ -485,7 +485,7 @@ body.quiz-open { overflow: hidden; }
       <option value="czech_asc">CZ A→Z</option>
       <option value="czech_desc">CZ Z→A</option>
       <option value="added_newest">Naposled přidané</option>
-      <option value="added_oldest">Nejdřív přidané</option>
+      <option value="added_oldest">Nejdříve přidané</option>
     </select>
     <button class="btn" onclick="clearAllFilters()" style="font-size:11px;white-space:nowrap">✕ Vymazat filtry</button>
   </div>
@@ -773,6 +773,7 @@ const SB_TABLE = 'botanika_sync';
 const SB_BUCKET = 'botanika-photos';
 const LOCAL_USERDATA_KEY = 'botanika_user_data_v1';
 const LOCAL_AUTH_PROFILE_KEY = 'botanika_auth_profile_v1';
+// Large offset keeps custom cards without `addedAt` grouped above base cards in "added" sorting.
 const CUSTOM_PLANT_ADDED_ORDER_OFFSET = 1_000_000_000_000;
 
 function getCustomPlants() {
