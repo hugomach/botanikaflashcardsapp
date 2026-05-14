@@ -1696,8 +1696,8 @@ function startQuiz() {
   quizLastSummary = null;
   quizSessionActive = quizList.length > 0;
   if (quizSessionActive) resetQuizStats();
-  if (quizSessionActive) lastFocusedBeforeQuiz = document.activeElement;
-  setQuizOverlayOpen(quizSessionActive);
+  lastFocusedBeforeQuiz = document.activeElement;
+  setQuizOverlayOpen(true);
   renderQuizSetup();
   renderQuiz();
 }
