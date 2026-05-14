@@ -207,24 +207,35 @@ textarea { resize: vertical; }
 .btn-save { width: 100%; margin-top: 8px; }
 .btn-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text3); padding: 0 4px; }
 
-.quiz-area { max-width: 560px; margin: 0 auto; }
+.quiz-area {
+  max-width: 760px;
+  margin: 0 auto;
+  --quiz-card-h-min: 260px;
+  --quiz-card-h-fluid: 44dvh;
+  --quiz-card-h-max: 420px;
+  --quiz-card-large-h-min: 440px;
+  --quiz-card-large-h-fluid: 68dvh;
+  --quiz-card-large-h-max: 820px;
+  --quiz-photo-front-max-ratio: 78%;
+}
+.quiz-area.foto-large { max-width: min(100%, 980px); }
 .quiz-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px; color: var(--text2); }
 .progress { background: var(--surface2); border-radius: 999px; height: 5px; margin-bottom: 1rem; overflow: hidden; }
 .progress-fill { background: var(--green); height: 100%; border-radius: 999px; transition: width 0.3s; }
-.flip-card { perspective: 900px; height: 260px; margin: 0.5rem 0 1rem; cursor: pointer; user-select: none; }
+.flip-card { perspective: 900px; height: var(--quiz-card-h-min); margin: 0.5rem 0 1rem; cursor: pointer; user-select: none; }
 .flip-inner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.4s ease; }
 .flip-card.flipped .flip-inner { transform: rotateY(180deg); }
 .flip-face { position: absolute; inset: 0; backface-visibility: hidden; background: var(--surface2); border-radius: var(--radius-lg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 1.5rem; border: 1px solid var(--border); overflow: hidden; }
 .flip-back { transform: rotateY(180deg); background: var(--green-light); border-color: #9FE1CB; }
-.flip-card.foto-large { height: 440px; }
+.flip-card.foto-large { height: var(--quiz-card-large-h-min); }
 .flip-card.foto-large .flip-face { padding: 1.1rem; }
-.flip-card.foto-large .flip-face .flip-img { max-height: 78%; max-width: 100%; }
+.flip-card.foto-large .flip-face .flip-img { max-height: var(--quiz-photo-front-max-ratio); max-width: 100%; }
 .flip-card.foto-large .flip-a { font-size: 22px; }
 .flip-card.foto-large .flip-family { font-size: 14px; }
 .flip-card.foto-large .flip-hint { font-size: 13px; }
 @supports (height: 100dvh) {
-  .flip-card { height: clamp(260px, 44dvh, 420px); }
-  .flip-card.foto-large { height: clamp(440px, 68dvh, 820px); }
+  .flip-card { height: clamp(var(--quiz-card-h-min), var(--quiz-card-h-fluid), var(--quiz-card-h-max)); }
+  .flip-card.foto-large { height: clamp(var(--quiz-card-large-h-min), var(--quiz-card-large-h-fluid), var(--quiz-card-large-h-max)); }
 }
 .flip-hint { font-size: 11px; color: var(--text3); }
 .flip-q { font-size: 22px; font-weight: 600; font-style: italic; text-align: center; color: var(--text); line-height: 1.3; }
@@ -356,12 +367,14 @@ body.quiz-open { overflow: hidden; }
   .quiz-overlay-head { padding: calc(env(safe-area-inset-top) + 10px) 14px 10px; position: sticky; top: 0; z-index: 5; }
   .quiz-overlay-body { padding: 12px 14px calc(env(safe-area-inset-bottom) + 18px); }
   .quiz-stage { padding: 12px; border-radius: 16px; }
-  .quiz-area { max-width: 100%; }
-  .flip-card { height: 220px; }
-  .flip-card.foto-large { height: 340px; }
-  @supports (height: 100dvh) {
-    .flip-card { height: clamp(220px, 36dvh, 320px); }
-    .flip-card.foto-large { height: clamp(340px, 56dvh, 560px); }
+  .quiz-area {
+    max-width: 100%;
+    --quiz-card-h-min: 220px;
+    --quiz-card-h-fluid: 36dvh;
+    --quiz-card-h-max: 320px;
+    --quiz-card-large-h-min: 340px;
+    --quiz-card-large-h-fluid: 56dvh;
+    --quiz-card-large-h-max: 560px;
   }
   .flip-face { padding: 1rem; }
   .quiz-btns .btn { min-height: 50px; }
@@ -718,6 +731,10 @@ let sbUserKey = null;
 let sb = null;
 let syncTimer = null;
 let quizList = [], quizIdx = 0, quizFlipped = false, quizMode = 'foto', quizPhotoSize = 'compact';
+const QUIZ_PHOTO_HEIGHTS = {
+  compact: { front: 250, back: 100, latin: 14 },
+  large: { front: 620, back: 220, latin: 17 }
+};
 let dirty = false;
 let activeGroup = '';
 let activeQuizGroup = '';
@@ -1648,8 +1665,9 @@ function renderQuiz() {
   let frontHTML = '', backHTML = '';
 
   if (quizMode === 'foto') {
-    const frontMaxHeight = largePhotoMode ? 620 : 250;
-    const backMaxHeight = largePhotoMode ? 220 : 100;
+    const photoHeights = largePhotoMode ? QUIZ_PHOTO_HEIGHTS.large : QUIZ_PHOTO_HEIGHTS.compact;
+    const frontMaxHeight = photoHeights.front;
+    const backMaxHeight = photoHeights.back;
     const frontRadius = largePhotoMode ? 10 : 8;
     const backRadius = largePhotoMode ? 8 : 6;
     frontHTML = photoSrc
@@ -1658,7 +1676,7 @@ function renderQuiz() {
     backHTML = `
       ${photoSrc ? `<img class="flip-img" style="max-height:${backMaxHeight}px;max-width:100%;object-fit:contain;border-radius:${backRadius}px;" src="${photoSrc}" onerror="this.style.display='none'">` : ''}
       <div class="flip-a">${p.czech}</div>
-      <div class="flip-a" style="font-size:${largePhotoMode ? 17 : 14}px;font-style:italic;">${p.latin}</div>
+      <div class="flip-a" style="font-size:${photoHeights.latin}px;font-style:italic;">${p.latin}</div>
       <div class="flip-family">${p.family_cz} · ${p.family_lat}</div>
       ${d.funfact ? `<div class="flip-fact">${esc(d.funfact)}</div>` : ''}`;
   } else {
