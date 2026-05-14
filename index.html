@@ -519,17 +519,17 @@ body.quiz-open { overflow: hidden; }
             </div>
             <div id="fgrp-quiz-lf" class="filter-body"><div class="group-chips" id="quiz-lf-chips"></div></div>
 
-            <div class="filter-group-header" onclick="toggleFilterGroup('fgrp-quiz-hab','farrow-quiz-hab')" onkeydown="onFilterKey(event,toggleFilterGroup,'fgrp-quiz-hab','farrow-quiz-hab')" tabindex="0" role="button" aria-label="Zobrazit nebo skrýt filtr Biotop" aria-expanded="true" aria-controls="fgrp-quiz-hab">
+            <div class="filter-group-header" onclick="toggleFilterGroup('fgrp-quiz-hab','farrow-quiz-hab')" onkeydown="onFilterKey(event,toggleFilterGroup,'fgrp-quiz-hab','farrow-quiz-hab')" tabindex="0" role="button" aria-label="Zobrazit nebo skrýt filtr Biotop" aria-expanded="false" aria-controls="fgrp-quiz-hab">
               <span class="filter-row-label">Biotop</span>
-              <span class="filter-arrow" id="farrow-quiz-hab">▼</span>
+              <span class="filter-arrow collapsed" id="farrow-quiz-hab">▼</span>
             </div>
-            <div id="fgrp-quiz-hab" class="filter-body"><div class="group-chips" id="quiz-hab-chips"></div></div>
+            <div id="fgrp-quiz-hab" class="filter-body hidden"><div class="group-chips" id="quiz-hab-chips"></div></div>
 
-            <div class="filter-group-header" onclick="toggleFilterGroup('fgrp-quiz-tox','farrow-quiz-tox')" onkeydown="onFilterKey(event,toggleFilterGroup,'fgrp-quiz-tox','farrow-quiz-tox')" tabindex="0" role="button" aria-label="Zobrazit nebo skrýt filtr Toxicita" aria-expanded="true" aria-controls="fgrp-quiz-tox">
+            <div class="filter-group-header" onclick="toggleFilterGroup('fgrp-quiz-tox','farrow-quiz-tox')" onkeydown="onFilterKey(event,toggleFilterGroup,'fgrp-quiz-tox','farrow-quiz-tox')" tabindex="0" role="button" aria-label="Zobrazit nebo skrýt filtr Toxicita" aria-expanded="false" aria-controls="fgrp-quiz-tox">
               <span class="filter-row-label">Toxicita</span>
-              <span class="filter-arrow" id="farrow-quiz-tox">▼</span>
+              <span class="filter-arrow collapsed" id="farrow-quiz-tox">▼</span>
             </div>
-            <div id="fgrp-quiz-tox" class="filter-body"><div class="group-chips" id="quiz-tox-chips"></div></div>
+            <div id="fgrp-quiz-tox" class="filter-body hidden"><div class="group-chips" id="quiz-tox-chips"></div></div>
           </div>
         </div>
         <div class="filterbar" style="margin-bottom:0.75rem;margin-top:0.5rem;">
@@ -766,13 +766,13 @@ let quizSessionStats = { startedAt: 0, total: 0, actions: 0, flagged: 0, review:
 let quizLastSummary = null;
 let dirty = false;
 let activeGroup = '';
-let activeQuizGroup = '';
+let activeQuizGroups = [];
 let activeLF = '';       // life form filter
 let activeHab = '';      // habitat filter
 let activeTox = '';      // toxicity filter
-let activeQuizLF = '';   // quiz life form filter
-let activeQuizHab = '';  // quiz habitat filter
-let activeQuizTox = '';  // quiz toxicity filter
+let activeQuizLFs = [];   // quiz life form filters
+let activeQuizHabs = [];  // quiz habitat filters
+let activeQuizToxes = []; // quiz toxicity filters
 let lastFocusedBeforeModal = null;
 let lastFocusedBeforeQuiz = null;
 let activeTab = 'browse';
@@ -1247,10 +1247,40 @@ function setFilterGroup(el, v)     { activeGroup = v;      setChipActive('browse
 function setFilterLF(el, v)        { activeLF = v;         setChipActive('lf-chips', v);     renderGrid(); }
 function setFilterHab(el, v)       { activeHab = v;        setChipActive('hab-chips', v);    renderGrid(); }
 function setFilterTox(el, v)       { activeTox = v;        setChipActive('tox-chips', v);    renderGrid(); }
-function setQuizFilterGroup(el, v) { activeQuizGroup = v;  setChipActive('quiz-chips', v);   resetQuiz(); }
-function setQuizFilterLF(el, v)    { activeQuizLF = v;     setChipActive('quiz-lf-chips', v);resetQuiz(); }
-function setQuizFilterHab(el, v)   { activeQuizHab = v;    setChipActive('quiz-hab-chips', v); resetQuiz(); }
-function setQuizFilterTox(el, v)   { activeQuizTox = v;    setChipActive('quiz-tox-chips', v); resetQuiz(); }
+function setChipActiveMulti(containerId, vals) {
+  const selected = new Set(vals || []);
+  document.querySelectorAll(`#${containerId} .chip`).forEach(c => {
+    const val = c.dataset.v || '';
+    const isAllChip = val === '';
+    c.classList.toggle('on', isAllChip ? selected.size === 0 : selected.has(val));
+  });
+}
+
+function toggleQuizFilterValue(selectedVals, v) {
+  if (!v) return [];
+  return selectedVals.includes(v) ? selectedVals.filter(x => x !== v) : [...selectedVals, v];
+}
+
+function setQuizFilterGroup(el, v) {
+  activeQuizGroups = toggleQuizFilterValue(activeQuizGroups, v);
+  setChipActiveMulti('quiz-chips', activeQuizGroups);
+  resetQuiz();
+}
+function setQuizFilterLF(el, v) {
+  activeQuizLFs = toggleQuizFilterValue(activeQuizLFs, v);
+  setChipActiveMulti('quiz-lf-chips', activeQuizLFs);
+  resetQuiz();
+}
+function setQuizFilterHab(el, v) {
+  activeQuizHabs = toggleQuizFilterValue(activeQuizHabs, v);
+  setChipActiveMulti('quiz-hab-chips', activeQuizHabs);
+  resetQuiz();
+}
+function setQuizFilterTox(el, v) {
+  activeQuizToxes = toggleQuizFilterValue(activeQuizToxes, v);
+  setChipActiveMulti('quiz-tox-chips', activeQuizToxes);
+  resetQuiz();
+}
 
 function clearAllFilters() {
   activeGroup = ''; activeLF = ''; activeHab = ''; activeTox = '';
@@ -1876,10 +1906,10 @@ function getQuizPlants() {
   const src = document.getElementById('quiz-source').value;
   return getAllPlants().filter(p => {
     const d = D(p.latin);
-    if (activeQuizGroup && p.group !== activeQuizGroup) return false;
-    if (activeQuizLF && p.life_form !== activeQuizLF) return false;
-    if (activeQuizHab && !p.habitat.includes(activeQuizHab)) return false;
-    if (activeQuizTox && p.toxic !== activeQuizTox) return false;
+    if (activeQuizGroups.length && !activeQuizGroups.includes(p.group)) return false;
+    if (activeQuizLFs.length && !activeQuizLFs.includes(p.life_form)) return false;
+    if (activeQuizHabs.length && !activeQuizHabs.some(h => p.habitat.includes(h))) return false;
+    if (activeQuizToxes.length && !activeQuizToxes.includes(p.toxic)) return false;
     if (fam && p.family_lat !== fam) return false;
     if (famCz && p.family_cz !== famCz) return false;
     if (src==='photo' && !d.photos.length) return false;
