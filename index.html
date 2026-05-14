@@ -1951,16 +1951,18 @@ function renderQuiz() {
     const latinSize = largePhotoMode ? photoSizing.latinLarge : photoSizing.latinCompact;
     const frontRadius = largePhotoMode ? 10 : 8;
     const photoCount = quizPhotoSources.length;
-    // 2.2 keeps roughly two rows visible (2 rows + gap/padding reserve) so multi-photo cards fit.
-    const MULTI_PHOTO_HEIGHT_RATIO = 2.2;
+    // Divisor 2.2 keeps roughly two rows visible (2 rows + gap/padding reserve) so multi-photo cards fit.
+    const MULTI_PHOTO_HEIGHT_DIVISOR = 2.2;
     const MIN_MULTI_PHOTO_HEIGHT = 70;
     const THREE_COLUMN_WIDTH = '31%';
     const TWO_COLUMN_WIDTH = '48%';
     const SINGLE_COLUMN_WIDTH = '100%';
     const frontPhotoMaxHeight = photoCount > 1
-      ? Math.max(MIN_MULTI_PHOTO_HEIGHT, Math.floor(frontMaxHeight / MULTI_PHOTO_HEIGHT_RATIO))
+      ? Math.max(MIN_MULTI_PHOTO_HEIGHT, Math.floor(frontMaxHeight / MULTI_PHOTO_HEIGHT_DIVISOR))
       : frontMaxHeight;
-    const frontPhotoMaxWidth = photoCount > 2 ? THREE_COLUMN_WIDTH : (photoCount === 2 ? TWO_COLUMN_WIDTH : SINGLE_COLUMN_WIDTH);
+    let frontPhotoMaxWidth = SINGLE_COLUMN_WIDTH;
+    if (photoCount > 2) frontPhotoMaxWidth = THREE_COLUMN_WIDTH;
+    else if (photoCount === 2) frontPhotoMaxWidth = TWO_COLUMN_WIDTH;
     const frontPhotoStyle = `max-height:${frontPhotoMaxHeight}px;max-width:${frontPhotoMaxWidth};width:auto;object-fit:contain;border-radius:${frontRadius}px;`;
     frontHTML = photoCount
       ? `<div style="display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:${largePhotoMode ? 10 : 8}px;max-width:100%;max-height:100%;overflow:auto;">${
