@@ -479,7 +479,7 @@ body.quiz-open { overflow: hidden; }
       <option value="flagged">🚩 Nevím</option>
       <option value="photo">S fotkou</option>
     </select>
-    <select id="sort-mode" onchange="renderGrid()">
+    <select id="sort-mode" onchange="setSortMode(this.value);renderGrid()">
       <option value="latin_asc">LAT A→Z</option>
       <option value="latin_desc">LAT Z→A</option>
       <option value="czech_asc">CZ A→Z</option>
@@ -773,6 +773,7 @@ const SB_TABLE = 'botanika_sync';
 const SB_BUCKET = 'botanika-photos';
 const LOCAL_USERDATA_KEY = 'botanika_user_data_v1';
 const LOCAL_AUTH_PROFILE_KEY = 'botanika_auth_profile_v1';
+const LOCAL_SORT_MODE_KEY = 'botanika_sort_mode_v1';
 // Large offset keeps custom cards without `addedAt` grouped above base cards in "added" sorting.
 const CUSTOM_PLANT_ADDED_ORDER_OFFSET = 1_000_000_000_000;
 
@@ -813,6 +814,10 @@ window.onload = async () => {
   sbAnonKey = localStorage.getItem('sb_anon_key');
   sbUserKey = localStorage.getItem('sb_user_key');
   populateSelects();
+  const savedSortMode = localStorage.getItem(LOCAL_SORT_MODE_KEY);
+  if (savedSortMode && document.getElementById('sort-mode')) {
+    document.getElementById('sort-mode').value = savedSortMode;
+  }
   syncQuizFilterAriaState();
   if (initSupabaseClient()) {
     await loadFromSupabase();
@@ -1160,7 +1165,7 @@ function clearAllFilters() {
   document.getElementById('filter-family').value = '';
   document.getElementById('filter-family-cz').value = '';
   document.getElementById('filter-status').value = '';
-  document.getElementById('sort-mode').value = 'latin_asc';
+  setSortMode('latin_asc');
   document.getElementById('search').value = '';
   renderGrid();
 }
@@ -1264,6 +1269,12 @@ function filteredPlants(familySel, familyCzSel, statusSel, searchVal) {
 
 function getSortMode() {
   return document.getElementById('sort-mode')?.value || 'latin_asc';
+}
+
+function setSortMode(mode) {
+  const select = document.getElementById('sort-mode');
+  if (select && select.value !== mode) select.value = mode;
+  try { localStorage.setItem(LOCAL_SORT_MODE_KEY, mode); } catch {}
 }
 
 function getPlantAddedOrder(plant, customOrderMap, baseOrderMap) {
