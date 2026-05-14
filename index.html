@@ -353,6 +353,7 @@ body.quiz-open { overflow: hidden; }
 .plants-table th { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.04em; background: var(--surface2); position: sticky; top: 0; }
 .plants-table tbody tr { cursor: pointer; }
 .plants-table tbody tr:hover { background: var(--surface2); }
+.table-edit-status { font-size: 12px; color: var(--text3); margin-top: 6px; }
 @media (max-width: 500px) {
   .quiz-btns { grid-template-columns: 1fr 1fr; }
   .action-row { grid-template-columns: 1fr 1fr; }
@@ -641,11 +642,13 @@ body.quiz-open { overflow: hidden; }
           <th>Forma</th>
           <th>Toxicita</th>
           <th>Stav</th>
+          <th>Úprava</th>
         </tr>
       </thead>
       <tbody id="plants-table-body"></tbody>
     </table>
   </div>
+  <div id="table-edit-status" class="table-edit-status"></div>
 </div>
 
 <!-- SETTINGS MODAL -->
@@ -770,8 +773,22 @@ function getCustomPlants() {
   return Array.isArray(userData.__customPlants) ? userData.__customPlants : [];
 }
 
+function getNameOverrides() {
+  const raw = userData.__nameOverrides;
+  return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+}
+
 function getAllPlants() {
-  return [...PLANTS, ...getCustomPlants()];
+  const overrides = getNameOverrides();
+  const base = PLANTS.map(p => {
+    const patch = overrides[p.latin];
+    if (!patch || typeof patch !== 'object') return p;
+    return {
+      ...p,
+      czech: typeof patch.czech === 'string' ? patch.czech : p.czech
+    };
+  });
+  return [...base, ...getCustomPlants()];
 }
 
 function saveLocalData() {
@@ -1068,6 +1085,77 @@ function setData(latin, patch) {
   scheduleSave();
 }
 
+function migratePlantDataKey(oldLatin, newLatin) {
+  if (oldLatin === newLatin) return;
+  const oldKey = SK(oldLatin);
+  const newKey = SK(newLatin);
+  if (oldKey === newKey) return;
+  if (!userData[oldKey]) return;
+  userData[newKey] = Object.assign({}, userData[newKey] || {}, userData[oldKey]);
+  delete userData[oldKey];
+}
+
+function editPlantNamesFromTable(latin) {
+  const plant = getAllPlants().find(p => p.latin === latin);
+  if (!plant) return;
+
+  const nextLatinRaw = prompt('Latinský název:', plant.latin);
+  if (nextLatinRaw === null) return;
+  const nextCzechRaw = prompt('Český název:', plant.czech);
+  if (nextCzechRaw === null) return;
+
+  const nextLatin = nextLatinRaw.trim();
+  const nextCzech = nextCzechRaw.trim();
+  const status = document.getElementById('table-edit-status');
+
+  if (!nextLatin || !nextCzech) {
+    if (status) status.textContent = 'LAT i CZ název musí být vyplněný.';
+    return;
+  }
+
+  const custom = getCustomPlants();
+  const customIdx = custom.findIndex(p => p.latin === latin);
+
+  if (customIdx >= 0) {
+    const duplicateCustom = custom.some((p, idx) => idx !== customIdx && p.latin.toLowerCase() === nextLatin.toLowerCase());
+    const duplicateBase = PLANTS.some(p => p.latin.toLowerCase() === nextLatin.toLowerCase());
+    const duplicate = duplicateCustom || duplicateBase;
+    if (duplicate) {
+      if (status) status.textContent = 'Rostlina s tímto LAT názvem už existuje.';
+      return;
+    }
+    custom[customIdx].latin = nextLatin;
+    custom[customIdx].czech = nextCzech;
+    userData.__customPlants = custom;
+    migratePlantDataKey(latin, nextLatin);
+    scheduleSave();
+    populateSelects();
+    renderAll();
+    if (status) status.textContent = 'Názvy upraveny ✓';
+    return;
+  }
+
+  if (nextLatin !== latin) {
+    if (status) status.textContent = 'U vestavěných rostlin lze zatím upravit jen český název.';
+    return;
+  }
+
+  const basePlant = PLANTS.find(p => p.latin === latin);
+  if (!basePlant) return;
+
+  const overrides = getNameOverrides();
+  if (nextCzech === basePlant.czech) {
+    delete overrides[latin];
+  } else {
+    overrides[latin] = {czech: nextCzech};
+  }
+  userData.__nameOverrides = overrides;
+  scheduleSave();
+  populateSelects();
+  renderAll();
+  if (status) status.textContent = 'Název upraven ✓';
+}
+
 // ── Populate selects ──
 const GROUP_ORDER = ['přesličky','kapradiny','nahosemenné','trávy','stromy a keře','jednoděložné','dvouděložné'];
 const GROUP_COLORS = {
@@ -1272,7 +1360,7 @@ function renderTable() {
   if (!body) return;
   const plants = getAllPlants().slice().sort((a,b)=>a.latin.localeCompare(b.latin,'la'));
   if (!plants.length) {
-    body.innerHTML = `<tr><td colspan="9" style="color:var(--text3)">Žádná data.</td></tr>`;
+    body.innerHTML = `<tr><td colspan="10" style="color:var(--text3)">Žádná data.</td></tr>`;
     return;
   }
   body.innerHTML = plants.map(p => {
@@ -1289,9 +1377,17 @@ function renderTable() {
       <td>${esc(p.life_form||'')}</td>
       <td>${esc(p.toxic||'')}</td>
       <td>${status}</td>
+      <td><button class="btn edit-name-btn" type="button" aria-label="Upravit názvy rostliny" title="Upravit názvy">✏️ Názvy</button></td>
     </tr>`;
   }).join('');
   body.querySelectorAll('.table-row').forEach(row => {
+    const editBtn = row.querySelector('.edit-name-btn');
+    if (editBtn) {
+      editBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        editPlantNamesFromTable(decodeURIComponent(row.dataset.latin || ''));
+      });
+    }
     row.addEventListener('click', () => openModal(decodeURIComponent(row.dataset.latin || '')));
   });
 }
