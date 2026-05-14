@@ -220,8 +220,8 @@ textarea { resize: vertical; }
   --quiz-photo-front-large-max: 620px;
   --quiz-photo-back-compact-max: 100px;
   --quiz-photo-back-large-max: 220px;
-  --quiz-photo-latin-compact-size: 14;
-  --quiz-photo-latin-large-size: 17;
+  --quiz-photo-latin-compact-size: 14px;
+  --quiz-photo-latin-large-size: 17px;
 }
 .quiz-area.foto-large { max-width: min(100%, 980px); }
 .quiz-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px; color: var(--text2); }
@@ -234,7 +234,7 @@ textarea { resize: vertical; }
 .flip-back { transform: rotateY(180deg); background: var(--green-light); border-color: #9FE1CB; }
 .flip-card.foto-large { height: var(--quiz-card-large-h-min); }
 .flip-card.foto-large .flip-face { padding: 1.1rem; }
-.flip-card.foto-large .flip-face .flip-img { max-height: var(--quiz-photo-front-large-max); max-width: 100%; }
+.flip-card.foto-large .flip-face .flip-img { max-height: var(--quiz-photo-front-large-max); }
 .flip-card.foto-large .flip-a { font-size: 22px; }
 .flip-card.foto-large .flip-family { font-size: 14px; }
 .flip-card.foto-large .flip-hint { font-size: 13px; }
@@ -249,7 +249,7 @@ textarea { resize: vertical; }
 .flip-a.cz { font-style: normal; }
 .flip-family { font-size: 12px; color: var(--green); }
 .flip-fact { font-size: 11px; color: var(--green-dark); font-style: italic; text-align: center; max-width: 90%; }
-.flip-img { max-height: 60px; border-radius: 6px; object-fit: cover; }
+.flip-img { max-width: 100%; max-height: 60px; border-radius: 6px; object-fit: cover; }
 .quiz-btns { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; }
 .quiz-empty { text-align: center; padding: 3rem 1rem; color: var(--text3); }
 .quiz-empty .btn { margin-top: 12px; }
@@ -1648,15 +1648,14 @@ function resetQuiz() {
 
 function getQuizPhotoSizingTokens(area) {
   const styles = getComputedStyle(area);
-  const readPx = (name, fallback) => parseFloat(styles.getPropertyValue(name)) || fallback;
-  const readNum = (name, fallback) => parseFloat(styles.getPropertyValue(name)) || fallback;
+  const readCssNumber = (name, fallback) => parseFloat(styles.getPropertyValue(name)) || fallback;
   return {
-    frontCompact: readPx('--quiz-photo-front-compact-max', 250),
-    frontLarge: readPx('--quiz-photo-front-large-max', 620),
-    backCompact: readPx('--quiz-photo-back-compact-max', 100),
-    backLarge: readPx('--quiz-photo-back-large-max', 220),
-    latinCompact: readNum('--quiz-photo-latin-compact-size', 14),
-    latinLarge: readNum('--quiz-photo-latin-large-size', 17)
+    frontCompact: readCssNumber('--quiz-photo-front-compact-max', 250),
+    frontLarge: readCssNumber('--quiz-photo-front-large-max', 620),
+    backCompact: readCssNumber('--quiz-photo-back-compact-max', 100),
+    backLarge: readCssNumber('--quiz-photo-back-large-max', 220),
+    latinCompact: readCssNumber('--quiz-photo-latin-compact-size', 14),
+    latinLarge: readCssNumber('--quiz-photo-latin-large-size', 17)
   };
 }
 
