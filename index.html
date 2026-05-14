@@ -773,6 +773,7 @@ const SB_TABLE = 'botanika_sync';
 const SB_BUCKET = 'botanika-photos';
 const LOCAL_USERDATA_KEY = 'botanika_user_data_v1';
 const LOCAL_AUTH_PROFILE_KEY = 'botanika_auth_profile_v1';
+const CUSTOM_PLANT_ADDED_ORDER_OFFSET = 1_000_000_000_000;
 
 function getCustomPlants() {
   return Array.isArray(userData.__customPlants) ? userData.__customPlants : [];
@@ -1055,11 +1056,12 @@ function addNewPlantFromForm() {
     return;
   }
   const tags = tagsRaw ? tagsRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
-  const plant = {latin, czech, family_lat, family_cz, group, habitat, life_form, toxic, tags};
+  const addedAt = Date.now();
+  const plant = {latin, czech, family_lat, family_cz, group, habitat, life_form, toxic, tags, addedAt};
   const custom = getCustomPlants();
   custom.push(plant);
   userData.__customPlants = custom;
-  userData[SK(latin)] = {...D(latin), addedAt: Date.now()};
+  userData[SK(latin)] = {...D(latin), addedAt};
   scheduleSave();
   populateSelects();
   renderAll();
@@ -1266,7 +1268,7 @@ function getSortMode() {
 function getPlantAddedOrder(plant, customOrderMap, baseOrderMap) {
   const addedAt = Number(D(plant.latin).addedAt);
   if (Number.isFinite(addedAt) && addedAt > 0) return addedAt;
-  if (customOrderMap.has(plant.latin)) return 1_000_000_000_000 + customOrderMap.get(plant.latin);
+  if (customOrderMap.has(plant.latin)) return CUSTOM_PLANT_ADDED_ORDER_OFFSET + customOrderMap.get(plant.latin);
   return baseOrderMap.get(plant.latin) ?? 0;
 }
 
