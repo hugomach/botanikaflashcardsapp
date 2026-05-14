@@ -479,6 +479,14 @@ body.quiz-open { overflow: hidden; }
       <option value="flagged">🚩 Nevím</option>
       <option value="photo">S fotkou</option>
     </select>
+    <select id="sort-mode" onchange="renderGrid()">
+      <option value="latin_asc">LAT A→Z</option>
+      <option value="latin_desc">LAT Z→A</option>
+      <option value="czech_asc">CZ A→Z</option>
+      <option value="czech_desc">CZ Z→A</option>
+      <option value="added_newest">Naposled přidané</option>
+      <option value="added_oldest">Nejdřív přidané</option>
+    </select>
     <button class="btn" onclick="clearAllFilters()" style="font-size:11px;white-space:nowrap">✕ Vymazat filtry</button>
   </div>
   <div style="font-size:11px;color:var(--text3);margin-bottom:0.5rem" id="filter-summary"></div>
@@ -1051,6 +1059,7 @@ function addNewPlantFromForm() {
   const custom = getCustomPlants();
   custom.push(plant);
   userData.__customPlants = custom;
+  userData[SK(latin)] = {...D(latin), addedAt: Date.now()};
   scheduleSave();
   populateSelects();
   renderAll();
@@ -1148,6 +1157,7 @@ function clearAllFilters() {
   document.getElementById('filter-family').value = '';
   document.getElementById('filter-family-cz').value = '';
   document.getElementById('filter-status').value = '';
+  document.getElementById('sort-mode').value = 'latin_asc';
   document.getElementById('search').value = '';
   renderGrid();
 }
@@ -1249,13 +1259,44 @@ function filteredPlants(familySel, familyCzSel, statusSel, searchVal) {
   return result;
 }
 
+function getSortMode() {
+  return document.getElementById('sort-mode')?.value || 'latin_asc';
+}
+
+function getPlantAddedOrder(plant, customOrderMap, baseOrderMap) {
+  const addedAt = Number(D(plant.latin).addedAt);
+  if (Number.isFinite(addedAt) && addedAt > 0) return addedAt;
+  if (customOrderMap.has(plant.latin)) return 1_000_000_000_000 + customOrderMap.get(plant.latin);
+  return baseOrderMap.get(plant.latin) ?? 0;
+}
+
+function sortPlants(plants, mode) {
+  const sorted = plants.slice();
+  if (mode === 'latin_desc') return sorted.sort((a,b) => b.latin.localeCompare(a.latin, 'la'));
+  if (mode === 'czech_asc') return sorted.sort((a,b) => a.czech.localeCompare(b.czech, 'cs'));
+  if (mode === 'czech_desc') return sorted.sort((a,b) => b.czech.localeCompare(a.czech, 'cs'));
+  if (mode === 'added_newest' || mode === 'added_oldest') {
+    const customOrderMap = new Map(getCustomPlants().map((p, i) => [p.latin, i]));
+    const baseOrderMap = new Map(PLANTS.map((p, i) => [p.latin, i]));
+    const direction = mode === 'added_newest' ? -1 : 1;
+    return sorted.sort((a,b) => {
+      const aOrder = getPlantAddedOrder(a, customOrderMap, baseOrderMap);
+      const bOrder = getPlantAddedOrder(b, customOrderMap, baseOrderMap);
+      if (aOrder !== bOrder) return (aOrder - bOrder) * direction;
+      return a.latin.localeCompare(b.latin, 'la');
+    });
+  }
+  return sorted.sort((a,b) => a.latin.localeCompare(b.latin, 'la'));
+}
+
 function renderGrid() {
-  const plants = filteredPlants(
+  const filtered = filteredPlants(
     document.getElementById('filter-family').value,
     document.getElementById('filter-family-cz').value,
     document.getElementById('filter-status').value,
     document.getElementById('search').value
   );
+  const plants = sortPlants(filtered, getSortMode());
   const g = document.getElementById('grid');
   g.innerHTML = plants.length ? plants.map(cardHTML).join('') : '<div class="empty">Žádné výsledky.</div>';
   renderStats();
