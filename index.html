@@ -353,6 +353,7 @@ body.quiz-open { overflow: hidden; }
 .plants-table th { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.04em; background: var(--surface2); position: sticky; top: 0; }
 .plants-table tbody tr { cursor: pointer; }
 .plants-table tbody tr:hover { background: var(--surface2); }
+.table-edit-status { font-size: 12px; color: var(--text3); margin-top: 6px; }
 @media (max-width: 500px) {
   .quiz-btns { grid-template-columns: 1fr 1fr; }
   .action-row { grid-template-columns: 1fr 1fr; }
@@ -647,7 +648,7 @@ body.quiz-open { overflow: hidden; }
       <tbody id="plants-table-body"></tbody>
     </table>
   </div>
-  <div id="table-edit-status" style="font-size:12px;color:var(--text3);margin-top:6px;"></div>
+  <div id="table-edit-status" class="table-edit-status"></div>
 </div>
 
 <!-- SETTINGS MODAL -->
@@ -1105,7 +1106,7 @@ function editPlantNamesFromTable(latin) {
 
   const nextLatin = nextLatinRaw.trim();
   const nextCzech = nextCzechRaw.trim();
-  const status = document.getElementById('table-edit-status') || document.getElementById('new-plant-status');
+  const status = document.getElementById('table-edit-status');
 
   if (!nextLatin || !nextCzech) {
     if (status) status.textContent = 'LAT i CZ název musí být vyplněný.';
@@ -1116,7 +1117,9 @@ function editPlantNamesFromTable(latin) {
   const customIdx = custom.findIndex(p => p.latin === latin);
 
   if (customIdx >= 0) {
-    const duplicate = getAllPlants().some(p => p.latin.toLowerCase() === nextLatin.toLowerCase() && p.latin !== latin);
+    const duplicateCustom = custom.some((p, idx) => idx !== customIdx && p.latin.toLowerCase() === nextLatin.toLowerCase());
+    const duplicateBase = PLANTS.some(p => p.latin.toLowerCase() === nextLatin.toLowerCase());
+    const duplicate = duplicateCustom || duplicateBase;
     if (duplicate) {
       if (status) status.textContent = 'Rostlina s tímto LAT názvem už existuje.';
       return;
@@ -1374,7 +1377,7 @@ function renderTable() {
       <td>${esc(p.life_form||'')}</td>
       <td>${esc(p.toxic||'')}</td>
       <td>${status}</td>
-      <td><button class="btn edit-name-btn" type="button">✏️ Názvy</button></td>
+      <td><button class="btn edit-name-btn" type="button" aria-label="Upravit názvy rostliny" title="Upravit názvy">✏️ Názvy</button></td>
     </tr>`;
   }).join('');
   body.querySelectorAll('.table-row').forEach(row => {
