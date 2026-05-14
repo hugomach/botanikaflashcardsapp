@@ -268,6 +268,10 @@ body.quiz-open { overflow: hidden; }
 .quiz-stage .progress { margin-bottom: 0.85rem; }
 .quiz-btns .btn { min-height: 46px; font-size: 13px; }
 .quiz-actions-note { margin-top: 10px; padding-bottom: max(4px, env(safe-area-inset-bottom)); }
+.quiz-setup-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 0.25rem 0 0.75rem; }
+.quiz-setup-note { font-size: 12px; color: var(--text2); }
+.quiz-session-summary { margin-bottom: 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; font-size: 12px; color: var(--text2); line-height: 1.55; }
+.quiz-empty-message { font-size: 14px; color: var(--text2); }
 .quiz-empty { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; }
 
 /* Group filter chips */
@@ -488,64 +492,71 @@ body.quiz-open { overflow: hidden; }
     <div class="quiz-overlay-head">
       <div>
         <div class="quiz-overlay-title" id="quiz-overlay-title">Kvíz</div>
-        <div class="quiz-overlay-subtitle">Samostatné studijní okno optimalizované pro mobil.</div>
+        <div class="quiz-overlay-subtitle" id="quiz-overlay-subtitle">Nastav filtry a spusť kvíz.</div>
       </div>
       <button class="btn-close quiz-overlay-close" id="quiz-close-btn" onclick="closeQuizOverlay()" aria-label="Zavřít kvíz">✕</button>
     </div>
     <div class="quiz-overlay-body">
-      <div class="filter-section">
-        <div class="filter-all-header" onclick="toggleQuizFilters()" onkeydown="onFilterKey(event,toggleQuizFilters)" tabindex="0" role="button" aria-label="Zobrazit nebo skrýt filtry v kvízu" aria-expanded="true" aria-controls="quiz-filters-body">
-          <span class="filter-all-label">🔍 Filtry</span>
-          <span class="filter-arrow" id="arrow-quiz-filters">▼</span>
-        </div>
-        <div id="quiz-filters-body">
-          <div class="filter-group-header" onclick="toggleFilterGroup('fgrp-quiz-group','farrow-quiz-group')" onkeydown="onFilterKey(event,toggleFilterGroup,'fgrp-quiz-group','farrow-quiz-group')" tabindex="0" role="button" aria-label="Zobrazit nebo skrýt filtr Evoluční linie" aria-expanded="true" aria-controls="fgrp-quiz-group">
-            <span class="filter-row-label">Evoluční linie</span>
-            <span class="filter-arrow" id="farrow-quiz-group">▼</span>
+      <div id="quiz-setup-panel">
+        <div class="filter-section">
+          <div class="filter-all-header" onclick="toggleQuizFilters()" onkeydown="onFilterKey(event,toggleQuizFilters)" tabindex="0" role="button" aria-label="Zobrazit nebo skrýt filtry v kvízu" aria-expanded="true" aria-controls="quiz-filters-body">
+            <span class="filter-all-label">🔍 Filtry</span>
+            <span class="filter-arrow" id="arrow-quiz-filters">▼</span>
           </div>
-          <div id="fgrp-quiz-group" class="filter-body"><div class="group-chips" id="quiz-chips"></div></div>
+          <div id="quiz-filters-body">
+            <div class="filter-group-header" onclick="toggleFilterGroup('fgrp-quiz-group','farrow-quiz-group')" onkeydown="onFilterKey(event,toggleFilterGroup,'fgrp-quiz-group','farrow-quiz-group')" tabindex="0" role="button" aria-label="Zobrazit nebo skrýt filtr Evoluční linie" aria-expanded="true" aria-controls="fgrp-quiz-group">
+              <span class="filter-row-label">Evoluční linie</span>
+              <span class="filter-arrow" id="farrow-quiz-group">▼</span>
+            </div>
+            <div id="fgrp-quiz-group" class="filter-body"><div class="group-chips" id="quiz-chips"></div></div>
 
-          <div class="filter-group-header" onclick="toggleFilterGroup('fgrp-quiz-lf','farrow-quiz-lf')" onkeydown="onFilterKey(event,toggleFilterGroup,'fgrp-quiz-lf','farrow-quiz-lf')" tabindex="0" role="button" aria-label="Zobrazit nebo skrýt filtr Životní forma" aria-expanded="true" aria-controls="fgrp-quiz-lf">
-            <span class="filter-row-label">Životní forma</span>
-            <span class="filter-arrow" id="farrow-quiz-lf">▼</span>
-          </div>
-          <div id="fgrp-quiz-lf" class="filter-body"><div class="group-chips" id="quiz-lf-chips"></div></div>
+            <div class="filter-group-header" onclick="toggleFilterGroup('fgrp-quiz-lf','farrow-quiz-lf')" onkeydown="onFilterKey(event,toggleFilterGroup,'fgrp-quiz-lf','farrow-quiz-lf')" tabindex="0" role="button" aria-label="Zobrazit nebo skrýt filtr Životní forma" aria-expanded="true" aria-controls="fgrp-quiz-lf">
+              <span class="filter-row-label">Životní forma</span>
+              <span class="filter-arrow" id="farrow-quiz-lf">▼</span>
+            </div>
+            <div id="fgrp-quiz-lf" class="filter-body"><div class="group-chips" id="quiz-lf-chips"></div></div>
 
-          <div class="filter-group-header" onclick="toggleFilterGroup('fgrp-quiz-hab','farrow-quiz-hab')" onkeydown="onFilterKey(event,toggleFilterGroup,'fgrp-quiz-hab','farrow-quiz-hab')" tabindex="0" role="button" aria-label="Zobrazit nebo skrýt filtr Biotop" aria-expanded="true" aria-controls="fgrp-quiz-hab">
-            <span class="filter-row-label">Biotop</span>
-            <span class="filter-arrow" id="farrow-quiz-hab">▼</span>
-          </div>
-          <div id="fgrp-quiz-hab" class="filter-body"><div class="group-chips" id="quiz-hab-chips"></div></div>
+            <div class="filter-group-header" onclick="toggleFilterGroup('fgrp-quiz-hab','farrow-quiz-hab')" onkeydown="onFilterKey(event,toggleFilterGroup,'fgrp-quiz-hab','farrow-quiz-hab')" tabindex="0" role="button" aria-label="Zobrazit nebo skrýt filtr Biotop" aria-expanded="true" aria-controls="fgrp-quiz-hab">
+              <span class="filter-row-label">Biotop</span>
+              <span class="filter-arrow" id="farrow-quiz-hab">▼</span>
+            </div>
+            <div id="fgrp-quiz-hab" class="filter-body"><div class="group-chips" id="quiz-hab-chips"></div></div>
 
-          <div class="filter-group-header" onclick="toggleFilterGroup('fgrp-quiz-tox','farrow-quiz-tox')" onkeydown="onFilterKey(event,toggleFilterGroup,'fgrp-quiz-tox','farrow-quiz-tox')" tabindex="0" role="button" aria-label="Zobrazit nebo skrýt filtr Toxicita" aria-expanded="true" aria-controls="fgrp-quiz-tox">
-            <span class="filter-row-label">Toxicita</span>
-            <span class="filter-arrow" id="farrow-quiz-tox">▼</span>
+            <div class="filter-group-header" onclick="toggleFilterGroup('fgrp-quiz-tox','farrow-quiz-tox')" onkeydown="onFilterKey(event,toggleFilterGroup,'fgrp-quiz-tox','farrow-quiz-tox')" tabindex="0" role="button" aria-label="Zobrazit nebo skrýt filtr Toxicita" aria-expanded="true" aria-controls="fgrp-quiz-tox">
+              <span class="filter-row-label">Toxicita</span>
+              <span class="filter-arrow" id="farrow-quiz-tox">▼</span>
+            </div>
+            <div id="fgrp-quiz-tox" class="filter-body"><div class="group-chips" id="quiz-tox-chips"></div></div>
           </div>
-          <div id="fgrp-quiz-tox" class="filter-body"><div class="group-chips" id="quiz-tox-chips"></div></div>
         </div>
-      </div>
-      <div class="filterbar" style="margin-bottom:0.75rem;margin-top:0.5rem;">
-        <select id="quiz-family-cz" onchange="syncQuizFamilyFromCz();resetQuiz()"><option value="">Všechny čeledi (CZ)</option></select>
-        <select id="quiz-family" onchange="syncQuizFamilyFromLat();resetQuiz()"><option value="">Všechny čeledi (LAT)</option></select>
-        <select id="quiz-source" onchange="resetQuiz()">
-          <option value="photo">Jen s fotkou</option>
-          <option value="all">Všechny kartičky</option>
-          <option value="flagged">Jen 🚩 Nevím</option>
-          <option value="review">Jen k opakování</option>
-          <option value="flagged_review">🚩 Nevím + k opakování</option>
-          <option value="learned">Jen naučeno ✓</option>
-          <option value="not_new">Vše kromě nových</option>
-        </select>
-        <div class="quiz-mode-toggle">
-          <button id="qm-foto" class="active" onclick="setQuizMode('foto')">Foto → název</button>
-          <button id="qm-lat" onclick="setQuizMode('lat')">LAT → CZ</button>
-          <button id="qm-cz" onclick="setQuizMode('cz')">CZ → LAT</button>
-          <button id="qm-fam" onclick="setQuizMode('fam')">Čeleď</button>
+        <div class="filterbar" style="margin-bottom:0.75rem;margin-top:0.5rem;">
+          <select id="quiz-family-cz" onchange="syncQuizFamilyFromCz();resetQuiz()"><option value="">Všechny čeledi (CZ)</option></select>
+          <select id="quiz-family" onchange="syncQuizFamilyFromLat();resetQuiz()"><option value="">Všechny čeledi (LAT)</option></select>
+          <select id="quiz-source" onchange="resetQuiz()">
+            <option value="photo">Jen s fotkou</option>
+            <option value="all">Všechny kartičky</option>
+            <option value="flagged">Jen 🚩 Nevím</option>
+            <option value="review">Jen k opakování</option>
+            <option value="flagged_review">🚩 Nevím + k opakování</option>
+            <option value="learned">Jen naučeno ✓</option>
+            <option value="not_new">Vše kromě nových</option>
+          </select>
+          <div class="quiz-mode-toggle">
+            <button id="qm-foto" class="active" onclick="setQuizMode('foto')">Foto → název</button>
+            <button id="qm-lat" onclick="setQuizMode('lat')">LAT → CZ</button>
+            <button id="qm-cz" onclick="setQuizMode('cz')">CZ → LAT</button>
+            <button id="qm-fam" onclick="setQuizMode('fam')">Čeleď</button>
+          </div>
+          <div class="quiz-photo-size-toggle" id="quiz-photo-size-toggle" role="group" aria-label="Velikost kartičky ve foto kvízu">
+            <button id="qps-compact" class="active" aria-pressed="true" onclick="setQuizPhotoSize('compact')">Kompaktní</button>
+            <button id="qps-large" aria-pressed="false" onclick="setQuizPhotoSize('large')">Větší foto</button>
+          </div>
         </div>
-        <div class="quiz-photo-size-toggle" id="quiz-photo-size-toggle" role="group" aria-label="Velikost kartičky ve foto kvízu">
-          <button id="qps-compact" class="active" aria-pressed="true" onclick="setQuizPhotoSize('compact')">Kompaktní</button>
-          <button id="qps-large" aria-pressed="false" onclick="setQuizPhotoSize('large')">Větší foto</button>
+        <div class="quiz-setup-actions">
+          <button class="btn green" id="quiz-start-btn" onclick="startQuiz()">Spustit kvíz</button>
+          <div class="quiz-setup-note" id="quiz-setup-note"></div>
         </div>
+        <div id="quiz-session-summary" class="quiz-session-summary" style="display:none;"></div>
       </div>
       <div class="quiz-area" id="quiz-area"></div>
     </div>
@@ -736,6 +747,9 @@ let sbUserKey = null;
 let sb = null;
 let syncTimer = null;
 let quizList = [], quizIdx = 0, quizFlipped = false, quizMode = 'foto', quizPhotoSize = 'compact';
+let quizSessionActive = false;
+let quizSessionStats = { startedAt: 0, total: 0, actions: 0, flagged: 0, review: 0, learned: 0, flips: 0 };
+let quizLastSummary = null;
 let dirty = false;
 let activeGroup = '';
 let activeQuizGroup = '';
@@ -798,6 +812,7 @@ window.onload = async () => {
   } else {
     refreshAuthProfileFromStorage();
   }
+  resetQuiz();
   renderAll();
   renderTable();
   if (hasSupabaseConfig()) syncStatus('ok','cloud synced');
@@ -1283,7 +1298,18 @@ function renderTable() {
   });
 }
 
-function renderAll() { renderStats(); renderGrid(); renderFlagged(); renderQuiz(); renderTable(); }
+function renderAll() {
+  renderStats();
+  renderGrid();
+  renderFlagged();
+  if (quizSessionActive) {
+    renderQuizSetup();
+    renderQuiz();
+  } else {
+    resetQuiz();
+  }
+  renderTable();
+}
 
 // ── Modal ──
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
@@ -1577,6 +1603,7 @@ function showTab(name) {
   document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active',tabs[i]===name));
   if (name==='flagged') renderFlagged();
   if (name==='quiz') {
+    renderQuizSetup();
     renderQuiz();
     requestAnimationFrame(() => document.getElementById('quiz-close-btn')?.focus());
   }
@@ -1585,6 +1612,10 @@ function showTab(name) {
 }
 
 function closeQuizOverlay() {
+  if (quizSessionActive) {
+    finishQuizSession();
+    return;
+  }
   const targetTab = lastNonQuizTab || 'browse';
   showTab(targetTab);
   if (lastFocusedBeforeQuiz?.isConnected) {
@@ -1618,6 +1649,68 @@ function setQuizPhotoSize(size) {
   renderQuiz();
 }
 
+function renderQuizSetup() {
+  const setupPanel = document.getElementById('quiz-setup-panel');
+  const setupNote = document.getElementById('quiz-setup-note');
+  const summaryBox = document.getElementById('quiz-session-summary');
+  const subtitle = document.getElementById('quiz-overlay-subtitle');
+  const photoSizeToggle = document.getElementById('quiz-photo-size-toggle');
+  if (photoSizeToggle) photoSizeToggle.style.display = quizMode === 'foto' ? 'inline-flex' : 'none';
+  if (setupPanel) setupPanel.style.display = quizSessionActive ? 'none' : '';
+  if (subtitle) subtitle.textContent = quizSessionActive
+    ? 'Kvíz běží. Filtry jsou skryté.'
+    : 'Nastav filtry a spusť kvíz.';
+  if (setupNote && !quizSessionActive) setupNote.textContent = `V balíčku je ${quizList.length} kartiček.`;
+  if (summaryBox) {
+    if (quizLastSummary && !quizSessionActive) {
+      summaryBox.style.display = '';
+      summaryBox.innerHTML = quizLastSummary;
+    } else {
+      summaryBox.style.display = 'none';
+      summaryBox.innerHTML = '';
+    }
+  }
+}
+
+function resetQuizStats() {
+  quizSessionStats = { startedAt: Date.now(), total: quizList.length, actions: 0, flagged: 0, review: 0, learned: 0, flips: 0 };
+}
+
+function trackQuizAction(type) {
+  if (!quizSessionActive) return;
+  quizSessionStats.actions++;
+  if (type === 'flagged') quizSessionStats.flagged++;
+  if (type === 'review') quizSessionStats.review++;
+  if (type === 'learned') quizSessionStats.learned++;
+}
+
+function startQuiz() {
+  quizList = shuffle(getQuizPlants());
+  quizIdx = 0;
+  quizFlipped = false;
+  quizLastSummary = null;
+  quizSessionActive = quizList.length > 0;
+  if (quizSessionActive) resetQuizStats();
+  renderQuizSetup();
+  renderQuiz();
+}
+
+function finishQuizSession() {
+  if (!quizSessionActive) return;
+  const secs = Math.max(0, Math.round((Date.now() - quizSessionStats.startedAt) / 1000));
+  const mins = Math.floor(secs / 60);
+  const secondsComponent = secs % 60;
+  const timeLabel = `${mins}:${String(secondsComponent).padStart(2, '0')}`;
+  quizLastSummary = `
+    <b>📊 Statistiky posledního kvízu</b><br>
+    Kartičky v balíčku: <b>${quizSessionStats.total}</b> · Akce celkem: <b>${quizSessionStats.actions}</b> · Čas: <b>${timeLabel}</b><br>
+    🚩 Nevím: <b>${quizSessionStats.flagged}</b> · 🔁 Opakovat: <b>${quizSessionStats.review}</b> · ✓ Umím: <b>${quizSessionStats.learned}</b>
+  `;
+  quizSessionActive = false;
+  quizFlipped = false;
+  resetQuiz();
+}
+
 function getQuizPlants() {
   const fam = document.getElementById('quiz-family').value;
   const famCz = document.getElementById('quiz-family-cz').value;
@@ -1641,8 +1734,9 @@ function getQuizPlants() {
 }
 
 function resetQuiz() {
-  quizList = getQuizPlants().sort(()=>Math.random()-0.5);
+  quizList = shuffle(getQuizPlants());
   quizIdx = 0; quizFlipped = false;
+  renderQuizSetup();
   renderQuiz();
 }
 
@@ -1664,6 +1758,11 @@ function getQuizPhotoSizingTokens(area) {
 
 function renderQuiz() {
   const area = document.getElementById('quiz-area');
+  if (!quizSessionActive) {
+    area.classList.remove('foto-large');
+    area.innerHTML = `<div class="quiz-empty"><div class="quiz-empty-message">Nastav filtry a spusť samostatné okno kvízu.</div></div>`;
+    return;
+  }
   const largePhotoMode = quizMode === 'foto' && quizPhotoSize === 'large';
   area.classList.toggle('foto-large', largePhotoMode);
   const photoSizing = getQuizPhotoSizingTokens(area);
@@ -1671,7 +1770,7 @@ function renderQuiz() {
     const msg = quizMode==='foto'
       ? 'Žádné kartičky s fotkou. Přidej fotky v záložce Kartičky.'
       : 'Žádné kartičky pro tento filtr.';
-    area.innerHTML = `<div class="quiz-empty"><div style="font-size:14px;color:var(--text2);">${msg}</div><button class="btn green" onclick="resetQuiz()">Načíst znovu</button></div>`;
+    area.innerHTML = `<div class="quiz-empty"><div class="quiz-empty-message">${msg}</div><button class="btn green" onclick="resetQuiz()">Načíst znovu</button></div>`;
     return;
   }
   const p = quizList[quizIdx];
@@ -1684,15 +1783,12 @@ function renderQuiz() {
 
   if (quizMode === 'foto') {
     const frontMaxHeight = largePhotoMode ? photoSizing.frontLarge : photoSizing.frontCompact;
-    const backMaxHeight = largePhotoMode ? photoSizing.backLarge : photoSizing.backCompact;
     const latinSize = largePhotoMode ? photoSizing.latinLarge : photoSizing.latinCompact;
     const frontRadius = largePhotoMode ? 10 : 8;
-    const backRadius = largePhotoMode ? 8 : 6;
     frontHTML = photoSrc
       ? `<img class="flip-img" style="max-height:${frontMaxHeight}px;max-width:100%;object-fit:contain;border-radius:${frontRadius}px;" src="${photoSrc}" onerror="this.style.display='none'">`
       : `<div style="font-size:13px;color:var(--text3);">bez fotky</div>`;
     backHTML = `
-      ${photoSrc ? `<img class="flip-img" style="max-height:${backMaxHeight}px;max-width:100%;object-fit:contain;border-radius:${backRadius}px;" src="${photoSrc}" onerror="this.style.display='none'">` : ''}
       <div class="flip-a">${p.czech}</div>
       <div class="flip-a" style="font-size:${latinSize}px;font-style:italic;">${p.latin}</div>
       <div class="flip-family">${p.family_cz} · ${p.family_lat}</div>
@@ -1739,6 +1835,7 @@ function renderQuiz() {
 
 function flipQuiz() {
   quizFlipped = !quizFlipped;
+  if (quizFlipped && quizSessionActive) quizSessionStats.flips++;
   document.getElementById('qflip')?.classList.toggle('flipped', quizFlipped);
 }
 
@@ -1747,6 +1844,7 @@ function qPrev() { quizIdx=(quizIdx-1+quizList.length)%quizList.length; quizFlip
 
 // Anki/Quizlet style: re-insert "Nevím" card back soon (2-4 positions ahead)
 function qFlag() {
+  trackQuizAction('flagged');
   const latin = quizList[quizIdx].latin;
   const d = D(latin);
   setData(latin, {flagged:true, wrongCount:(d.wrongCount||0)+1, correctStreak:0});
@@ -1769,6 +1867,7 @@ function qReview() {
 
 // Intelligent repeat: reinsert based on frequency setting and auto-tracking
 function qMarkReview() {
+  trackQuizAction('review');
   const latin = quizList[quizIdx].latin;
   const d = D(latin);
   const newWrongCount = (d.wrongCount || 0) + 1;
@@ -1801,6 +1900,7 @@ function qMarkReview() {
 }
 
 function qLearned() {
+  trackQuizAction('learned');
   const latin = quizList[quizIdx].latin;
   const d = D(latin);
   const newStreak = (d.correctStreak || 0) + 1;
@@ -1852,7 +1952,14 @@ function setMatchMode(m) {
   startMatch();
 }
 
-function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
+function shuffle(arr) {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
 
 function startMatch() {
   matchSelected = null;
