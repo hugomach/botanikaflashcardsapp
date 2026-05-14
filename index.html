@@ -249,7 +249,7 @@ textarea { resize: vertical; }
 .flip-a.cz { font-style: normal; }
 .flip-family { font-size: 12px; color: var(--green); }
 .flip-fact { font-size: 11px; color: var(--green-dark); font-style: italic; text-align: center; max-width: 90%; }
-.flip-img { max-width: 100%; max-height: 60px; border-radius: 6px; object-fit: cover; }
+.flip-img { max-width: 100%; max-height: var(--quiz-photo-back-compact-max); border-radius: 6px; object-fit: cover; }
 .quiz-btns { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; }
 .quiz-empty { text-align: center; padding: 3rem 1rem; color: var(--text3); }
 .quiz-empty .btn { margin-top: 12px; }
@@ -1649,7 +1649,7 @@ function resetQuiz() {
 function getQuizPhotoSizingTokens(area) {
   const styles = getComputedStyle(area);
   const readCssNumber = (name, fallback) => {
-    const parsed = parseFloat(styles.getPropertyValue(name));
+    const parsed = parseFloat(styles.getPropertyValue(name).trim());
     return Number.isNaN(parsed) ? fallback : parsed;
   };
   return {
