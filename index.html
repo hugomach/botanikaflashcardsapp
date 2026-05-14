@@ -1841,7 +1841,7 @@ function trackQuizAction(type) {
 }
 
 function startQuiz() {
-  quizList = shuffle(getQuizPlants());
+  quizList = buildQuizDeck();
   quizIdx = 0;
   quizFlipped = false;
   quizLastSummary = null;
@@ -1892,8 +1892,19 @@ function getQuizPlants() {
   });
 }
 
+function buildQuizDeck() {
+  const plants = getQuizPlants();
+  if (quizMode !== 'foto') return shuffle(plants);
+  const deck = plants.flatMap(p => {
+    const photos = D(p.latin).photos;
+    if (!photos.length) return [p];
+    return photos.map(src => ({...p, _quizPhotoSrc: src}));
+  });
+  return shuffle(deck);
+}
+
 function resetQuiz() {
-  quizList = shuffle(getQuizPlants());
+  quizList = buildQuizDeck();
   quizIdx = 0; quizFlipped = false;
   renderQuizSetup();
   renderQuiz();
@@ -1935,7 +1946,7 @@ function renderQuiz() {
   const p = quizList[quizIdx];
   const d = D(p.latin);
   const pct = Math.round(((quizIdx+1)/quizList.length)*100);
-  const photo = d.photos[0] || '';
+  const photo = quizMode === 'foto' && p._quizPhotoSrc ? p._quizPhotoSrc : (d.photos[0] || '');
   const photoSrc = photo ? (photo.startsWith('data:') ? photo : esc(photo)) : '';
 
   let frontHTML = '', backHTML = '';
