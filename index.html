@@ -647,6 +647,7 @@ body.quiz-open { overflow: hidden; }
       <tbody id="plants-table-body"></tbody>
     </table>
   </div>
+  <div id="table-edit-status" style="font-size:12px;color:var(--text3);margin-top:6px;"></div>
 </div>
 
 <!-- SETTINGS MODAL -->
@@ -1104,7 +1105,7 @@ function editPlantNamesFromTable(latin) {
 
   const nextLatin = nextLatinRaw.trim();
   const nextCzech = nextCzechRaw.trim();
-  const status = document.getElementById('new-plant-status');
+  const status = document.getElementById('table-edit-status') || document.getElementById('new-plant-status');
 
   if (!nextLatin || !nextCzech) {
     if (status) status.textContent = 'LAT i CZ název musí být vyplněný.';
@@ -1373,10 +1374,17 @@ function renderTable() {
       <td>${esc(p.life_form||'')}</td>
       <td>${esc(p.toxic||'')}</td>
       <td>${status}</td>
-      <td><button class="btn" type="button" onclick="event.stopPropagation();editPlantNamesFromTable(decodeURIComponent('${latinEnc}'))">✏️ Názvy</button></td>
+      <td><button class="btn edit-name-btn" type="button">✏️ Názvy</button></td>
     </tr>`;
   }).join('');
   body.querySelectorAll('.table-row').forEach(row => {
+    const editBtn = row.querySelector('.edit-name-btn');
+    if (editBtn) {
+      editBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        editPlantNamesFromTable(decodeURIComponent(row.dataset.latin || ''));
+      });
+    }
     row.addEventListener('click', () => openModal(decodeURIComponent(row.dataset.latin || '')));
   });
 }
