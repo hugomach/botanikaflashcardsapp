@@ -1087,6 +1087,7 @@ function migratePlantDataKey(oldLatin, newLatin) {
   if (oldLatin === newLatin) return;
   const oldKey = SK(oldLatin);
   const newKey = SK(newLatin);
+  if (oldKey === newKey) return;
   if (!userData[oldKey]) return;
   userData[newKey] = Object.assign({}, userData[newKey] || {}, userData[oldKey]);
   delete userData[oldKey];
