@@ -264,6 +264,11 @@ body.quiz-open { overflow: hidden; }
 .quiz-overlay-close { width: 40px; height: 40px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); display: inline-flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
 .quiz-overlay-body { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding: 14px 18px 20px; }
 .quiz-overlay-body .filterbar { align-items: stretch; }
+.quiz-tab-shell .quiz-overlay-shell { width: 100%; height: auto; max-height: none; margin: 0; border-radius: 0; box-shadow: none; background: transparent; overflow: visible; }
+.quiz-tab-shell .quiz-overlay-head { border-bottom: none; background: transparent; padding: 0 0 8px; }
+.quiz-tab-shell .quiz-overlay-body { overflow: visible; padding: 0; }
+.quiz-start-row { display: flex; justify-content: center; margin: 0 0 12px; }
+.quiz-prestart { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 1rem; text-align: center; color: var(--text2); }
 .quiz-stage { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 14px; box-shadow: 0 10px 24px rgba(0,0,0,0.06); }
 .quiz-stage .progress { margin-bottom: 0.85rem; }
 .quiz-btns .btn { min-height: 46px; font-size: 13px; }
@@ -483,14 +488,13 @@ body.quiz-open { overflow: hidden; }
 </div>
 
 <!-- QUIZ TAB -->
-<div id="tab-quiz" class="quiz-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="quiz-overlay-title" onclick="quizOverlayBgClick(event)">
+<div id="tab-quiz" class="quiz-tab-shell" style="display:none;">
   <div class="quiz-overlay-shell">
     <div class="quiz-overlay-head">
       <div>
         <div class="quiz-overlay-title" id="quiz-overlay-title">Kvíz</div>
-        <div class="quiz-overlay-subtitle">Samostatné studijní okno optimalizované pro mobil.</div>
+        <div class="quiz-overlay-subtitle">Nastav filtry a spusť kvíz.</div>
       </div>
-      <button class="btn-close quiz-overlay-close" id="quiz-close-btn" onclick="closeQuizOverlay()" aria-label="Zavřít kvíz">✕</button>
     </div>
     <div class="quiz-overlay-body">
       <div class="filter-section">
@@ -546,6 +550,9 @@ body.quiz-open { overflow: hidden; }
           <button id="qps-compact" class="active" aria-pressed="true" onclick="setQuizPhotoSize('compact')">Kompaktní</button>
           <button id="qps-large" aria-pressed="false" onclick="setQuizPhotoSize('large')">Větší foto</button>
         </div>
+      </div>
+      <div class="quiz-start-row">
+        <button class="btn green" id="quiz-start-btn" onclick="startQuiz()">Spustit kvíz</button>
       </div>
       <div class="quiz-area" id="quiz-area"></div>
     </div>
@@ -735,7 +742,7 @@ let sbAnonKey = null;
 let sbUserKey = null;
 let sb = null;
 let syncTimer = null;
-let quizList = [], quizIdx = 0, quizFlipped = false, quizMode = 'foto', quizPhotoSize = 'compact';
+let quizList = [], quizIdx = 0, quizFlipped = false, quizMode = 'foto', quizPhotoSize = 'compact', quizStarted = false;
 let dirty = false;
 let activeGroup = '';
 let activeQuizGroup = '';
@@ -1573,12 +1580,10 @@ function showTab(name) {
   tabs.forEach(t => {
     document.getElementById('tab-'+t).style.display = t===name ? '' : 'none';
   });
-  document.body.classList.toggle('quiz-open', name === 'quiz');
   document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active',tabs[i]===name));
   if (name==='flagged') renderFlagged();
   if (name==='quiz') {
     renderQuiz();
-    requestAnimationFrame(() => document.getElementById('quiz-close-btn')?.focus());
   }
   if (name==='match') startMatch();
   if (name==='table') renderTable();
@@ -1641,9 +1646,21 @@ function getQuizPlants() {
 }
 
 function resetQuiz() {
+  if (!quizStarted) {
+    quizList = [];
+    quizIdx = 0;
+    quizFlipped = false;
+    renderQuiz();
+    return;
+  }
   quizList = getQuizPlants().sort(()=>Math.random()-0.5);
   quizIdx = 0; quizFlipped = false;
   renderQuiz();
+}
+
+function startQuiz() {
+  quizStarted = true;
+  resetQuiz();
 }
 
 function getQuizPhotoSizingTokens(area) {
@@ -1666,6 +1683,10 @@ function renderQuiz() {
   const area = document.getElementById('quiz-area');
   const largePhotoMode = quizMode === 'foto' && quizPhotoSize === 'large';
   area.classList.toggle('foto-large', largePhotoMode);
+  if (!quizStarted) {
+    area.innerHTML = `<div class="quiz-prestart">Kvíz ještě neběží. Klikni na <b>Spustit kvíz</b>.</div>`;
+    return;
+  }
   const photoSizing = getQuizPhotoSizingTokens(area);
   if (!quizList.length) {
     const msg = quizMode==='foto'
@@ -1831,6 +1852,7 @@ function setRepeatFreq(latin, freq) {
 
 function startFlaggedQuiz() {
   document.getElementById('quiz-source').value = 'flagged';
+  quizStarted = true;
   resetQuiz();
   showTab('quiz');
 }
@@ -2129,10 +2151,6 @@ document.addEventListener('keydown', e => {
   }
   if (e.key === 'Escape' && document.getElementById('settings-modal').style.display !== 'none') {
     closeSettingsModal();
-    return;
-  }
-  if (e.key === 'Escape' && activeTab === 'quiz') {
-    closeQuizOverlay();
     return;
   }
   if (activeTab !== 'quiz') return;
