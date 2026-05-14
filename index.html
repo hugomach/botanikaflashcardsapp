@@ -1648,7 +1648,10 @@ function resetQuiz() {
 
 function getQuizPhotoSizingTokens(area) {
   const styles = getComputedStyle(area);
-  const readCssNumber = (name, fallback) => parseFloat(styles.getPropertyValue(name)) || fallback;
+  const readCssNumber = (name, fallback) => {
+    const parsed = parseFloat(styles.getPropertyValue(name));
+    return Number.isNaN(parsed) ? fallback : parsed;
+  };
   return {
     frontCompact: readCssNumber('--quiz-photo-front-compact-max', 250),
     frontLarge: readCssNumber('--quiz-photo-front-large-max', 620),
@@ -1662,8 +1665,8 @@ function getQuizPhotoSizingTokens(area) {
 function renderQuiz() {
   const area = document.getElementById('quiz-area');
   const largePhotoMode = quizMode === 'foto' && quizPhotoSize === 'large';
-  const photoSizing = getQuizPhotoSizingTokens(area);
   area.classList.toggle('foto-large', largePhotoMode);
+  const photoSizing = getQuizPhotoSizingTokens(area);
   if (!quizList.length) {
     const msg = quizMode==='foto'
       ? 'Žádné kartičky s fotkou. Přidej fotky v záložce Kartičky.'
