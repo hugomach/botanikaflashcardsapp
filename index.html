@@ -1894,13 +1894,7 @@ function getQuizPlants() {
 
 function buildQuizDeck() {
   const plants = getQuizPlants();
-  if (quizMode !== 'foto') return shuffle(plants);
-  const deck = plants.flatMap(p => {
-    const photos = D(p.latin).photos;
-    if (!photos.length) return [p];
-    return photos.map(src => ({...p, quizPhotoSrc: src}));
-  });
-  return shuffle(deck);
+  return shuffle(plants);
 }
 
 function resetQuiz() {
@@ -1946,7 +1940,10 @@ function renderQuiz() {
   const p = quizList[quizIdx];
   const d = D(p.latin);
   const pct = Math.round(((quizIdx+1)/quizList.length)*100);
-  const photo = quizMode === 'foto' && p.quizPhotoSrc ? p.quizPhotoSrc : (d.photos[0] || '');
+  const quizPhotoSources = quizMode === 'foto'
+    ? d.photos.map(src => src.startsWith('data:') ? src : esc(src))
+    : [];
+  const photo = d.photos[0] || '';
   const photoSrc = photo ? (photo.startsWith('data:') ? photo : esc(photo)) : '';
 
   let frontHTML = '', backHTML = '';
@@ -1955,8 +1952,13 @@ function renderQuiz() {
     const frontMaxHeight = largePhotoMode ? photoSizing.frontLarge : photoSizing.frontCompact;
     const latinSize = largePhotoMode ? photoSizing.latinLarge : photoSizing.latinCompact;
     const frontRadius = largePhotoMode ? 10 : 8;
-    frontHTML = photoSrc
-      ? `<img class="flip-img" style="max-height:${frontMaxHeight}px;max-width:100%;object-fit:contain;border-radius:${frontRadius}px;" src="${photoSrc}" onerror="this.style.display='none'">`
+    const photoCount = quizPhotoSources.length;
+    const frontPhotoMaxHeight = photoCount > 1 ? Math.max(70, Math.floor(frontMaxHeight / 2.2)) : frontMaxHeight;
+    const frontPhotoMaxWidth = photoCount > 2 ? '31%' : (photoCount === 2 ? '48%' : '100%');
+    frontHTML = photoCount
+      ? `<div style="display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:${largePhotoMode ? 10 : 8}px;max-width:100%;max-height:100%;overflow:auto;">${
+          quizPhotoSources.map(src => `<img class="flip-img" style="max-height:${frontPhotoMaxHeight}px;max-width:${frontPhotoMaxWidth};width:auto;object-fit:contain;border-radius:${frontRadius}px;" src="${src}" onerror="this.style.display='none'">`).join('')
+        }</div>`
       : `<div style="font-size:13px;color:var(--text3);">bez fotky</div>`;
     backHTML = `
       <div class="flip-a">${p.czech}</div>
