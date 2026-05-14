@@ -765,11 +765,11 @@ let quizSessionActive = false;
 let quizSessionStats = { startedAt: 0, total: 0, actions: 0, flagged: 0, review: 0, learned: 0, flips: 0 };
 let quizLastSummary = null;
 let dirty = false;
-let activeGroup = '';
+let activeGroup = [];
 let activeQuizGroups = [];
-let activeLF = '';       // life form filter
-let activeHab = '';      // habitat filter
-let activeTox = '';      // toxicity filter
+let activeLF = [];       // life form filters
+let activeHab = [];      // habitat filters
+let activeTox = [];      // toxicity filters
 let activeQuizLFs = [];   // quiz life form filters
 let activeQuizHabs = [];  // quiz habitat filters
 let activeQuizToxes = []; // quiz toxicity filters
@@ -1243,10 +1243,10 @@ function setChipActive(containerId, val) {
   document.querySelectorAll(`#${containerId} .chip`).forEach(c => c.classList.toggle('on', c.dataset.v === val));
 }
 
-function setFilterGroup(el, v)     { activeGroup = v;      setChipActive('browse-chips', v); renderGrid(); }
-function setFilterLF(el, v)        { activeLF = v;         setChipActive('lf-chips', v);     renderGrid(); }
-function setFilterHab(el, v)       { activeHab = v;        setChipActive('hab-chips', v);    renderGrid(); }
-function setFilterTox(el, v)       { activeTox = v;        setChipActive('tox-chips', v);    renderGrid(); }
+function setFilterGroup(el, v)     { activeGroup = toggleQuizFilterValue(activeGroup, v); setChipActiveMulti('browse-chips', activeGroup); renderGrid(); }
+function setFilterLF(el, v)        { activeLF = toggleQuizFilterValue(activeLF, v);       setChipActiveMulti('lf-chips', activeLF);       renderGrid(); }
+function setFilterHab(el, v)       { activeHab = toggleQuizFilterValue(activeHab, v);     setChipActiveMulti('hab-chips', activeHab);     renderGrid(); }
+function setFilterTox(el, v)       { activeTox = toggleQuizFilterValue(activeTox, v);     setChipActiveMulti('tox-chips', activeTox);     renderGrid(); }
 function setChipActiveMulti(containerId, vals) {
   const selected = new Set(vals || []);
   document.querySelectorAll(`#${containerId} .chip`).forEach(c => {
@@ -1283,8 +1283,8 @@ function setQuizFilterTox(el, v) {
 }
 
 function clearAllFilters() {
-  activeGroup = ''; activeLF = ''; activeHab = ''; activeTox = '';
-  ['browse-chips','lf-chips','hab-chips','tox-chips'].forEach(id => setChipActive(id, ''));
+  activeGroup = []; activeLF = []; activeHab = []; activeTox = [];
+  ['browse-chips','lf-chips','hab-chips','tox-chips'].forEach(id => setChipActiveMulti(id, []));
   document.getElementById('filter-family').value = '';
   document.getElementById('filter-family-cz').value = '';
   document.getElementById('filter-status').value = '';
@@ -1366,10 +1366,10 @@ function filteredPlants(familySel, familyCzSel, statusSel, searchVal) {
   const st = statusSel||'';
   const result = getAllPlants().filter(p => {
     const d = D(p.latin);
-    if (activeGroup && p.group !== activeGroup) return false;
-    if (activeLF && p.life_form !== activeLF) return false;
-    if (activeHab && !p.habitat.includes(activeHab)) return false;
-    if (activeTox && p.toxic !== activeTox) return false;
+    if (activeGroup.length && !activeGroup.includes(p.group)) return false;
+    if (activeLF.length && !activeLF.includes(p.life_form)) return false;
+    if (activeHab.length && !activeHab.some(h => p.habitat.includes(h))) return false;
+    if (activeTox.length && !activeTox.includes(p.toxic)) return false;
     if (fam && p.family_lat !== fam) return false;
     if (famCz && p.family_cz !== famCz) return false;
     if (st==='new' && d.status!=='new') return false;
@@ -1384,7 +1384,7 @@ function filteredPlants(familySel, familyCzSel, statusSel, searchVal) {
     return true;
   });
   // update summary
-  const active = [activeGroup, activeLF, activeHab, activeTox].filter(Boolean);
+  const active = [...activeGroup, ...activeLF, ...activeHab, ...activeTox];
   const sum = document.getElementById('filter-summary');
   if (sum) sum.textContent = active.length ? `Filtr: ${active.join(' · ')} — zobrazeno ${result.length} rostlin` : `Zobrazeno ${result.length} rostlin`;
   return result;
