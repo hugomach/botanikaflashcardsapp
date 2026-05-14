@@ -1943,8 +1943,6 @@ function renderQuiz() {
   const quizPhotoSources = quizMode === 'foto'
     ? d.photos.map(src => src.startsWith('data:') ? src : esc(src))
     : [];
-  const photo = d.photos[0] || '';
-  const photoSrc = photo ? (photo.startsWith('data:') ? photo : esc(photo)) : '';
 
   let frontHTML = '', backHTML = '';
 
@@ -1953,6 +1951,7 @@ function renderQuiz() {
     const latinSize = largePhotoMode ? photoSizing.latinLarge : photoSizing.latinCompact;
     const frontRadius = largePhotoMode ? 10 : 8;
     const photoCount = quizPhotoSources.length;
+    // Slightly above 2 rows to keep spacing/padding without making thumbnails too small.
     const MULTI_PHOTO_HEIGHT_RATIO = 2.2;
     const MIN_MULTI_PHOTO_HEIGHT = 70;
     const THREE_COLUMN_WIDTH = '31%';
@@ -1973,6 +1972,8 @@ function renderQuiz() {
       <div class="flip-family">${p.family_cz} · ${p.family_lat}</div>
       ${d.funfact ? `<div class="flip-fact">${esc(d.funfact)}</div>` : ''}`;
   } else {
+    const photo = d.photos[0] || '';
+    const photoSrc = photo ? (photo.startsWith('data:') ? photo : esc(photo)) : '';
     let qText='', aText='', qCls='', aCls='';
     if (quizMode==='lat') { qText=p.latin; aText=p.czech; qCls=''; aCls='cz'; }
     else if (quizMode==='cz') { qText=p.czech; aText=p.latin; qCls='cz'; aCls=''; }
