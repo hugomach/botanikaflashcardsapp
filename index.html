@@ -1807,7 +1807,6 @@ function renderQuiz() {
     <div class="quiz-stage">
       <div class="quiz-meta">
         <span>${quizIdx+1} / ${quizList.length}</span>
-        <span style="font-size:11px;color:var(--text3);">${p.family_cz}</span>
       </div>
       <div class="progress"><div class="progress-fill" style="width:${pct}%"></div></div>
       <div class="flip-card${quizFlipped?' flipped':''}${d.status==='review'?' review-card':''}${quizMode==='foto' && quizPhotoSize==='large' ? ' foto-large' : ''}" id="qflip" onclick="flipQuiz()">
