@@ -1898,7 +1898,7 @@ function buildQuizDeck() {
   const deck = plants.flatMap(p => {
     const photos = D(p.latin).photos;
     if (!photos.length) return [p];
-    return photos.map(src => ({...p, _quizPhotoSrc: src}));
+    return photos.map(src => ({...p, quizPhotoSrc: src}));
   });
   return shuffle(deck);
 }
@@ -1946,7 +1946,7 @@ function renderQuiz() {
   const p = quizList[quizIdx];
   const d = D(p.latin);
   const pct = Math.round(((quizIdx+1)/quizList.length)*100);
-  const photo = quizMode === 'foto' && p._quizPhotoSrc ? p._quizPhotoSrc : (d.photos[0] || '');
+  const photo = quizMode === 'foto' && p.quizPhotoSrc ? p.quizPhotoSrc : (d.photos[0] || '');
   const photoSrc = photo ? (photo.startsWith('data:') ? photo : esc(photo)) : '';
 
   let frontHTML = '', backHTML = '';
