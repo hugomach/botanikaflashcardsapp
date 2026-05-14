@@ -641,6 +641,7 @@ body.quiz-open { overflow: hidden; }
           <th>Forma</th>
           <th>Toxicita</th>
           <th>Stav</th>
+          <th>Úprava</th>
         </tr>
       </thead>
       <tbody id="plants-table-body"></tbody>
@@ -770,8 +771,22 @@ function getCustomPlants() {
   return Array.isArray(userData.__customPlants) ? userData.__customPlants : [];
 }
 
+function getNameOverrides() {
+  const raw = userData.__nameOverrides;
+  return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+}
+
 function getAllPlants() {
-  return [...PLANTS, ...getCustomPlants()];
+  const overrides = getNameOverrides();
+  const base = PLANTS.map(p => {
+    const patch = overrides[p.latin];
+    if (!patch || typeof patch !== 'object') return p;
+    return {
+      ...p,
+      czech: typeof patch.czech === 'string' ? patch.czech : p.czech
+    };
+  });
+  return [...base, ...getCustomPlants()];
 }
 
 function saveLocalData() {
@@ -1068,6 +1083,74 @@ function setData(latin, patch) {
   scheduleSave();
 }
 
+function migratePlantDataKey(oldLatin, newLatin) {
+  if (oldLatin === newLatin) return;
+  const oldKey = SK(oldLatin);
+  const newKey = SK(newLatin);
+  if (!userData[oldKey]) return;
+  userData[newKey] = Object.assign({}, userData[newKey] || {}, userData[oldKey]);
+  delete userData[oldKey];
+}
+
+function editPlantNamesFromTable(latin) {
+  const plant = getAllPlants().find(p => p.latin === latin);
+  if (!plant) return;
+
+  const nextLatinRaw = prompt('Latinský název:', plant.latin);
+  if (nextLatinRaw === null) return;
+  const nextCzechRaw = prompt('Český název:', plant.czech);
+  if (nextCzechRaw === null) return;
+
+  const nextLatin = nextLatinRaw.trim();
+  const nextCzech = nextCzechRaw.trim();
+  const status = document.getElementById('new-plant-status');
+
+  if (!nextLatin || !nextCzech) {
+    if (status) status.textContent = 'LAT i CZ název musí být vyplněný.';
+    return;
+  }
+
+  const custom = getCustomPlants();
+  const customIdx = custom.findIndex(p => p.latin === latin);
+
+  if (customIdx >= 0) {
+    const duplicate = getAllPlants().some(p => p.latin.toLowerCase() === nextLatin.toLowerCase() && p.latin !== latin);
+    if (duplicate) {
+      if (status) status.textContent = 'Rostlina s tímto LAT názvem už existuje.';
+      return;
+    }
+    custom[customIdx].latin = nextLatin;
+    custom[customIdx].czech = nextCzech;
+    userData.__customPlants = custom;
+    migratePlantDataKey(latin, nextLatin);
+    scheduleSave();
+    populateSelects();
+    renderAll();
+    if (status) status.textContent = 'Názvy upraveny ✓';
+    return;
+  }
+
+  if (nextLatin !== latin) {
+    if (status) status.textContent = 'U vestavěných rostlin lze zatím upravit jen český název.';
+    return;
+  }
+
+  const basePlant = PLANTS.find(p => p.latin === latin);
+  if (!basePlant) return;
+
+  const overrides = getNameOverrides();
+  if (nextCzech === basePlant.czech) {
+    delete overrides[latin];
+  } else {
+    overrides[latin] = {czech: nextCzech};
+  }
+  userData.__nameOverrides = overrides;
+  scheduleSave();
+  populateSelects();
+  renderAll();
+  if (status) status.textContent = 'Název upraven ✓';
+}
+
 // ── Populate selects ──
 const GROUP_ORDER = ['přesličky','kapradiny','nahosemenné','trávy','stromy a keře','jednoděložné','dvouděložné'];
 const GROUP_COLORS = {
@@ -1272,7 +1355,7 @@ function renderTable() {
   if (!body) return;
   const plants = getAllPlants().slice().sort((a,b)=>a.latin.localeCompare(b.latin,'la'));
   if (!plants.length) {
-    body.innerHTML = `<tr><td colspan="9" style="color:var(--text3)">Žádná data.</td></tr>`;
+    body.innerHTML = `<tr><td colspan="10" style="color:var(--text3)">Žádná data.</td></tr>`;
     return;
   }
   body.innerHTML = plants.map(p => {
@@ -1289,6 +1372,7 @@ function renderTable() {
       <td>${esc(p.life_form||'')}</td>
       <td>${esc(p.toxic||'')}</td>
       <td>${status}</td>
+      <td><button class="btn" type="button" onclick="event.stopPropagation();editPlantNamesFromTable(decodeURIComponent('${latinEnc}'))">✏️ Názvy</button></td>
     </tr>`;
   }).join('');
   body.querySelectorAll('.table-row').forEach(row => {
