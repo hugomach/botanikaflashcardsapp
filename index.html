@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Botanika OŽP</title>
+<title>Flashcards App</title>
 <style>
 :root {
   --green: #1D9E75; --green-dark: #0F6E56; --green-light: #E1F5EE;
@@ -415,7 +415,7 @@ body.quiz-open { overflow: hidden; }
 <div class="app">
 
 <div class="topbar">
-  <h1>🌿 Botanika OŽP</h1>
+  <h1>🧠 Flashcards App</h1>
   <div class="sync-status" id="sync-status">
     <div class="sync-dot" id="sync-dot"></div>
     <span id="sync-label">nepřipojeno</span>
@@ -569,10 +569,10 @@ body.quiz-open { overflow: hidden; }
       <button class="btn green" onclick="startMatch()">Nové kolo</button>
     </div>
     <div class="match-mode-toggle">
-      <button id="mm-ptof" class="active" onclick="setMatchMode('ptof')">Rostlina → čeleď</button>
-      <button id="mm-ftop" onclick="setMatchMode('ftop')">Čeleď → rostliny</button>
+      <button id="mm-ptof" class="active" onclick="setMatchMode('ptof')">Kartička → kategorie</button>
+      <button id="mm-ftop" onclick="setMatchMode('ftop')">Kategorie → kartičky</button>
     </div>
-    <div class="match-directions" id="match-dir">Klikni na rostlinu vlevo, pak na správnou čeleď vpravo.</div>
+    <div class="match-directions" id="match-dir">Klikni na kartičku vlevo, pak na správnou kategorii vpravo.</div>
     <div id="match-area"></div>
   </div>
 </div>
@@ -580,7 +580,7 @@ body.quiz-open { overflow: hidden; }
 <!-- FLAGGED TAB -->
 <div id="tab-flagged" style="display:none;">
   <div style="margin-bottom:1rem;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-    <span style="font-size:13px;color:var(--text2);">Rostliny označené vlajkou:</span>
+    <span style="font-size:13px;color:var(--text2);">Kartičky označené vlajkou:</span>
     <button class="btn" onclick="startFlaggedQuiz()">Kvíz z těchto 🚩</button>
   </div>
   <div class="grid" id="flagged-grid"></div>
@@ -589,18 +589,19 @@ body.quiz-open { overflow: hidden; }
 <!-- TABLE TAB -->
 <div id="tab-table" style="display:none;">
   <div class="settings-section">
-    <h3>Přidat novou rostlinu</h3>
+    <h3>Přidat novou kartičku</h3>
     <div class="settings-grid">
-      <label>Latinský název *</label>
-      <input type="text" id="new-latin" placeholder="Acer platanoides">
-      <label>Český název *</label>
-      <input type="text" id="new-czech" placeholder="javor mléč">
-      <label>Čeleď LAT *</label>
-      <input type="text" id="new-family-lat" placeholder="Sapindaceae">
-      <label>Čeleď CZ *</label>
-      <input type="text" id="new-family-cz" placeholder="mýdelníkovité">
-      <label>Evoluční skupina</label>
+      <label>Přední strana *</label>
+      <input type="text" id="new-latin" placeholder="Např. HTTP 404">
+      <label>Zadní strana *</label>
+      <input type="text" id="new-czech" placeholder="Např. Not Found">
+      <label>Kategorie (lat)</label>
+      <input type="text" id="new-family-lat" placeholder="Např. Web">
+      <label>Kategorie (cz)</label>
+      <input type="text" id="new-family-cz" placeholder="Např. Webové pojmy">
+      <label>Skupina</label>
       <select id="new-group">
+        <option value="ostatní">ostatní</option>
         <option value="dvouděložné">dvouděložné</option>
         <option value="jednoděložné">jednoděložné</option>
         <option value="stromy a keře">stromy a keře</option>
@@ -609,11 +610,11 @@ body.quiz-open { overflow: hidden; }
         <option value="kapradiny">kapradiny</option>
         <option value="přesličky">přesličky</option>
       </select>
-      <label>Biotop</label>
-      <input type="text" id="new-habitat" placeholder="les">
-      <label>Životní forma</label>
-      <input type="text" id="new-life-form" placeholder="strom">
-      <label>Toxicita</label>
+      <label>Kontext</label>
+      <input type="text" id="new-habitat" placeholder="Např. backend">
+      <label>Typ</label>
+      <input type="text" id="new-life-form" placeholder="Např. pojem">
+      <label>Náročnost</label>
       <select id="new-toxic">
         <option value="ne">ne</option>
         <option value="mírně">mírně</option>
@@ -621,10 +622,10 @@ body.quiz-open { overflow: hidden; }
         <option value="silně jedovatý">silně jedovatý</option>
       </select>
       <label>Tagy (oddělené čárkou)</label>
-      <input type="text" id="new-tags" placeholder="okrasný, listnatý">
+      <input type="text" id="new-tags" placeholder="api, status-code">
     </div>
     <div class="settings-actions">
-      <button class="btn green" onclick="addNewPlantFromForm()">Přidat rostlinu</button>
+      <button class="btn green" onclick="addNewPlantFromForm()">Přidat kartičku</button>
     </div>
     <div id="new-plant-status" style="font-size:12px;color:var(--text3);margin-top:6px;"></div>
   </div>
@@ -632,10 +633,10 @@ body.quiz-open { overflow: hidden; }
     <table class="plants-table">
       <thead>
         <tr>
-          <th>LAT</th>
-          <th>CZ</th>
-          <th>Čeleď (CZ)</th>
-          <th>Čeleď (LAT)</th>
+          <th>Přední strana</th>
+          <th>Zadní strana</th>
+          <th>Kategorie (CZ)</th>
+          <th>Kategorie (LAT)</th>
           <th>Skupina</th>
           <th>Biotop</th>
           <th>Forma</th>
@@ -664,6 +665,25 @@ body.quiz-open { overflow: hidden; }
           <option value="dark">🌙 Černý</option>
           <option value="auto">⚙️ Auto</option>
         </select>
+      </div>
+
+      <div class="settings-section">
+        <h3>Sady kartiček</h3>
+        <label>Aktivní sada</label>
+        <select id="active-set-select" onchange="changeActiveSet(this.value)"></select>
+        <div style="font-size:12px;color:var(--text2);margin-top:6px;" id="active-set-meta"></div>
+        <div class="settings-grid" style="margin-top:10px;">
+          <label>Název nové sady</label>
+          <input type="text" id="new-set-name" placeholder="Např. Biologie - maturita">
+          <label style="display:flex;gap:8px;align-items:center;margin:0;">
+            <input type="checkbox" id="new-set-with-base" checked style="width:auto;">
+            Přidat i výchozí botanické kartičky
+          </label>
+        </div>
+        <div class="settings-actions">
+          <button class="btn green" onclick="createStudySetFromForm()">Vytvořit sadu</button>
+        </div>
+        <div id="set-status" style="font-size:12px;color:var(--text3);margin-top:6px;"></div>
       </div>
 
       <div class="settings-section">
@@ -742,6 +762,7 @@ let userData = {};
 let sbUrl = null;
 let sbAnonKey = null;
 let sbUserKey = null;
+let resolvedSyncUserKey = '';
 let sb = null;
 let syncTimer = null;
 let quizList = [], quizIdx = 0, quizFlipped = false, quizMode = 'foto', quizPhotoSize = 'compact';
@@ -765,13 +786,98 @@ const SB_TABLE = 'botanika_sync';
 const SB_BUCKET = 'botanika-photos';
 const LOCAL_USERDATA_KEY = 'botanika_user_data_v1';
 const LOCAL_AUTH_PROFILE_KEY = 'botanika_auth_profile_v1';
+const DEFAULT_SET_ID = 'set-botanika-default';
+
+function ensureStudySetsData() {
+  const fallbackSet = {id: DEFAULT_SET_ID, name: 'Výchozí botanika', useBasePlants: true, customPlants: []};
+  if (!Array.isArray(userData.__sets) || !userData.__sets.length) {
+    const legacyCustom = Array.isArray(userData.__customPlants) ? userData.__customPlants : [];
+    fallbackSet.customPlants = legacyCustom;
+    userData.__sets = [fallbackSet];
+  }
+  const setIds = new Set(userData.__sets.map(s => s?.id).filter(Boolean));
+  if (!setIds.has(DEFAULT_SET_ID)) userData.__sets.unshift(fallbackSet);
+  userData.__sets = userData.__sets.map(set => ({
+    id: set.id || ('set-' + Math.random().toString(36).slice(2, 10)),
+    name: (set.name || 'Bez názvu').trim(),
+    useBasePlants: set.useBasePlants !== false,
+    customPlants: Array.isArray(set.customPlants) ? set.customPlants : []
+  }));
+  if (!userData.__activeSetId || !userData.__sets.some(s => s.id === userData.__activeSetId)) {
+    userData.__activeSetId = DEFAULT_SET_ID;
+  }
+  if (!Array.isArray(userData.__customPlants)) userData.__customPlants = [];
+}
+
+function getStudySets() {
+  ensureStudySetsData();
+  return userData.__sets;
+}
+
+function getActiveSet() {
+  const sets = getStudySets();
+  return sets.find(s => s.id === userData.__activeSetId) || sets[0];
+}
 
 function getCustomPlants() {
-  return Array.isArray(userData.__customPlants) ? userData.__customPlants : [];
+  return getActiveSet()?.customPlants || [];
 }
 
 function getAllPlants() {
-  return [...PLANTS, ...getCustomPlants()];
+  const activeSet = getActiveSet();
+  const base = activeSet?.useBasePlants ? PLANTS : [];
+  return [...base, ...getCustomPlants()];
+}
+
+function renderSetControls() {
+  const select = document.getElementById('active-set-select');
+  const meta = document.getElementById('active-set-meta');
+  if (!select) return;
+  const sets = getStudySets();
+  const activeSet = getActiveSet();
+  select.innerHTML = sets.map(s => `<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');
+  select.value = activeSet.id;
+  if (meta) {
+    const count = (activeSet.useBasePlants ? PLANTS.length : 0) + activeSet.customPlants.length;
+    const mode = activeSet.useBasePlants ? 'obsahuje i výchozí botanickou databázi' : 'obsahuje jen vlastní kartičky';
+    meta.textContent = `${count} kartiček · ${mode}`;
+  }
+}
+
+function changeActiveSet(setId) {
+  ensureStudySetsData();
+  if (!userData.__sets.some(s => s.id === setId)) return;
+  userData.__activeSetId = setId;
+  scheduleSave();
+  populateSelects();
+  renderSetControls();
+  renderAll();
+}
+
+function createStudySetFromForm() {
+  const input = document.getElementById('new-set-name');
+  const withBase = !!document.getElementById('new-set-with-base')?.checked;
+  const status = document.getElementById('set-status');
+  const rawName = input?.value.trim() || '';
+  if (!rawName) {
+    if (status) status.textContent = 'Zadejte název nové sady.';
+    return;
+  }
+  ensureStudySetsData();
+  const duplicate = userData.__sets.some(s => s.name.toLowerCase() === rawName.toLowerCase());
+  if (duplicate) {
+    if (status) status.textContent = 'Sada s tímto názvem už existuje.';
+    return;
+  }
+  const id = 'set-' + rawName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Date.now().toString(36);
+  userData.__sets.push({id, name: rawName, useBasePlants: withBase, customPlants: []});
+  userData.__activeSetId = id;
+  scheduleSave();
+  if (input) input.value = '';
+  if (status) status.textContent = 'Sada vytvořena ✓';
+  populateSelects();
+  renderSetControls();
+  renderAll();
 }
 
 function saveLocalData() {
@@ -799,25 +905,47 @@ function D(latin) {
 window.onload = async () => {
   clearAuthUrlFragment();
   loadLocalData();
+  ensureStudySetsData();
   sbUrl = localStorage.getItem('sb_url');
   sbAnonKey = localStorage.getItem('sb_anon_key');
   sbUserKey = localStorage.getItem('sb_user_key');
   populateSelects();
+  renderSetControls();
   syncQuizFilterAriaState();
   if (initSupabaseClient()) {
-    await loadFromSupabase();
     await refreshAuthProfile();
+    await loadFromSupabase();
   } else {
     refreshAuthProfileFromStorage();
   }
   resetQuiz();
   renderAll();
   renderTable();
-  if (hasSupabaseConfig()) syncStatus('ok','cloud synced');
+  if (hasSupabaseConfig()) {
+    if (resolvedSyncUserKey || sbUserKey) syncStatus('ok','cloud synced');
+    else syncStatus('','připojeno (čeká na přihlášení)');
+  }
 };
 
 function hasSupabaseConfig() {
-  return !!(sb && sbUserKey);
+  return !!sb;
+}
+
+async function resolveSyncUserKey() {
+  if (!sb) return '';
+  if (sbUserKey) {
+    resolvedSyncUserKey = sbUserKey;
+    return resolvedSyncUserKey;
+  }
+  if (!sb?.auth?.getUser) return '';
+  try {
+    const {data, error} = await sb.auth.getUser();
+    if (!error && data?.user?.id) {
+      resolvedSyncUserKey = data.user.id;
+      return resolvedSyncUserKey;
+    }
+  } catch {}
+  return '';
 }
 
 function initSupabaseClient() {
@@ -838,13 +966,20 @@ function clearAuthUrlFragment() {
 
 async function loadFromSupabase() {
   if (!hasSupabaseConfig()) return;
+  const syncKey = await resolveSyncUserKey();
+  if (!syncKey) {
+    syncStatus('','připojeno (čeká na přihlášení)');
+    return;
+  }
   try {
     syncStatus('...','načítám cloud…');
-    const {data, error} = await sb.from(SB_TABLE).select('data').eq('user_key', sbUserKey).maybeSingle();
+    const {data, error} = await sb.from(SB_TABLE).select('data').eq('user_key', syncKey).maybeSingle();
     if (error && error.code !== 'PGRST116') throw error;
     if (data?.data && typeof data.data === 'object') userData = data.data;
+    ensureStudySetsData();
     saveLocalData();
     populateSelects();
+    renderSetControls();
     syncStatus('ok','cloud synced');
   } catch (e) {
     syncStatus('err','chyba cloud načtení');
@@ -854,9 +989,14 @@ async function loadFromSupabase() {
 
 async function saveToSupabase() {
   if (!hasSupabaseConfig()) return;
+  const syncKey = await resolveSyncUserKey();
+  if (!syncKey) {
+    syncStatus('','čeká na přihlášení');
+    return;
+  }
   try {
     syncStatus('...','ukládám cloud…');
-    const row = {user_key: sbUserKey, data: userData, updated_at: new Date().toISOString()};
+    const row = {user_key: syncKey, data: userData, updated_at: new Date().toISOString()};
     const {error} = await sb.from(SB_TABLE).upsert(row, {onConflict: 'user_key'});
     if (error) throw error;
     syncStatus('ok','cloud uloženo ✓');
@@ -903,12 +1043,14 @@ async function saveSupabaseConfig() {
   await refreshAuthProfile();
 
   document.getElementById('sb-status').textContent = 'Připojuji…';
+  await loadFromSupabase();
+  if (!Object.keys(userData).length) await saveToSupabase();
   if (sbUserKey) {
-    await loadFromSupabase();
-    if (!Object.keys(userData).length) await saveToSupabase();
     document.getElementById('sb-status').textContent = 'Připojeno k Supabase ✓';
+  } else if (resolvedSyncUserKey) {
+    document.getElementById('sb-status').textContent = 'Připojeno k Supabase (sync dle přihlášeného účtu)';
   } else {
-    document.getElementById('sb-status').textContent = 'Připojeno k Supabase (bez sync klíče)';
+    document.getElementById('sb-status').textContent = 'Připojeno k Supabase (čeká na přihlášení)';
   }
   renderAll();
 }
@@ -918,6 +1060,7 @@ function clearSupabaseConfig() {
   sbUrl = null;
   sbAnonKey = null;
   sbUserKey = null;
+  resolvedSyncUserKey = '';
   localStorage.removeItem('sb_url');
   localStorage.removeItem('sb_anon_key');
   localStorage.removeItem('sb_user_key');
@@ -958,11 +1101,13 @@ async function refreshAuthProfile() {
   if (!sb?.auth) return refreshAuthProfileFromStorage();
   const {data, error} = await sb.auth.getUser();
   if (error || !data?.user) {
+    resolvedSyncUserKey = sbUserKey || '';
     saveAuthProfile(null);
     renderAuthProfile(null);
     return;
   }
   const u = data.user;
+  resolvedSyncUserKey = sbUserKey || u.id || '';
   const provider = u.app_metadata?.provider || u.identities?.[0]?.provider || 'email';
   const name = u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split('@')[0] || '';
   const profile = {name, email: u.email || '', provider};
@@ -1013,6 +1158,8 @@ async function signInWithEmail() {
   if (error) return setAuthStatus('Přihlášení selhalo: ' + error.message);
   setAuthStatus('Přihlášeno ✓');
   await refreshAuthProfile();
+  await loadFromSupabase();
+  renderAll();
 }
 
 async function signOutAuth() {
@@ -1020,6 +1167,7 @@ async function signOutAuth() {
     const {error} = await sb.auth.signOut();
     if (error) return setAuthStatus('Odhlášení selhalo: ' + error.message);
   }
+  resolvedSyncUserKey = sbUserKey || '';
   saveAuthProfile(null);
   renderAuthProfile(null);
   setAuthStatus('Odhlášeno');
@@ -1028,22 +1176,22 @@ async function signOutAuth() {
 function addNewPlantFromForm() {
   const latin = document.getElementById('new-latin')?.value.trim();
   const czech = document.getElementById('new-czech')?.value.trim();
-  const family_lat = document.getElementById('new-family-lat')?.value.trim();
-  const family_cz = document.getElementById('new-family-cz')?.value.trim();
-  const group = document.getElementById('new-group')?.value || 'dvouděložné';
+  const family_lat = document.getElementById('new-family-lat')?.value.trim() || 'General';
+  const family_cz = document.getElementById('new-family-cz')?.value.trim() || 'Obecné';
+  const group = document.getElementById('new-group')?.value || 'ostatní';
   const habitat = document.getElementById('new-habitat')?.value.trim() || '';
   const life_form = document.getElementById('new-life-form')?.value.trim() || '';
   const toxic = document.getElementById('new-toxic')?.value || 'ne';
   const tagsRaw = document.getElementById('new-tags')?.value.trim() || '';
   const status = document.getElementById('new-plant-status');
 
-  if (!latin || !czech || !family_lat || !family_cz) {
-    if (status) status.textContent = 'Vyplňte povinná pole označená *.';
+  if (!latin || !czech) {
+    if (status) status.textContent = 'Vyplňte povinná pole Přední strana a Zadní strana.';
     return;
   }
   const exists = getAllPlants().some(p => p.latin.toLowerCase() === latin.toLowerCase());
   if (exists) {
-    if (status) status.textContent = 'Rostlina s tímto LAT názvem už existuje.';
+    if (status) status.textContent = 'Kartička s touto přední stranou už existuje v aktivní sadě.';
     return;
   }
   const tags = tagsRaw ? tagsRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
@@ -1058,7 +1206,7 @@ function addNewPlantFromForm() {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
-  if (status) status.textContent = 'Rostlina přidána ✓';
+  if (status) status.textContent = 'Kartička přidána ✓';
 }
 
 // ── Data helpers ──
@@ -1069,8 +1217,9 @@ function setData(latin, patch) {
 }
 
 // ── Populate selects ──
-const GROUP_ORDER = ['přesličky','kapradiny','nahosemenné','trávy','stromy a keře','jednoděložné','dvouděložné'];
+const GROUP_ORDER = ['ostatní','přesličky','kapradiny','nahosemenné','trávy','stromy a keře','jednoděložné','dvouděložné'];
 const GROUP_COLORS = {
+  'ostatní':     '#6b7280',
   'přesličky':   '#5F5E5A',
   'kapradiny':   '#3B6D11',
   'nahosemenné': '#085041',
@@ -1245,7 +1394,7 @@ function filteredPlants(familySel, familyCzSel, statusSel, searchVal) {
   // update summary
   const active = [activeGroup, activeLF, activeHab, activeTox].filter(Boolean);
   const sum = document.getElementById('filter-summary');
-  if (sum) sum.textContent = active.length ? `Filtr: ${active.join(' · ')} — zobrazeno ${result.length} rostlin` : `Zobrazeno ${result.length} rostlin`;
+  if (sum) sum.textContent = active.length ? `Filtr: ${active.join(' · ')} — zobrazeno ${result.length} kartiček` : `Zobrazeno ${result.length} kartiček`;
   return result;
 }
 
@@ -1264,7 +1413,7 @@ function renderGrid() {
 function renderFlagged() {
   const plants = getAllPlants().filter(p => D(p.latin).flagged);
   const g = document.getElementById('flagged-grid');
-  g.innerHTML = plants.length ? plants.map(cardHTML).join('') : '<div class="empty">Žádné rostliny označeny vlajkou. Otevři kartičku a klikni 🚩 Nevím.</div>';
+  g.innerHTML = plants.length ? plants.map(cardHTML).join('') : '<div class="empty">Žádné kartičky označeny vlajkou. Otevři kartičku a klikni 🚩 Nevím.</div>';
 }
 
 function renderTable() {
@@ -1297,6 +1446,7 @@ function renderTable() {
 }
 
 function renderAll() {
+  renderSetControls();
   renderStats();
   renderGrid();
   renderFlagged();
@@ -1940,8 +2090,8 @@ function setMatchMode(m) {
   matchMode = m;
   ['ptof','ftop'].forEach(k => document.getElementById('mm-'+k).classList.toggle('active', k===m));
   const dir = m==='ptof'
-    ? 'Klikni na rostlinu vlevo, pak na správnou čeleď vpravo.'
-    : 'Klikni na čeleď vlevo, pak na rostliny které do ní patří — postupně všechny.';
+    ? 'Klikni na kartičku vlevo, pak na správnou kategorii vpravo.'
+    : 'Klikni na kategorii vlevo, pak na kartičky které do ní patří — postupně všechny.';
   document.getElementById('match-dir').textContent = dir;
   startMatch();
 }
@@ -2140,7 +2290,7 @@ function showMatchDone() {
   area.innerHTML = `
     <div class="match-result">
       <h2>🎉 Hotovo!</h2>
-      <p>Správně jsi přiřadil všechny rostliny do čeledí.</p>
+      <p>Správně jsi přiřadil všechny kartičky do kategorií.</p>
       <button class="btn green" onclick="startMatch()">Hrát znovu</button>
     </div>`;
 }
