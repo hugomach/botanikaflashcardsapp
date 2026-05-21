@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1D9E75">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Botanika OŽP</title>
 <style>
 :root {
@@ -2464,6 +2467,10 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'ArrowUp')    { e.preventDefault(); qFlag(); }
   else if (e.key === ' ')          { e.preventDefault(); flipQuiz(); }
 });
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
 </script>
 </body>
 </html>
