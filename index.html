@@ -269,6 +269,18 @@ body.quiz-open { overflow: hidden; }
 .quiz-stage .progress { margin-bottom: 0.85rem; }
 .quiz-btns .btn { min-height: 46px; font-size: 13px; }
 .quiz-actions-note { margin-top: 10px; padding-bottom: max(4px, env(safe-area-inset-bottom)); }
+.type-quiz-card { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-lg); margin: 0.5rem 0 0.75rem; padding: 1rem; min-height: 240px; display: flex; align-items: center; justify-content: center; text-align: center; }
+.type-quiz-photo { max-width: 100%; max-height: min(52dvh, 420px); border-radius: 10px; object-fit: contain; }
+.type-quiz-input-wrap { display: grid; gap: 8px; margin-bottom: 8px; }
+.type-quiz-input-wrap input { font-size: 16px; padding: 10px 12px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); outline: none; }
+.type-quiz-input-wrap input:focus { border-color: var(--green); }
+.type-quiz-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+.type-quiz-feedback { min-height: 20px; margin: 6px 0; text-align: center; font-size: 14px; }
+.type-quiz-feedback.ok { color: var(--green); }
+.type-quiz-feedback.almost { color: #854F0B; }
+.type-quiz-feedback.bad { color: var(--flag); }
+.type-quiz-reveal { display: block; text-align: center; font-size: 12px; color: var(--text2); cursor: pointer; text-decoration: underline; margin-top: 4px; }
+.type-quiz-answer { text-align: center; font-size: 13px; color: var(--text2); margin-top: 6px; }
 .quiz-setup-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 0.25rem 0 0.75rem; }
 .quiz-setup-note { font-size: 12px; color: var(--text2); }
 .quiz-session-summary { margin-bottom: 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; font-size: 12px; color: var(--text2); line-height: 1.55; }
@@ -549,6 +561,7 @@ body.quiz-open { overflow: hidden; }
             <button id="qm-lat" onclick="setQuizMode('lat')">LAT → CZ</button>
             <button id="qm-cz" onclick="setQuizMode('cz')">CZ → LAT</button>
             <button id="qm-fam" onclick="setQuizMode('fam')">Čeleď</button>
+            <button id="qm-type" onclick="setQuizMode('type')">Psaní ✏️</button>
           </div>
           <div class="quiz-photo-size-toggle" id="quiz-photo-size-toggle" role="group" aria-label="Velikost kartičky ve foto kvízu">
             <button id="qps-compact" class="active" aria-pressed="true" onclick="setQuizPhotoSize('compact')">Kompaktní</button>
@@ -761,6 +774,7 @@ let sbUserKey = null;
 let sb = null;
 let syncTimer = null;
 let quizList = [], quizIdx = 0, quizFlipped = false, quizMode = 'foto', quizPhotoSize = 'compact';
+let quizTypeAutoAdvanceTimer = null;
 let quizSessionActive = false;
 let quizSessionStats = { startedAt: 0, total: 0, actions: 0, flagged: 0, review: 0, learned: 0, flips: 0 };
 let quizLastSummary = null;
@@ -1823,7 +1837,7 @@ function quizOverlayBgClick(e) {
 // ── Quiz ──
 function setQuizMode(m) {
   quizMode = m;
-  ['foto','lat','cz','fam'].forEach(k => document.getElementById('qm-'+k).classList.toggle('active',k===m));
+  ['foto','lat','cz','fam','type'].forEach(k => document.getElementById('qm-'+k).classList.toggle('active',k===m));
   const photoSizeToggle = document.getElementById('quiz-photo-size-toggle');
   if (photoSizeToggle) photoSizeToggle.style.display = m === 'foto' ? 'inline-flex' : 'none';
   resetQuiz();
@@ -1950,8 +1964,123 @@ function getQuizPhotoSizingTokens(area) {
   };
 }
 
+function normalizeQuizTypeAnswer(value) {
+  return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function levenshtein(a, b) {
+  const s = String(a || '');
+  const t = String(b || '');
+  if (!s.length) return t.length;
+  if (!t.length) return s.length;
+  const matrix = Array.from({ length: s.length + 1 }, () => Array(t.length + 1).fill(0));
+  for (let i = 0; i <= s.length; i++) matrix[i][0] = i;
+  for (let j = 0; j <= t.length; j++) matrix[0][j] = j;
+  for (let i = 1; i <= s.length; i++) {
+    for (let j = 1; j <= t.length; j++) {
+      const cost = s[i - 1] === t[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost
+      );
+    }
+  }
+  return matrix[s.length][t.length];
+}
+
+function getQuizTypePlant() {
+  if (!quizSessionActive || quizMode !== 'type' || !quizList.length) return null;
+  return quizList[quizIdx] || null;
+}
+
+function onQuizTypeInputKeydown(event) {
+  if (event.key !== 'Enter') return;
+  event.preventDefault();
+  checkQuizTypeAnswer();
+}
+
+function showQuizTypeAnswer() {
+  const p = getQuizTypePlant();
+  if (!p) return;
+  const answerEl = document.getElementById('quiz-type-answer');
+  if (!answerEl) return;
+  answerEl.innerHTML = `Správná odpověď: <b><i>${esc(p.latin)}</i></b>`;
+}
+
+function typeQuizCountAsCorrect() {
+  const p = getQuizTypePlant();
+  if (!p) return;
+  qLearned();
+}
+
+function typeQuizNextWrong() {
+  const p = getQuizTypePlant();
+  if (!p) return;
+  qMarkReview();
+}
+
+function checkQuizTypeAnswer() {
+  const p = getQuizTypePlant();
+  if (!p) return;
+  if (quizTypeAutoAdvanceTimer) {
+    clearTimeout(quizTypeAutoAdvanceTimer);
+    quizTypeAutoAdvanceTimer = null;
+  }
+  const input = document.getElementById('quiz-type-input');
+  const checkBtn = document.getElementById('quiz-type-check');
+  const feedback = document.getElementById('quiz-type-feedback');
+  const actions = document.getElementById('quiz-type-actions');
+  if (!input || !checkBtn || !feedback || !actions || checkBtn.disabled) return;
+  const given = normalizeQuizTypeAnswer(input.value);
+  const correct = normalizeQuizTypeAnswer(p.latin);
+  if (!given) {
+    feedback.className = 'type-quiz-feedback bad';
+    feedback.textContent = 'Napiš odpověď.';
+    input.focus();
+    return;
+  }
+
+  input.disabled = true;
+  checkBtn.disabled = true;
+  actions.innerHTML = '';
+  const escapedCorrect = esc(p.latin);
+
+  if (given === correct) {
+    feedback.className = 'type-quiz-feedback ok';
+    feedback.textContent = 'Správně! ✓';
+    const expectedLatin = p.latin;
+    quizTypeAutoAdvanceTimer = setTimeout(() => {
+      quizTypeAutoAdvanceTimer = null;
+      if (!quizSessionActive || quizMode !== 'type') return;
+      if (quizList[quizIdx]?.latin !== expectedLatin) return;
+      qLearned();
+    }, 1000);
+    return;
+  }
+
+  const distance = levenshtein(given, correct);
+  if (distance <= 2) {
+    feedback.className = 'type-quiz-feedback almost';
+    feedback.innerHTML = `Skoro! Správně je: <b><i>${escapedCorrect}</i></b>`;
+    actions.innerHTML = `
+      <button class="btn green" onclick="typeQuizCountAsCorrect()">Počítat jako správně</button>
+      <button class="btn" onclick="typeQuizNextWrong()">Další</button>
+    `;
+    return;
+  }
+
+  feedback.className = 'type-quiz-feedback bad';
+  feedback.innerHTML = `Špatně. Správně je: <b><i>${escapedCorrect}</i></b>`;
+  actions.innerHTML = `<button class="btn" onclick="typeQuizNextWrong()">Další</button>`;
+}
+
 function renderQuiz() {
   const area = document.getElementById('quiz-area');
+  if (quizTypeAutoAdvanceTimer) {
+    clearTimeout(quizTypeAutoAdvanceTimer);
+    quizTypeAutoAdvanceTimer = null;
+  }
   if (!quizSessionActive) {
     area.classList.remove('foto-large');
     area.innerHTML = `<div class="quiz-empty"><div class="quiz-empty-message">Nastav filtry a spusť samostatné okno kvízu.</div></div>`;
@@ -1970,6 +2099,33 @@ function renderQuiz() {
   const p = quizList[quizIdx];
   const d = D(p.latin);
   const pct = Math.round(((quizIdx+1)/quizList.length)*100);
+  if (quizMode === 'type') {
+    const photo = d.photos[0] || '';
+    const photoSrc = photo ? (photo.startsWith('data:') ? photo : esc(photo)) : '';
+    const questionHTML = photoSrc
+      ? `<img class="type-quiz-photo" src="${photoSrc}" alt="${esc(p.czech)}" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<div class=&quot;flip-q cz&quot;>${esc(p.czech)}</div>')">`
+      : `<div class="flip-q cz">${esc(p.czech)}</div>`;
+    area.innerHTML = `
+      <div class="quiz-stage">
+        <div class="quiz-meta">
+          <span>${quizIdx+1} / ${quizList.length}</span>
+        </div>
+        <div class="progress"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <div class="type-quiz-card">${questionHTML}</div>
+        <div class="type-quiz-input-wrap">
+          <input id="quiz-type-input" type="text" placeholder="Napiš latinský název…" onkeydown="onQuizTypeInputKeydown(event)" autocomplete="off" autocapitalize="off" spellcheck="false">
+          <button class="btn green" id="quiz-type-check" onclick="checkQuizTypeAnswer()">Zkontrolovat</button>
+        </div>
+        <div id="quiz-type-feedback" class="type-quiz-feedback"></div>
+        <div id="quiz-type-actions" class="type-quiz-actions"></div>
+        <a class="type-quiz-reveal" role="button" tabindex="0" onclick="showQuizTypeAnswer()" onkeydown="onFilterKey(event,showQuizTypeAnswer)">Zobrazit odpověď</a>
+        <div id="quiz-type-answer" class="type-quiz-answer"></div>
+      </div>
+    `;
+    const input = document.getElementById('quiz-type-input');
+    if (input) input.focus();
+    return;
+  }
   const quizPhotoSources = quizMode === 'foto'
     ? d.photos.map(src => src.startsWith('data:') ? src : esc(src))
     : [];
