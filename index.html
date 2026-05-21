@@ -738,6 +738,20 @@ create policy if not exists "anon update botanika_sync" on botanika_sync for upd
           Storage bucket vytvoř v Supabase jako public bucket jménem <b>botanika-photos</b>.
         </div>
       </div>
+
+      <div class="settings-section">
+        <h3>Data</h3>
+        <div class="settings-actions">
+          <button class="btn" onclick="exportJSON()">Export JSON</button>
+          <button class="btn" onclick="exportCSV()">Export CSV</button>
+        </div>
+        <label style="margin-top:10px;">Import JSON</label>
+        <input type="file" id="import-json-file" accept=".json,application/json">
+        <div class="settings-actions">
+          <button class="btn green" onclick="importJSON(event)">Import JSON</button>
+        </div>
+        <div id="data-transfer-status" style="font-size:12px;color:var(--text3);margin-top:6px;"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -1570,6 +1584,136 @@ function closeModal() {
 function openSettingsModal() { document.getElementById('settings-modal').style.display = 'flex'; }
 function closeSettingsModal() { document.getElementById('settings-modal').style.display = 'none'; }
 function settingsModalBgClick(e) { if (e.target.id==='settings-modal') closeSettingsModal(); }
+
+function setDataTransferStatus(message) {
+  const el = document.getElementById('data-transfer-status');
+  if (el) el.textContent = message || '';
+}
+
+function triggerDownload(filename, mimeType, content) {
+  const blob = new Blob([content], {type: mimeType});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function escapeCSVCell(value) {
+  const text = value == null ? '' : String(value);
+  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function exportJSON() {
+  try {
+    const now = new Date();
+    const payload = {
+      userData,
+      customPlants: getCustomPlants(),
+      exportedAt: now.toISOString()
+    };
+    const filename = `botanika-export-${now.toISOString().slice(0, 10)}.json`;
+    triggerDownload(filename, 'application/json;charset=utf-8', JSON.stringify(payload, null, 2));
+    setDataTransferStatus('JSON export vytvořen ✓');
+  } catch (e) {
+    console.error('exportJSON failed:', e);
+    setDataTransferStatus('JSON export selhal.');
+  }
+}
+
+function exportCSV() {
+  try {
+    const headers = ['latin', 'czech', 'family_lat', 'family_cz', 'group', 'habitat', 'life_form', 'toxic', 'status', 'flagged', 'photos_count', 'funfact', 'wrongCount', 'correctStreak'];
+    const rows = getAllPlants().map(p => {
+      const d = D(p.latin);
+      return [
+        p.latin,
+        p.czech,
+        p.family_lat,
+        p.family_cz,
+        p.group || '',
+        p.habitat || '',
+        p.life_form || '',
+        p.toxic || '',
+        d.status || 'new',
+        d.flagged ? 'true' : 'false',
+        Array.isArray(d.photos) ? d.photos.length : 0,
+        d.funfact || '',
+        Number(d.wrongCount || 0),
+        Number(d.correctStreak || 0)
+      ];
+    });
+    const csv = [headers, ...rows].map(row => row.map(escapeCSVCell).join(',')).join('\n');
+    const filename = `botanika-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    triggerDownload(filename, 'text/csv;charset=utf-8', '\uFEFF' + csv);
+    setDataTransferStatus('CSV export vytvořen ✓');
+  } catch (e) {
+    console.error('exportCSV failed:', e);
+    setDataTransferStatus('CSV export selhal.');
+  }
+}
+
+function mergeCustomPlants(existingPlants, incomingPlants) {
+  const existing = Array.isArray(existingPlants) ? existingPlants : [];
+  const incoming = Array.isArray(incomingPlants) ? incomingPlants : [];
+  if (!incoming.length) return existing;
+  const byLatin = new Map();
+  existing.forEach(p => {
+    if (p && typeof p === 'object' && typeof p.latin === 'string' && p.latin.trim()) {
+      byLatin.set(p.latin.trim().toLowerCase(), p);
+    }
+  });
+  incoming.forEach(p => {
+    if (p && typeof p === 'object' && typeof p.latin === 'string' && p.latin.trim()) {
+      byLatin.set(p.latin.trim().toLowerCase(), p);
+    }
+  });
+  return [...byLatin.values()];
+}
+
+function importJSON(event) {
+  event?.preventDefault?.();
+  const input = document.getElementById('import-json-file');
+  const file = input?.files?.[0];
+  if (!file) {
+    setDataTransferStatus('Vyberte JSON soubor.');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const parsed = JSON.parse(String(reader.result || '{}'));
+      if (!parsed || typeof parsed !== 'object' || !parsed.userData || typeof parsed.userData !== 'object' || Array.isArray(parsed.userData)) {
+        setDataTransferStatus('Neplatný JSON: chybí `userData` objekt.');
+        return;
+      }
+      if (!confirm('Importovat data a sloučit je s aktuálními daty?')) {
+        setDataTransferStatus('Import zrušen.');
+        return;
+      }
+      const mergedUserData = {...userData, ...parsed.userData};
+      const incomingCustomPlants = Array.isArray(parsed.customPlants)
+        ? parsed.customPlants
+        : Array.isArray(parsed.userData.__customPlants) ? parsed.userData.__customPlants : [];
+      const mergedCustomPlants = mergeCustomPlants(userData.__customPlants, incomingCustomPlants);
+      if (mergedCustomPlants.length) mergedUserData.__customPlants = mergedCustomPlants;
+      userData = mergedUserData;
+      scheduleSave();
+      populateSelects();
+      renderAll();
+      if (input) input.value = '';
+      setDataTransferStatus('Import hotový ✓');
+    } catch (e) {
+      console.error('importJSON failed:', e);
+      setDataTransferStatus('Import selhal: neplatný JSON.');
+    }
+  };
+  reader.onerror = () => setDataTransferStatus('Import selhal: soubor nelze načíst.');
+  reader.readAsText(file);
+}
 
 function dataUrlToBlob(dataUrl) {
   const parts = dataUrl.split(',');
