@@ -729,9 +729,20 @@ body.quiz-open { overflow: hidden; }
 );
 
 alter table botanika_sync enable row level security;
-create policy if not exists "anon read botanika_sync" on botanika_sync for select to anon using (true);
-create policy if not exists "anon upsert botanika_sync" on botanika_sync for insert to anon with check (true);
-create policy if not exists "anon update botanika_sync" on botanika_sync for update to anon using (true) with check (true);</code>
+
+-- Users can only read their own data
+create policy "read own data" on botanika_sync 
+  for select to anon 
+  using (user_key = current_setting('request.headers')::json->>'x-user-key');
+
+-- For simpler setup without custom headers, use this instead:
+-- Users can read/write any row but must know the user_key
+create policy "anon read botanika_sync" on botanika_sync for select to anon using (true);
+create policy "anon insert botanika_sync" on botanika_sync for insert to anon with check (true);
+create policy "anon update botanika_sync" on botanika_sync for update to anon using (true) with check (true);</code>
+          <div style="margin-top:8px;">
+            ⚠️ Tyto politiky jsou permisivní — kdokoli se znalostí vašeho sync klíče může data číst i měnit. Pro lepší zabezpečení použijte Supabase Auth a omezte přístup na přihlášené uživatele.
+          </div>
         </div>
 
         <div style="margin-top:12px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2);font-size:12px;color:var(--text2);line-height:1.6;">
