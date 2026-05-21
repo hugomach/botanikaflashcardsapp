@@ -1359,6 +1359,40 @@ function cardHTML(p) {
   </div>`;
 }
 
+function fuzzyMatch(query, text) {
+  const q = (query || '').toLowerCase().trim();
+  const t = (text || '').toLowerCase();
+  if (!q) return true;
+
+  const queryWords = q.split(/\s+/).filter(Boolean);
+  const textWords = t.split(/\s+/).filter(Boolean);
+
+  function levenshteinDistance(a, b) {
+    const rows = a.length + 1;
+    const cols = b.length + 1;
+    const dp = Array.from({ length: rows }, () => new Array(cols).fill(0));
+    for (let i = 0; i < rows; i++) dp[i][0] = i;
+    for (let j = 0; j < cols; j++) dp[0][j] = j;
+    for (let i = 1; i < rows; i++) {
+      for (let j = 1; j < cols; j++) {
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        dp[i][j] = Math.min(
+          dp[i - 1][j] + 1,
+          dp[i][j - 1] + 1,
+          dp[i - 1][j - 1] + cost
+        );
+      }
+    }
+    return dp[a.length][b.length];
+  }
+
+  return queryWords.every(word => {
+    if (t.includes(word)) return true;
+    if (word.length <= 4) return false;
+    return textWords.some(tw => levenshteinDistance(word, tw) <= 2);
+  });
+}
+
 function filteredPlants(familySel, familyCzSel, statusSel, searchVal) {
   const q = (searchVal||'').toLowerCase();
   const fam = familySel||'';
@@ -1379,7 +1413,7 @@ function filteredPlants(familySel, familyCzSel, statusSel, searchVal) {
     if (st==='photo' && !d.photos.length) return false;
     if (q) {
       const searchIn = [p.latin, p.czech, p.family_cz, p.family_lat, p.habitat, p.life_form, ...(p.tags||[])].join(' ').toLowerCase();
-      if (!searchIn.includes(q)) return false;
+      if (!fuzzyMatch(q, searchIn)) return false;
     }
     return true;
   });
