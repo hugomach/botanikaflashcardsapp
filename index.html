@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1D9E75">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Botanika OŽP</title>
 <style>
 :root {
@@ -29,6 +32,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text3); }
 .sync-dot.ok { background: var(--green); }
 .sync-dot.err { background: var(--flag); }
+.streak-badge { font-size: 12px; color: var(--text2); font-weight: 600; }
 .theme-select { background: var(--surface2); border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px; font-size: 13px; cursor: pointer; color: var(--text2); appearance: none; -webkit-appearance: none; text-align: center; }
 
 .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; gap: 2px; }
@@ -169,6 +173,10 @@ body.quiz-open { overflow: hidden; }
 .quiz-actions-note { margin-top: 10px; padding-bottom: max(4px, env(safe-area-inset-bottom)); }
 .quiz-setup-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 0.25rem 0 0.75rem; }
 .quiz-setup-note { font-size: 12px; color: var(--text2); }
+.daily-progress { margin-bottom: 0.85rem; }
+.daily-progress-label { font-size: 12px; color: var(--text2); margin-bottom: 5px; }
+.daily-progress-track { width: 100%; max-width: 240px; height: 6px; border-radius: 999px; background: var(--surface2); overflow: hidden; }
+.daily-progress-fill { height: 100%; background: var(--green); border-radius: 999px; transition: width 0.25s ease; }
 .quiz-session-summary { margin-bottom: 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; font-size: 12px; color: var(--text2); line-height: 1.55; }
 .quiz-empty-message { font-size: 14px; color: var(--text2); }
 .quiz-empty { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; }
@@ -321,6 +329,7 @@ body.quiz-open { overflow: hidden; }
     <div class="sync-dot" id="sync-dot"></div>
     <span id="sync-label">nepřipojeno</span>
   </div>
+  <div class="streak-badge" id="streak-indicator" style="display:none;"></div>
   <button class="settings-icon-btn" type="button" onclick="openSettingsModal()" aria-label="Otevřít nastavení" title="Nastavení">⚙️</button>
 </div>
 
@@ -460,6 +469,10 @@ body.quiz-open { overflow: hidden; }
           <button class="btn green" id="quiz-start-btn" onclick="startQuiz()">Spustit kvíz</button>
           <div class="quiz-setup-note" id="quiz-setup-note"></div>
         </div>
+        <div class="daily-progress" id="daily-progress-box">
+          <div class="daily-progress-label" id="daily-progress-label">Dnes: 0/20 kartiček</div>
+          <div class="daily-progress-track"><div class="daily-progress-fill" id="daily-progress-fill" style="width:0%;"></div></div>
+        </div>
         <div id="quiz-session-summary" class="quiz-session-summary" style="display:none;"></div>
     </div>
   </div>
@@ -584,6 +597,13 @@ body.quiz-open { overflow: hidden; }
       </div>
 
       <div class="settings-section">
+        <h3>Denní challenge</h3>
+        <label>Denní cíl (kartičky)</label>
+        <input type="number" id="daily-goal-input" min="1" step="1" value="20" onchange="updateDailyGoal(this.value)">
+        <div id="daily-goal-status" style="font-size:12px;color:var(--text3);margin-top:6px;"></div>
+      </div>
+
+      <div class="settings-section">
         <h3>Přihlášení / Profil</h3>
         <div id="auth-profile" style="font-size:12px;color:var(--text2);margin-bottom:8px;">Anonymní režim</div>
         <div class="settings-actions">
@@ -677,7 +697,7 @@ let sb = null;
 let syncTimer = null;
 let quizList = [], quizIdx = 0, quizFlipped = false, quizMode = 'foto', quizPhotoSize = 'compact';
 let quizSessionActive = false;
-let quizSessionStats = { startedAt: 0, total: 0, actions: 0, flagged: 0, review: 0, learned: 0, flips: 0 };
+let quizSessionStats = { startedAt: 0, total: 0, actions: 0, flagged: 0, review: 0, learned: 0, flips: 0, dailyGoalReached: false };
 let quizLastSummary = null;
 let mcfotoCorrect = 0, mcfotoAnswered = 0, mcfotoLocked = false, mcfotoChoices = [], mcfotoCorrectLatin = '';
 let dirty = false;
@@ -698,6 +718,7 @@ const SB_BUCKET = 'botanika-photos';
 const LOCAL_USERDATA_KEY = 'botanika_user_data_v1';
 const LOCAL_AUTH_PROFILE_KEY = 'botanika_auth_profile_v1';
 const LOCAL_SORT_MODE_KEY = 'botanika_sort_mode_v1';
+const DEFAULT_DAILY_GOAL = 20;
 // Large offset keeps custom cards without `addedAt` grouped above base cards in "added" sorting.
 const CUSTOM_PLANT_ADDED_ORDER_OFFSET = 1_000_000_000_000;
 
@@ -710,15 +731,28 @@ function getNameOverrides() {
   return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
 }
 
+function getFieldOverrides() {
+  const raw = userData.__fieldOverrides;
+  return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+}
+
 function getAllPlants() {
-  const overrides = getNameOverrides();
+  const nameOverrides = getNameOverrides();
+  const fieldOverrides = getFieldOverrides();
   const base = PLANTS.map(p => {
-    const patch = overrides[p.latin];
-    if (!patch || typeof patch !== 'object') return p;
-    return {
-      ...p,
-      czech: typeof patch.czech === 'string' ? patch.czech : p.czech
-    };
+    const namePatch = nameOverrides[p.latin];
+    const fieldPatch = fieldOverrides[p.latin];
+    if ((!namePatch || typeof namePatch !== 'object') && (!fieldPatch || typeof fieldPatch !== 'object')) return p;
+    const merged = {...p};
+    if (namePatch && typeof namePatch === 'object' && typeof namePatch.czech === 'string') merged.czech = namePatch.czech;
+    if (fieldPatch && typeof fieldPatch === 'object') {
+      if (typeof fieldPatch.czech === 'string') merged.czech = fieldPatch.czech;
+      if (typeof fieldPatch.habitat === 'string') merged.habitat = fieldPatch.habitat;
+      if (typeof fieldPatch.life_form === 'string') merged.life_form = fieldPatch.life_form;
+      if (typeof fieldPatch.toxic === 'string') merged.toxic = fieldPatch.toxic;
+      if (Array.isArray(fieldPatch.tags)) merged.tags = fieldPatch.tags;
+    }
+    return merged;
   });
   return [...base, ...getCustomPlants()];
 }
@@ -755,6 +789,121 @@ function D(latin) {
     ...raw,
     photos
   };
+}
+
+function getDateYMD(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getRelativeDateYMD(deltaDays) {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  date.setDate(date.getDate() + deltaDays);
+  return getDateYMD(date);
+}
+
+function asPositiveInt(value, fallback) {
+  const n = Number.parseInt(value, 10);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
+function getStreakData() {
+  const raw = userData.__streak;
+  const streak = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  const normalized = {
+    currentStreak: asPositiveInt(streak.currentStreak, 0),
+    lastStudyDate: typeof streak.lastStudyDate === 'string' ? streak.lastStudyDate : '',
+    longestStreak: asPositiveInt(streak.longestStreak, 0),
+    todayActions: asPositiveInt(streak.todayActions, 0),
+    todayDate: typeof streak.todayDate === 'string' ? streak.todayDate : '',
+    dailyGoal: asPositiveInt(streak.dailyGoal, DEFAULT_DAILY_GOAL)
+  };
+  userData.__streak = normalized;
+  return normalized;
+}
+
+function getDailyGoal(streak = getStreakData()) {
+  return asPositiveInt(streak.dailyGoal, DEFAULT_DAILY_GOAL);
+}
+
+function getCurrentStreakForDisplay(streak = getStreakData()) {
+  const today = getRelativeDateYMD(0);
+  const yesterday = getRelativeDateYMD(-1);
+  if (streak.lastStudyDate === today || streak.lastStudyDate === yesterday) return streak.currentStreak;
+  return 0;
+}
+
+function getTodayActions(streak = getStreakData()) {
+  const today = getRelativeDateYMD(0);
+  return streak.todayDate === today ? streak.todayActions : 0;
+}
+
+function renderStreakIndicator() {
+  const el = document.getElementById('streak-indicator');
+  if (!el) return;
+  const streak = getCurrentStreakForDisplay();
+  if (streak >= 2) {
+    el.style.display = '';
+    el.textContent = `🔥 ${streak} dní`;
+  } else {
+    el.style.display = 'none';
+    el.textContent = '';
+  }
+}
+
+function renderDailyProgress() {
+  const streak = getStreakData();
+  const goal = getDailyGoal(streak);
+  const todayActions = getTodayActions(streak);
+  const pct = Math.max(0, Math.min(100, Math.round((todayActions / goal) * 100)));
+  const label = document.getElementById('daily-progress-label');
+  const fill = document.getElementById('daily-progress-fill');
+  const goalInput = document.getElementById('daily-goal-input');
+  if (label) label.textContent = `Dnes: ${todayActions}/${goal} kartiček`;
+  if (fill) fill.style.width = `${pct}%`;
+  if (goalInput) goalInput.value = String(goal);
+}
+
+function updateDailyGoal(value) {
+  const streak = getStreakData();
+  const goal = asPositiveInt(value, DEFAULT_DAILY_GOAL);
+  streak.dailyGoal = goal;
+  userData.__streak = streak;
+  scheduleSave();
+  const status = document.getElementById('daily-goal-status');
+  if (status) status.textContent = `Denní cíl nastaven na ${goal} kartiček.`;
+  renderDailyProgress();
+}
+
+function trackDailyActivity() {
+  const streak = getStreakData();
+  const today = getRelativeDateYMD(0);
+  const yesterday = getRelativeDateYMD(-1);
+  const goal = getDailyGoal(streak);
+  const previousTodayActions = getTodayActions(streak);
+
+  if (streak.todayDate === today) {
+    streak.todayActions += 1;
+  } else if (streak.todayDate === yesterday) {
+    streak.currentStreak += 1;
+    streak.todayDate = today;
+    streak.todayActions = 1;
+  } else {
+    streak.currentStreak = 1;
+    streak.todayDate = today;
+    streak.todayActions = 1;
+  }
+
+  streak.lastStudyDate = today;
+  if (streak.currentStreak > streak.longestStreak) streak.longestStreak = streak.currentStreak;
+  userData.__streak = streak;
+  scheduleSave();
+  renderStreakIndicator();
+  renderDailyProgress();
+  return {goalReachedNow: previousTodayActions < goal && streak.todayActions >= goal};
 }
 
 // ── Init ──
@@ -1081,7 +1230,6 @@ function getFamilySuccessLabel(familyLat) {
   const perf = getFamilyPerformance(familyLat);
   return perf.total ? `${Math.round((perf.ratio || 0) * 100)} %` : '—';
 }
-
 function sm2Update(latin, quality) {
   const q = Math.max(0, Math.min(5, Number(quality) || 0));
   const d = D(latin);
@@ -1128,65 +1276,171 @@ function migratePlantDataKey(oldLatin, newLatin) {
   delete userData[oldKey];
 }
 
-function editPlantNamesFromTable(latin) {
+function buildSelectOptions(order, selected, includeBlank = false) {
+  const values = Array.isArray(order) ? [...order] : [];
+  if (selected && !values.includes(selected)) values.unshift(selected);
+  return (includeBlank ? '<option value="">—</option>' : '')
+    + values.map(v => `<option value="${esc(v)}"${v===selected?' selected':''}>${esc(v)}</option>`).join('');
+}
+
+function editPlantFromTable(latin) {
   const plant = getAllPlants().find(p => p.latin === latin);
   if (!plant) return;
+  const custom = getCustomPlants();
+  const isCustom = custom.some(p => p.latin === latin);
+  const latinEnc = encodeURIComponent(latin);
+  const tagsStr = Array.isArray(plant.tags) ? plant.tags.join(', ') : '';
+  lastFocusedBeforeModal = document.activeElement;
+  document.getElementById('modal-inner').innerHTML = `
+    <div class="modal-head">
+      <div>
+        <div id="modal-title" style="font-size:16px;font-weight:600;">Upravit rostlinu</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px;">${isCustom ? 'Vlastní rostlina' : 'Vestavěná rostlina'}</div>
+      </div>
+      <button class="btn-close" id="modal-close-btn" aria-label="Zavřít úpravu rostliny" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="settings-grid">
+        <label>Latinský název</label>
+        <input type="text" id="edit-plant-latin" value="${esc(plant.latin)}" ${isCustom ? '' : 'disabled'}>
+        <label>Český název</label>
+        <input type="text" id="edit-plant-czech" value="${esc(plant.czech || '')}">
+        <label>Čeleď LAT</label>
+        <input type="text" id="edit-plant-family-lat" value="${esc(plant.family_lat || '')}" ${isCustom ? '' : 'disabled'}>
+        <label>Čeleď CZ</label>
+        <input type="text" id="edit-plant-family-cz" value="${esc(plant.family_cz || '')}" ${isCustom ? '' : 'disabled'}>
+        <label>Evoluční skupina</label>
+        <select id="edit-plant-group" ${isCustom ? '' : 'disabled'}>${buildSelectOptions(GROUP_ORDER, plant.group || '')}</select>
+        <label>Biotop</label>
+        <input type="text" id="edit-plant-habitat" value="${esc(plant.habitat || '')}">
+        <label>Životní forma</label>
+        <select id="edit-plant-life-form">${buildSelectOptions(LF_ORDER, plant.life_form || '', true)}</select>
+        <label>Toxicita</label>
+        <select id="edit-plant-toxic">${buildSelectOptions(TOX_ORDER, plant.toxic || '', true)}</select>
+        <label>Tagy (oddělené čárkou)</label>
+        <input type="text" id="edit-plant-tags" value="${esc(tagsStr)}">
+      </div>
+      <div class="settings-actions" style="margin-top:12px;">
+        <button class="btn btn-save" type="button" onclick="savePlantFromTableForm('${latinEnc}')">Uložit změny</button>
+        ${isCustom ? `<button class="btn" type="button" onclick="deleteCustomPlantFromTable('${latinEnc}')">Smazat</button>` : ''}
+      </div>
+      <div id="edit-plant-status" style="font-size:12px;color:var(--text3);margin-top:6px;"></div>
+    </div>`;
+  document.getElementById('modal').style.display = 'flex';
+  requestAnimationFrame(() => document.getElementById('modal-close-btn')?.focus());
+}
 
-  const nextLatinRaw = prompt('Latinský název:', plant.latin);
-  if (nextLatinRaw === null) return;
-  const nextCzechRaw = prompt('Český název:', plant.czech);
-  if (nextCzechRaw === null) return;
+function savePlantFromTableForm(originalLatinEnc) {
+  const originalLatin = decodeURIComponent(originalLatinEnc || '');
+  const status = document.getElementById('edit-plant-status');
+  const custom = getCustomPlants();
+  const customIdx = custom.findIndex(p => p.latin === originalLatin);
+  const isCustom = customIdx >= 0;
 
-  const nextLatin = nextLatinRaw.trim();
-  const nextCzech = nextCzechRaw.trim();
-  const status = document.getElementById('table-edit-status');
+  const latin = document.getElementById('edit-plant-latin')?.value.trim() || '';
+  const czech = document.getElementById('edit-plant-czech')?.value.trim() || '';
+  const family_lat = document.getElementById('edit-plant-family-lat')?.value.trim() || '';
+  const family_cz = document.getElementById('edit-plant-family-cz')?.value.trim() || '';
+  const group = document.getElementById('edit-plant-group')?.value || '';
+  const habitat = document.getElementById('edit-plant-habitat')?.value.trim() || '';
+  const life_form = document.getElementById('edit-plant-life-form')?.value || '';
+  const toxic = document.getElementById('edit-plant-toxic')?.value || '';
+  const tagsRaw = document.getElementById('edit-plant-tags')?.value.trim() || '';
+  const tags = tagsRaw ? tagsRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
 
-  if (!nextLatin || !nextCzech) {
-    if (status) status.textContent = 'LAT i CZ název musí být vyplněný.';
+  if (!czech) {
+    if (status) status.textContent = 'Český název musí být vyplněný.';
     return;
   }
 
-  const custom = getCustomPlants();
-  const customIdx = custom.findIndex(p => p.latin === latin);
-
-  if (customIdx >= 0) {
-    const duplicateCustom = custom.some((p, idx) => idx !== customIdx && p.latin.toLowerCase() === nextLatin.toLowerCase());
-    const duplicateBase = PLANTS.some(p => p.latin.toLowerCase() === nextLatin.toLowerCase());
-    const duplicate = duplicateCustom || duplicateBase;
+  if (isCustom) {
+    if (!latin || !family_lat || !family_cz) {
+      if (status) status.textContent = 'LAT název i obě čeledi musí být vyplněné.';
+      return;
+    }
+    const duplicate = getAllPlants().some(p => p.latin.toLowerCase() === latin.toLowerCase() && p.latin !== originalLatin);
     if (duplicate) {
       if (status) status.textContent = 'Rostlina s tímto LAT názvem už existuje.';
       return;
     }
-    custom[customIdx].latin = nextLatin;
-    custom[customIdx].czech = nextCzech;
+    custom[customIdx] = {
+      ...custom[customIdx],
+      latin,
+      czech,
+      family_lat,
+      family_cz,
+      group,
+      habitat,
+      life_form,
+      toxic,
+      tags
+    };
     userData.__customPlants = custom;
-    migratePlantDataKey(latin, nextLatin);
+    migratePlantDataKey(originalLatin, latin);
     scheduleSave();
     populateSelects();
     renderAll();
-    if (status) status.textContent = 'Názvy upraveny ✓';
+    closeModal();
+    const tableStatus = document.getElementById('table-edit-status');
+    if (tableStatus) tableStatus.textContent = 'Rostlina upravena ✓';
     return;
   }
 
-  if (nextLatin !== latin) {
-    if (status) status.textContent = 'U vestavěných rostlin lze zatím upravit jen český název.';
-    return;
-  }
-
-  const basePlant = PLANTS.find(p => p.latin === latin);
+  const basePlant = PLANTS.find(p => p.latin === originalLatin);
   if (!basePlant) return;
 
-  const overrides = getNameOverrides();
-  if (nextCzech === basePlant.czech) {
-    delete overrides[latin];
-  } else {
-    overrides[latin] = {czech: nextCzech};
+  const fieldOverrides = getFieldOverrides();
+  const patch = {};
+  if (czech !== (basePlant.czech || '')) patch.czech = czech;
+  if (habitat !== (basePlant.habitat || '')) patch.habitat = habitat;
+  if (life_form !== (basePlant.life_form || '')) patch.life_form = life_form;
+  if (toxic !== (basePlant.toxic || '')) patch.toxic = toxic;
+  const baseTags = Array.isArray(basePlant.tags) ? basePlant.tags : [];
+  if (JSON.stringify(tags) !== JSON.stringify(baseTags)) patch.tags = tags;
+
+  if (Object.keys(patch).length) fieldOverrides[originalLatin] = patch;
+  else delete fieldOverrides[originalLatin];
+  userData.__fieldOverrides = fieldOverrides;
+
+  const nameOverrides = getNameOverrides();
+  if (Object.prototype.hasOwnProperty.call(nameOverrides, originalLatin)) {
+    delete nameOverrides[originalLatin];
+    userData.__nameOverrides = nameOverrides;
   }
-  userData.__nameOverrides = overrides;
+
   scheduleSave();
   populateSelects();
   renderAll();
-  if (status) status.textContent = 'Název upraven ✓';
+  closeModal();
+  const tableStatus = document.getElementById('table-edit-status');
+  if (tableStatus) tableStatus.textContent = 'Rostlina upravena ✓';
+}
+
+function deleteCustomPlantFromTable(latinEnc) {
+  const latin = decodeURIComponent(latinEnc || '');
+  const custom = getCustomPlants();
+  const idx = custom.findIndex(p => p.latin === latin);
+  if (idx < 0) return;
+  if (!confirm(`Opravdu smazat vlastní rostlinu „${latin}“?`)) return;
+  custom.splice(idx, 1);
+  userData.__customPlants = custom;
+  const fieldOverrides = getFieldOverrides();
+  if (Object.prototype.hasOwnProperty.call(fieldOverrides, latin)) {
+    delete fieldOverrides[latin];
+    userData.__fieldOverrides = fieldOverrides;
+  }
+  const nameOverrides = getNameOverrides();
+  if (Object.prototype.hasOwnProperty.call(nameOverrides, latin)) {
+    delete nameOverrides[latin];
+    userData.__nameOverrides = nameOverrides;
+  }
+  delete userData[SK(latin)];
+  scheduleSave();
+  populateSelects();
+  renderAll();
+  closeModal();
+  const status = document.getElementById('table-edit-status');
+  if (status) status.textContent = 'Rostlina smazána ✓';
 }
 
 // ── Populate selects ──
@@ -1520,15 +1774,15 @@ function renderTable() {
       <td>${esc(p.life_form||'')}</td>
       <td>${esc(p.toxic||'')}</td>
       <td>${status}</td>
-      <td><button class="btn edit-name-btn" type="button" aria-label="Upravit názvy rostliny" title="Upravit názvy">✏️ Názvy</button></td>
+      <td><button class="btn edit-plant-btn" type="button" aria-label="Upravit rostlinu" title="Upravit rostlinu">✏️ Upravit</button></td>
     </tr>`;
   }).join('');
   body.querySelectorAll('.table-row').forEach(row => {
-    const editBtn = row.querySelector('.edit-name-btn');
+    const editBtn = row.querySelector('.edit-plant-btn');
     if (editBtn) {
       editBtn.addEventListener('click', (event) => {
         event.stopPropagation();
-        editPlantNamesFromTable(decodeURIComponent(row.dataset.latin || ''));
+        editPlantFromTable(decodeURIComponent(row.dataset.latin || ''));
       });
     }
     row.addEventListener('click', () => openModal(decodeURIComponent(row.dataset.latin || '')));
@@ -1536,6 +1790,8 @@ function renderTable() {
 }
 
 function renderAll() {
+  renderStreakIndicator();
+  renderDailyProgress();
   renderStats();
   renderGrid();
   renderFlagged();
@@ -2040,10 +2296,11 @@ function renderQuizSetup() {
       summaryBox.innerHTML = '';
     }
   }
+  renderDailyProgress();
 }
 
 function resetQuizStats() {
-  quizSessionStats = { startedAt: Date.now(), total: quizList.length, actions: 0, flagged: 0, review: 0, learned: 0, flips: 0 };
+  quizSessionStats = { startedAt: Date.now(), total: quizList.length, actions: 0, flagged: 0, review: 0, learned: 0, flips: 0, dailyGoalReached: false };
 }
 
 function trackQuizAction(type) {
@@ -2082,6 +2339,7 @@ function finishQuizSession() {
     <b>📊 Statistiky posledního kvízu</b><br>
     Kartičky v balíčku: <b>${quizSessionStats.total}</b> · Akce celkem: <b>${quizSessionStats.actions}</b> · Čas: <b>${timeLabel}</b><br>
     🚩 Nevím: <b>${quizSessionStats.flagged}</b> · 🔁 Opakovat: <b>${quizSessionStats.review}</b> · ✓ Umím: <b>${quizSessionStats.learned}</b>
+    ${quizSessionStats.dailyGoalReached ? '<br>🎉 Denní cíl splněn! Skvělá práce.' : ''}
   `;
   quizSessionActive = false;
   quizFlipped = false;
@@ -2359,6 +2617,8 @@ function qPrev() { quizIdx=(quizIdx-1+quizList.length)%quizList.length; quizFlip
 // Anki/Quizlet style: re-insert "Nevím" card back soon (2-4 positions ahead)
 function qFlag() {
   trackQuizAction('flagged');
+  const activity = trackDailyActivity();
+  if (activity.goalReachedNow) quizSessionStats.dailyGoalReached = true;
   const current = quizList[quizIdx];
   const latin = current.latin;
   const d = D(latin);
@@ -2388,6 +2648,8 @@ function qReview() {
 // Intelligent repeat: reinsert based on frequency setting and auto-tracking
 function qMarkReview() {
   trackQuizAction('review');
+  const activity = trackDailyActivity();
+  if (activity.goalReachedNow) quizSessionStats.dailyGoalReached = true;
   const current = quizList[quizIdx];
   const latin = current.latin;
   const d = D(latin);
@@ -2424,6 +2686,8 @@ function qMarkReview() {
 
 function qLearned() {
   trackQuizAction('learned');
+  const activity = trackDailyActivity();
+  if (activity.goalReachedNow) quizSessionStats.dailyGoalReached = true;
   const current = quizList[quizIdx];
   const latin = current.latin;
   const d = D(latin);
@@ -2785,6 +3049,10 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'ArrowUp')    { e.preventDefault(); qFlag(); }
   else if (e.key === ' ')          { e.preventDefault(); flipQuiz(); }
 });
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
 </script>
 </body>
 </html>
