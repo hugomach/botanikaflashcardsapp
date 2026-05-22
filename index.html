@@ -32,6 +32,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text3); }
 .sync-dot.ok { background: var(--green); }
 .sync-dot.err { background: var(--flag); }
+.streak-badge { font-size: 12px; color: var(--text2); font-weight: 600; }
 .theme-select { background: var(--surface2); border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px; font-size: 13px; cursor: pointer; color: var(--text2); appearance: none; -webkit-appearance: none; text-align: center; }
 
 .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; gap: 2px; }
@@ -165,6 +166,10 @@ body.quiz-open { overflow: hidden; }
 .quiz-actions-note { margin-top: 10px; padding-bottom: max(4px, env(safe-area-inset-bottom)); }
 .quiz-setup-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 0.25rem 0 0.75rem; }
 .quiz-setup-note { font-size: 12px; color: var(--text2); }
+.daily-progress { margin-bottom: 0.85rem; }
+.daily-progress-label { font-size: 12px; color: var(--text2); margin-bottom: 5px; }
+.daily-progress-track { width: 100%; max-width: 240px; height: 6px; border-radius: 999px; background: var(--surface2); overflow: hidden; }
+.daily-progress-fill { height: 100%; background: var(--green); border-radius: 999px; transition: width 0.25s ease; }
 .quiz-session-summary { margin-bottom: 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; font-size: 12px; color: var(--text2); line-height: 1.55; }
 .quiz-empty-message { font-size: 14px; color: var(--text2); }
 .quiz-empty { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; }
@@ -317,6 +322,7 @@ body.quiz-open { overflow: hidden; }
     <div class="sync-dot" id="sync-dot"></div>
     <span id="sync-label">nepřipojeno</span>
   </div>
+  <div class="streak-badge" id="streak-indicator" style="display:none;"></div>
   <button class="settings-icon-btn" type="button" onclick="openSettingsModal()" aria-label="Otevřít nastavení" title="Nastavení">⚙️</button>
 </div>
 
@@ -455,6 +461,10 @@ body.quiz-open { overflow: hidden; }
           <button class="btn green" id="quiz-start-btn" onclick="startQuiz()">Spustit kvíz</button>
           <div class="quiz-setup-note" id="quiz-setup-note"></div>
         </div>
+        <div class="daily-progress" id="daily-progress-box">
+          <div class="daily-progress-label" id="daily-progress-label">Dnes: 0/20 kartiček</div>
+          <div class="daily-progress-track"><div class="daily-progress-fill" id="daily-progress-fill" style="width:0%;"></div></div>
+        </div>
         <div id="quiz-session-summary" class="quiz-session-summary" style="display:none;"></div>
     </div>
   </div>
@@ -579,6 +589,13 @@ body.quiz-open { overflow: hidden; }
       </div>
 
       <div class="settings-section">
+        <h3>Denní challenge</h3>
+        <label>Denní cíl (kartičky)</label>
+        <input type="number" id="daily-goal-input" min="1" step="1" value="20" onchange="updateDailyGoal(this.value)">
+        <div id="daily-goal-status" style="font-size:12px;color:var(--text3);margin-top:6px;"></div>
+      </div>
+
+      <div class="settings-section">
         <h3>Přihlášení / Profil</h3>
         <div id="auth-profile" style="font-size:12px;color:var(--text2);margin-bottom:8px;">Anonymní režim</div>
         <div class="settings-actions">
@@ -672,7 +689,7 @@ let sb = null;
 let syncTimer = null;
 let quizList = [], quizIdx = 0, quizFlipped = false, quizMode = 'foto', quizPhotoSize = 'compact';
 let quizSessionActive = false;
-let quizSessionStats = { startedAt: 0, total: 0, actions: 0, flagged: 0, review: 0, learned: 0, flips: 0 };
+let quizSessionStats = { startedAt: 0, total: 0, actions: 0, flagged: 0, review: 0, learned: 0, flips: 0, dailyGoalReached: false };
 let quizLastSummary = null;
 let mcfotoCorrect = 0, mcfotoAnswered = 0, mcfotoLocked = false, mcfotoChoices = [], mcfotoCorrectLatin = '';
 let dirty = false;
@@ -693,6 +710,7 @@ const SB_BUCKET = 'botanika-photos';
 const LOCAL_USERDATA_KEY = 'botanika_user_data_v1';
 const LOCAL_AUTH_PROFILE_KEY = 'botanika_auth_profile_v1';
 const LOCAL_SORT_MODE_KEY = 'botanika_sort_mode_v1';
+const DEFAULT_DAILY_GOAL = 20;
 // Large offset keeps custom cards without `addedAt` grouped above base cards in "added" sorting.
 const CUSTOM_PLANT_ADDED_ORDER_OFFSET = 1_000_000_000_000;
 
@@ -750,6 +768,121 @@ function D(latin) {
     ...raw,
     photos
   };
+}
+
+function getDateYMD(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getRelativeDateYMD(deltaDays) {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  date.setDate(date.getDate() + deltaDays);
+  return getDateYMD(date);
+}
+
+function asPositiveInt(value, fallback) {
+  const n = Number.parseInt(value, 10);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
+function getStreakData() {
+  const raw = userData.__streak;
+  const streak = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  const normalized = {
+    currentStreak: asPositiveInt(streak.currentStreak, 0),
+    lastStudyDate: typeof streak.lastStudyDate === 'string' ? streak.lastStudyDate : '',
+    longestStreak: asPositiveInt(streak.longestStreak, 0),
+    todayActions: asPositiveInt(streak.todayActions, 0),
+    todayDate: typeof streak.todayDate === 'string' ? streak.todayDate : '',
+    dailyGoal: asPositiveInt(streak.dailyGoal, DEFAULT_DAILY_GOAL)
+  };
+  userData.__streak = normalized;
+  return normalized;
+}
+
+function getDailyGoal(streak = getStreakData()) {
+  return asPositiveInt(streak.dailyGoal, DEFAULT_DAILY_GOAL);
+}
+
+function getCurrentStreakForDisplay(streak = getStreakData()) {
+  const today = getRelativeDateYMD(0);
+  const yesterday = getRelativeDateYMD(-1);
+  if (streak.lastStudyDate === today || streak.lastStudyDate === yesterday) return streak.currentStreak;
+  return 0;
+}
+
+function getTodayActions(streak = getStreakData()) {
+  const today = getRelativeDateYMD(0);
+  return streak.todayDate === today ? streak.todayActions : 0;
+}
+
+function renderStreakIndicator() {
+  const el = document.getElementById('streak-indicator');
+  if (!el) return;
+  const streak = getCurrentStreakForDisplay();
+  if (streak >= 2) {
+    el.style.display = '';
+    el.textContent = `🔥 ${streak} dní`;
+  } else {
+    el.style.display = 'none';
+    el.textContent = '';
+  }
+}
+
+function renderDailyProgress() {
+  const streak = getStreakData();
+  const goal = getDailyGoal(streak);
+  const todayActions = getTodayActions(streak);
+  const pct = Math.max(0, Math.min(100, Math.round((todayActions / goal) * 100)));
+  const label = document.getElementById('daily-progress-label');
+  const fill = document.getElementById('daily-progress-fill');
+  const goalInput = document.getElementById('daily-goal-input');
+  if (label) label.textContent = `Dnes: ${todayActions}/${goal} kartiček`;
+  if (fill) fill.style.width = `${pct}%`;
+  if (goalInput) goalInput.value = String(goal);
+}
+
+function updateDailyGoal(value) {
+  const streak = getStreakData();
+  const goal = asPositiveInt(value, DEFAULT_DAILY_GOAL);
+  streak.dailyGoal = goal;
+  userData.__streak = streak;
+  scheduleSave();
+  const status = document.getElementById('daily-goal-status');
+  if (status) status.textContent = `Denní cíl nastaven na ${goal} kartiček.`;
+  renderDailyProgress();
+}
+
+function trackDailyActivity() {
+  const streak = getStreakData();
+  const today = getRelativeDateYMD(0);
+  const yesterday = getRelativeDateYMD(-1);
+  const goal = getDailyGoal(streak);
+  const previousTodayActions = getTodayActions(streak);
+
+  if (streak.todayDate === today) {
+    streak.todayActions += 1;
+  } else if (streak.todayDate === yesterday) {
+    streak.currentStreak += 1;
+    streak.todayDate = today;
+    streak.todayActions = 1;
+  } else {
+    streak.currentStreak = 1;
+    streak.todayDate = today;
+    streak.todayActions = 1;
+  }
+
+  streak.lastStudyDate = today;
+  if (streak.currentStreak > streak.longestStreak) streak.longestStreak = streak.currentStreak;
+  userData.__streak = streak;
+  scheduleSave();
+  renderStreakIndicator();
+  renderDailyProgress();
+  return {goalReachedNow: previousTodayActions < goal && streak.todayActions >= goal};
 }
 
 // ── Init ──
@@ -1480,6 +1613,8 @@ function renderTable() {
 }
 
 function renderAll() {
+  renderStreakIndicator();
+  renderDailyProgress();
   renderStats();
   renderGrid();
   renderFlagged();
@@ -1984,10 +2119,11 @@ function renderQuizSetup() {
       summaryBox.innerHTML = '';
     }
   }
+  renderDailyProgress();
 }
 
 function resetQuizStats() {
-  quizSessionStats = { startedAt: Date.now(), total: quizList.length, actions: 0, flagged: 0, review: 0, learned: 0, flips: 0 };
+  quizSessionStats = { startedAt: Date.now(), total: quizList.length, actions: 0, flagged: 0, review: 0, learned: 0, flips: 0, dailyGoalReached: false };
 }
 
 function trackQuizAction(type) {
@@ -2026,6 +2162,7 @@ function finishQuizSession() {
     <b>📊 Statistiky posledního kvízu</b><br>
     Kartičky v balíčku: <b>${quizSessionStats.total}</b> · Akce celkem: <b>${quizSessionStats.actions}</b> · Čas: <b>${timeLabel}</b><br>
     🚩 Nevím: <b>${quizSessionStats.flagged}</b> · 🔁 Opakovat: <b>${quizSessionStats.review}</b> · ✓ Umím: <b>${quizSessionStats.learned}</b>
+    ${quizSessionStats.dailyGoalReached ? '<br>🎉 Denní cíl splněn! Skvělá práce.' : ''}
   `;
   quizSessionActive = false;
   quizFlipped = false;
@@ -2293,6 +2430,8 @@ function qPrev() { quizIdx=(quizIdx-1+quizList.length)%quizList.length; quizFlip
 // Anki/Quizlet style: re-insert "Nevím" card back soon (2-4 positions ahead)
 function qFlag() {
   trackQuizAction('flagged');
+  const activity = trackDailyActivity();
+  if (activity.goalReachedNow) quizSessionStats.dailyGoalReached = true;
   const latin = quizList[quizIdx].latin;
   const d = D(latin);
   setData(latin, {flagged:true, wrongCount:(d.wrongCount||0)+1, correctStreak:0});
@@ -2320,6 +2459,8 @@ function qReview() {
 // Intelligent repeat: reinsert based on frequency setting and auto-tracking
 function qMarkReview() {
   trackQuizAction('review');
+  const activity = trackDailyActivity();
+  if (activity.goalReachedNow) quizSessionStats.dailyGoalReached = true;
   const latin = quizList[quizIdx].latin;
   const d = D(latin);
   const newWrongCount = (d.wrongCount || 0) + 1;
@@ -2354,6 +2495,8 @@ function qMarkReview() {
 
 function qLearned() {
   trackQuizAction('learned');
+  const activity = trackDailyActivity();
+  if (activity.goalReachedNow) quizSessionStats.dailyGoalReached = true;
   const latin = quizList[quizIdx].latin;
   const d = D(latin);
   const newStreak = (d.correctStreak || 0) + 1;
