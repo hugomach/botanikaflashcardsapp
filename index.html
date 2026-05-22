@@ -1344,7 +1344,7 @@ function cardHTML(p) {
   const firstPhoto = photos[0] || '';
   const countBadge = photos.length > 1 ? `<span class="photo-count-badge">${photos.length} 📷</span>` : '';
   const img = firstPhoto
-    ? `<div class="card-img" style="position:relative"><img src="${esc(firstPhoto)}" alt="" onerror="this.parentNode.innerHTML='bez fotky'">${countBadge}</div>`
+    ? `<div class="card-img" style="position:relative"><img src="${esc(firstPhoto)}" alt="" loading="lazy" onerror="this.parentNode.innerHTML='bez fotky'">${countBadge}</div>`
     : `<div class="card-img">bez fotky</div>`;
   const safe = esc(p.latin);
   const groupBadge = `<span class="badge" style="background:${GROUP_COLORS[p.group]||'#888'};color:#fff;margin-left:auto">${p.group||''}</span>`;
@@ -1704,7 +1704,7 @@ function buildGalleryHTML(latin) {
   return `<div class="photo-gallery">` +
     d.photos.map((src, i) => {
       const s = src.startsWith('data:') ? src : esc(src);
-      return `<div class="photo-thumb"><img src="${s}" onerror="this.parentNode.style.background='var(--surface2)'" alt=""><button class="photo-delete-btn" onclick="removePhoto('${sl}',${i})" title="Odstranit">✕</button></div>`;
+      return `<div class="photo-thumb"><img src="${s}" loading="lazy" onerror="this.parentNode.style.background='var(--surface2)'" alt=""><button class="photo-delete-btn" onclick="removePhoto('${sl}',${i})" title="Odstranit">✕</button></div>`;
     }).join('') + `</div>`;
 }
 
