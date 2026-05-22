@@ -723,15 +723,28 @@ function getNameOverrides() {
   return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
 }
 
+function getFieldOverrides() {
+  const raw = userData.__fieldOverrides;
+  return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+}
+
 function getAllPlants() {
-  const overrides = getNameOverrides();
+  const nameOverrides = getNameOverrides();
+  const fieldOverrides = getFieldOverrides();
   const base = PLANTS.map(p => {
-    const patch = overrides[p.latin];
-    if (!patch || typeof patch !== 'object') return p;
-    return {
-      ...p,
-      czech: typeof patch.czech === 'string' ? patch.czech : p.czech
-    };
+    const namePatch = nameOverrides[p.latin];
+    const fieldPatch = fieldOverrides[p.latin];
+    if ((!namePatch || typeof namePatch !== 'object') && (!fieldPatch || typeof fieldPatch !== 'object')) return p;
+    const merged = {...p};
+    if (namePatch && typeof namePatch === 'object' && typeof namePatch.czech === 'string') merged.czech = namePatch.czech;
+    if (fieldPatch && typeof fieldPatch === 'object') {
+      if (typeof fieldPatch.czech === 'string') merged.czech = fieldPatch.czech;
+      if (typeof fieldPatch.habitat === 'string') merged.habitat = fieldPatch.habitat;
+      if (typeof fieldPatch.life_form === 'string') merged.life_form = fieldPatch.life_form;
+      if (typeof fieldPatch.toxic === 'string') merged.toxic = fieldPatch.toxic;
+      if (Array.isArray(fieldPatch.tags)) merged.tags = fieldPatch.tags;
+    }
+    return merged;
   });
   return [...base, ...getCustomPlants()];
 }
@@ -1210,65 +1223,171 @@ function migratePlantDataKey(oldLatin, newLatin) {
   delete userData[oldKey];
 }
 
-function editPlantNamesFromTable(latin) {
+function buildSelectOptions(order, selected, includeBlank = false) {
+  const values = Array.isArray(order) ? [...order] : [];
+  if (selected && !values.includes(selected)) values.unshift(selected);
+  return (includeBlank ? '<option value="">—</option>' : '')
+    + values.map(v => `<option value="${esc(v)}"${v===selected?' selected':''}>${esc(v)}</option>`).join('');
+}
+
+function editPlantFromTable(latin) {
   const plant = getAllPlants().find(p => p.latin === latin);
   if (!plant) return;
+  const custom = getCustomPlants();
+  const isCustom = custom.some(p => p.latin === latin);
+  const latinEnc = encodeURIComponent(latin);
+  const tagsStr = Array.isArray(plant.tags) ? plant.tags.join(', ') : '';
+  lastFocusedBeforeModal = document.activeElement;
+  document.getElementById('modal-inner').innerHTML = `
+    <div class="modal-head">
+      <div>
+        <div id="modal-title" style="font-size:16px;font-weight:600;">Upravit rostlinu</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px;">${isCustom ? 'Vlastní rostlina' : 'Vestavěná rostlina'}</div>
+      </div>
+      <button class="btn-close" id="modal-close-btn" aria-label="Zavřít úpravu rostliny" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="settings-grid">
+        <label>Latinský název</label>
+        <input type="text" id="edit-plant-latin" value="${esc(plant.latin)}" ${isCustom ? '' : 'disabled'}>
+        <label>Český název</label>
+        <input type="text" id="edit-plant-czech" value="${esc(plant.czech || '')}">
+        <label>Čeleď LAT</label>
+        <input type="text" id="edit-plant-family-lat" value="${esc(plant.family_lat || '')}" ${isCustom ? '' : 'disabled'}>
+        <label>Čeleď CZ</label>
+        <input type="text" id="edit-plant-family-cz" value="${esc(plant.family_cz || '')}" ${isCustom ? '' : 'disabled'}>
+        <label>Evoluční skupina</label>
+        <select id="edit-plant-group" ${isCustom ? '' : 'disabled'}>${buildSelectOptions(GROUP_ORDER, plant.group || '')}</select>
+        <label>Biotop</label>
+        <input type="text" id="edit-plant-habitat" value="${esc(plant.habitat || '')}">
+        <label>Životní forma</label>
+        <select id="edit-plant-life-form">${buildSelectOptions(LF_ORDER, plant.life_form || '', true)}</select>
+        <label>Toxicita</label>
+        <select id="edit-plant-toxic">${buildSelectOptions(TOX_ORDER, plant.toxic || '', true)}</select>
+        <label>Tagy (oddělené čárkou)</label>
+        <input type="text" id="edit-plant-tags" value="${esc(tagsStr)}">
+      </div>
+      <div class="settings-actions" style="margin-top:12px;">
+        <button class="btn btn-save" type="button" onclick="savePlantFromTableForm('${latinEnc}')">Uložit změny</button>
+        ${isCustom ? `<button class="btn" type="button" onclick="deleteCustomPlantFromTable('${latinEnc}')">Smazat</button>` : ''}
+      </div>
+      <div id="edit-plant-status" style="font-size:12px;color:var(--text3);margin-top:6px;"></div>
+    </div>`;
+  document.getElementById('modal').style.display = 'flex';
+  requestAnimationFrame(() => document.getElementById('modal-close-btn')?.focus());
+}
 
-  const nextLatinRaw = prompt('Latinský název:', plant.latin);
-  if (nextLatinRaw === null) return;
-  const nextCzechRaw = prompt('Český název:', plant.czech);
-  if (nextCzechRaw === null) return;
+function savePlantFromTableForm(originalLatinEnc) {
+  const originalLatin = decodeURIComponent(originalLatinEnc || '');
+  const status = document.getElementById('edit-plant-status');
+  const custom = getCustomPlants();
+  const customIdx = custom.findIndex(p => p.latin === originalLatin);
+  const isCustom = customIdx >= 0;
 
-  const nextLatin = nextLatinRaw.trim();
-  const nextCzech = nextCzechRaw.trim();
-  const status = document.getElementById('table-edit-status');
+  const latin = document.getElementById('edit-plant-latin')?.value.trim() || '';
+  const czech = document.getElementById('edit-plant-czech')?.value.trim() || '';
+  const family_lat = document.getElementById('edit-plant-family-lat')?.value.trim() || '';
+  const family_cz = document.getElementById('edit-plant-family-cz')?.value.trim() || '';
+  const group = document.getElementById('edit-plant-group')?.value || '';
+  const habitat = document.getElementById('edit-plant-habitat')?.value.trim() || '';
+  const life_form = document.getElementById('edit-plant-life-form')?.value || '';
+  const toxic = document.getElementById('edit-plant-toxic')?.value || '';
+  const tagsRaw = document.getElementById('edit-plant-tags')?.value.trim() || '';
+  const tags = tagsRaw ? tagsRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
 
-  if (!nextLatin || !nextCzech) {
-    if (status) status.textContent = 'LAT i CZ název musí být vyplněný.';
+  if (!czech) {
+    if (status) status.textContent = 'Český název musí být vyplněný.';
     return;
   }
 
-  const custom = getCustomPlants();
-  const customIdx = custom.findIndex(p => p.latin === latin);
-
-  if (customIdx >= 0) {
-    const duplicateCustom = custom.some((p, idx) => idx !== customIdx && p.latin.toLowerCase() === nextLatin.toLowerCase());
-    const duplicateBase = PLANTS.some(p => p.latin.toLowerCase() === nextLatin.toLowerCase());
-    const duplicate = duplicateCustom || duplicateBase;
+  if (isCustom) {
+    if (!latin || !family_lat || !family_cz) {
+      if (status) status.textContent = 'LAT název i obě čeledi musí být vyplněné.';
+      return;
+    }
+    const duplicate = getAllPlants().some(p => p.latin.toLowerCase() === latin.toLowerCase() && p.latin !== originalLatin);
     if (duplicate) {
       if (status) status.textContent = 'Rostlina s tímto LAT názvem už existuje.';
       return;
     }
-    custom[customIdx].latin = nextLatin;
-    custom[customIdx].czech = nextCzech;
+    custom[customIdx] = {
+      ...custom[customIdx],
+      latin,
+      czech,
+      family_lat,
+      family_cz,
+      group,
+      habitat,
+      life_form,
+      toxic,
+      tags
+    };
     userData.__customPlants = custom;
-    migratePlantDataKey(latin, nextLatin);
+    migratePlantDataKey(originalLatin, latin);
     scheduleSave();
     populateSelects();
     renderAll();
-    if (status) status.textContent = 'Názvy upraveny ✓';
+    closeModal();
+    const tableStatus = document.getElementById('table-edit-status');
+    if (tableStatus) tableStatus.textContent = 'Rostlina upravena ✓';
     return;
   }
 
-  if (nextLatin !== latin) {
-    if (status) status.textContent = 'U vestavěných rostlin lze zatím upravit jen český název.';
-    return;
-  }
-
-  const basePlant = PLANTS.find(p => p.latin === latin);
+  const basePlant = PLANTS.find(p => p.latin === originalLatin);
   if (!basePlant) return;
 
-  const overrides = getNameOverrides();
-  if (nextCzech === basePlant.czech) {
-    delete overrides[latin];
-  } else {
-    overrides[latin] = {czech: nextCzech};
+  const fieldOverrides = getFieldOverrides();
+  const patch = {};
+  if (czech !== (basePlant.czech || '')) patch.czech = czech;
+  if (habitat !== (basePlant.habitat || '')) patch.habitat = habitat;
+  if (life_form !== (basePlant.life_form || '')) patch.life_form = life_form;
+  if (toxic !== (basePlant.toxic || '')) patch.toxic = toxic;
+  const baseTags = Array.isArray(basePlant.tags) ? basePlant.tags : [];
+  if (JSON.stringify(tags) !== JSON.stringify(baseTags)) patch.tags = tags;
+
+  if (Object.keys(patch).length) fieldOverrides[originalLatin] = patch;
+  else delete fieldOverrides[originalLatin];
+  userData.__fieldOverrides = fieldOverrides;
+
+  const nameOverrides = getNameOverrides();
+  if (Object.prototype.hasOwnProperty.call(nameOverrides, originalLatin)) {
+    delete nameOverrides[originalLatin];
+    userData.__nameOverrides = nameOverrides;
   }
-  userData.__nameOverrides = overrides;
+
   scheduleSave();
   populateSelects();
   renderAll();
-  if (status) status.textContent = 'Název upraven ✓';
+  closeModal();
+  const tableStatus = document.getElementById('table-edit-status');
+  if (tableStatus) tableStatus.textContent = 'Rostlina upravena ✓';
+}
+
+function deleteCustomPlantFromTable(latinEnc) {
+  const latin = decodeURIComponent(latinEnc || '');
+  const custom = getCustomPlants();
+  const idx = custom.findIndex(p => p.latin === latin);
+  if (idx < 0) return;
+  if (!confirm(`Opravdu smazat vlastní rostlinu „${latin}“?`)) return;
+  custom.splice(idx, 1);
+  userData.__customPlants = custom;
+  const fieldOverrides = getFieldOverrides();
+  if (Object.prototype.hasOwnProperty.call(fieldOverrides, latin)) {
+    delete fieldOverrides[latin];
+    userData.__fieldOverrides = fieldOverrides;
+  }
+  const nameOverrides = getNameOverrides();
+  if (Object.prototype.hasOwnProperty.call(nameOverrides, latin)) {
+    delete nameOverrides[latin];
+    userData.__nameOverrides = nameOverrides;
+  }
+  delete userData[SK(latin)];
+  scheduleSave();
+  populateSelects();
+  renderAll();
+  closeModal();
+  const status = document.getElementById('table-edit-status');
+  if (status) status.textContent = 'Rostlina smazána ✓';
 }
 
 // ── Populate selects ──
@@ -1597,15 +1716,15 @@ function renderTable() {
       <td>${esc(p.life_form||'')}</td>
       <td>${esc(p.toxic||'')}</td>
       <td>${status}</td>
-      <td><button class="btn edit-name-btn" type="button" aria-label="Upravit názvy rostliny" title="Upravit názvy">✏️ Názvy</button></td>
+      <td><button class="btn edit-plant-btn" type="button" aria-label="Upravit rostlinu" title="Upravit rostlinu">✏️ Upravit</button></td>
     </tr>`;
   }).join('');
   body.querySelectorAll('.table-row').forEach(row => {
-    const editBtn = row.querySelector('.edit-name-btn');
+    const editBtn = row.querySelector('.edit-plant-btn');
     if (editBtn) {
       editBtn.addEventListener('click', (event) => {
         event.stopPropagation();
-        editPlantNamesFromTable(decodeURIComponent(row.dataset.latin || ''));
+        editPlantFromTable(decodeURIComponent(row.dataset.latin || ''));
       });
     }
     row.addEventListener('click', () => openModal(decodeURIComponent(row.dataset.latin || '')));
