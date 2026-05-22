@@ -3,123 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1D9E75">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Botanika OŽP</title>
 <style>
-:root {
-  --green: #1D9E75; --green-dark: #0F6E56; --green-light: #E1F5EE;
-  --amber: #EF9F27; --amber-light: #FAEEDA;
-  --red-light: #fff3f3; --red: #a32d2d;
-  --bg: #ffffff; --surface: #ffffff; --surface2: #f0efec;
-  --border: #e2e0da; --border2: #ccc;
-  --text: #1a1a18; --text2: #5a5a56; --text3: #9a9a96;
-  --radius: 10px; --radius-lg: 14px;
-  --flag: #e85d3c;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-
-/* Layout */
-.app { max-width: 1100px; margin: 0 auto; padding: 1rem; }
-.topbar { display: flex; align-items: center; gap: 10px; margin-bottom: 1.25rem; flex-wrap: wrap; }
-.topbar h1 { font-size: 17px; font-weight: 600; flex: 1; }
-.sync-status { font-size: 12px; color: var(--text3); display: flex; align-items: center; gap: 5px; }
-.sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text3); }
-.sync-dot.ok { background: var(--green); }
-.sync-dot.err { background: var(--flag); }
-
-/* Tabs */
-.tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; gap: 2px; }
-.tab { padding: 8px 16px; font-size: 14px; border: none; background: none; cursor: pointer; color: var(--text2); border-bottom: 2px solid transparent; margin-bottom: -1px; border-radius: var(--radius) var(--radius) 0 0; transition: color 0.15s; }
-.tab:hover { color: var(--text); background: var(--surface2); }
-.tab.active { color: var(--green); border-bottom-color: var(--green); font-weight: 500; }
-
-/* Stats bar */
-.statsbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; }
-.stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 5px 11px; font-size: 12px; color: var(--text2); }
-.stat b { color: var(--text); font-weight: 600; }
-.stat.flagged b { color: var(--flag); }
-
-/* Filter bar */
-.filterbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
-.filterbar input, .filterbar select { font-size: 13px; padding: 7px 10px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); outline: none; }
-.filterbar input { flex: 1; min-width: 160px; }
-.filterbar input:focus, .filterbar select:focus { border-color: var(--green); }
-.quiz-mode-toggle { display: flex; background: var(--surface2); border-radius: var(--radius); padding: 3px; gap: 2px; border: 1px solid var(--border); }
-.quiz-mode-toggle button { padding: 5px 12px; font-size: 12px; border: none; background: none; border-radius: 7px; cursor: pointer; color: var(--text2); }
-.quiz-mode-toggle button.active { background: var(--surface); color: var(--green); font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-
-/* Grid */
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
-.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; cursor: pointer; transition: box-shadow 0.15s, border-color 0.15s; position: relative; }
-.card:hover { border-color: var(--green); box-shadow: 0 2px 10px rgba(29,158,117,0.12); }
-.card.learned { border-left: 3px solid var(--green); }
-.card.review { border-left: 3px solid var(--amber); }
-.card.flagged-card { border-left: 3px solid var(--flag); }
-.card-img { width: 100%; height: 120px; object-fit: cover; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--text3); overflow: hidden; }
-.card-img img { width: 100%; height: 100%; object-fit: cover; }
-.card-body { padding: 10px 12px 12px; }
-.card-latin { font-size: 14px; font-weight: 500; font-style: italic; line-height: 1.3; }
-.card-czech { font-size: 12px; color: var(--text2); margin-top: 2px; }
-.card-family { font-size: 11px; color: var(--text3); margin-top: 3px; }
-.card-footer { display: flex; align-items: center; gap: 5px; margin-top: 8px; flex-wrap: wrap; }
-.badge { font-size: 10px; padding: 2px 7px; border-radius: 999px; font-weight: 500; }
-.b-learned { background: var(--green-light); color: var(--green-dark); }
-.b-review { background: var(--amber-light); color: #854F0B; }
-.b-new { background: var(--surface2); color: var(--text3); }
-.flag-icon { margin-left: auto; font-size: 14px; opacity: 0.8; }
-
-label { font-size: 11px; color: var(--text3); display: block; margin-top: 10px; margin-bottom: 3px; }
-input[type=url], input[type=text], input[type=email], input[type=password], textarea, .settings-section select { width: 100%; font-size: 13px; padding: 7px 9px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); outline: none; font-family: inherit; }
-input[type=url]:focus, input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, textarea:focus, .settings-section select:focus { border-color: var(--green); }
-textarea { resize: vertical; }
-.ext-links { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 5px; }
-.ext-link { font-size: 11px; color: #185FA5; text-decoration: none; }
-.ext-link:hover { text-decoration: underline; }
-.action-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 12px; }
-.btn { padding: 7px 12px; font-size: 12px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); cursor: pointer; font-weight: 500; transition: background 0.12s; }
-.btn:hover { background: var(--surface2); }
-.btn.green { background: var(--green); color: #fff; border-color: var(--green); }
-.btn.green:hover { background: var(--green-dark); }
-.btn.amber { background: var(--amber-light); color: #854F0B; border-color: var(--amber); }
-.btn.red-flag { background: #fff0ee; color: var(--flag); border-color: #f5c4b3; }
-.btn.red-flag.active { background: var(--flag); color: #fff; border-color: var(--flag); }
-.btn-save { width: 100%; margin-top: 8px; }
-.btn-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text3); padding: 0 4px; }
-
-/* Quiz */
-.quiz-area { max-width: 760px; margin: 0 auto; }
-.quiz-area.foto-large { max-width: min(100%, 980px); }
-.quiz-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px; color: var(--text2); }
-.progress { background: var(--surface2); border-radius: 999px; height: 5px; margin-bottom: 1rem; overflow: hidden; }
-.progress-fill { background: var(--green); height: 100%; border-radius: 999px; transition: width 0.3s; }
-.flip-card { perspective: 900px; height: 220px; margin: 0.5rem 0 1rem; cursor: pointer; user-select: none; }
-.flip-inner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.4s ease; }
-.flip-card.flipped .flip-inner { transform: rotateY(180deg); }
-.flip-face { position: absolute; inset: 0; backface-visibility: hidden; background: var(--surface2); border-radius: var(--radius-lg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 1.5rem; border: 1px solid var(--border); }
-.flip-back { transform: rotateY(180deg); background: var(--green-light); border-color: #9FE1CB; }
-.flip-hint { font-size: 11px; color: var(--text3); }
-.flip-q { font-size: 22px; font-weight: 600; font-style: italic; text-align: center; color: var(--text); line-height: 1.3; }
-.flip-q.cz { font-style: normal; font-size: 20px; }
-.flip-sub { font-size: 12px; color: var(--text3); }
-.flip-a { font-size: 18px; font-weight: 600; color: var(--green-dark); text-align: center; font-style: italic; }
-.flip-a.cz { font-style: normal; }
-.flip-family { font-size: 12px; color: var(--green); }
-.flip-fact { font-size: 11px; color: var(--green-dark); font-style: italic; text-align: center; max-width: 90%; }
-.flip-img { max-height: 60px; border-radius: 6px; object-fit: cover; }
-.quiz-btns { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; }
-.quiz-empty { text-align: center; padding: 3rem 1rem; color: var(--text3); }
-.quiz-empty .btn { margin-top: 12px; }
-
-/* Setup */
-.setup-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem; max-width: 500px; margin: 0 auto; }
-.setup-box h2 { font-size: 15px; font-weight: 600; margin-bottom: 0.75rem; }
-.setup-box p { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 0.75rem; }
-.setup-box ol { font-size: 13px; color: var(--text2); line-height: 2; padding-left: 1.25rem; margin-bottom: 1rem; }
-.setup-box ol a { color: #185FA5; }
-.token-row { display: flex; gap: 6px; }
-.token-row input { flex: 1; font-size: 13px; padding: 7px 9px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); outline: none; font-family: monospace; }
-.token-row input:focus { border-color: var(--green); }
-
 :root {
   --green: #1D9E75; --green-dark: #0F6E56; --green-light: #E1F5EE;
   --amber: #EF9F27; --amber-light: #FAEEDA;
@@ -144,6 +32,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text3); }
 .sync-dot.ok { background: var(--green); }
 .sync-dot.err { background: var(--flag); }
+.streak-badge { font-size: 12px; color: var(--text2); font-weight: 600; }
 .theme-select { background: var(--surface2); border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px; font-size: 13px; cursor: pointer; color: var(--text2); appearance: none; -webkit-appearance: none; text-align: center; }
 
 .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; gap: 2px; }
@@ -255,6 +144,12 @@ textarea { resize: vertical; }
 .quiz-empty .btn { margin-top: 12px; }
 .quiz-hint { text-align: center; font-size: 11px; color: var(--text3); margin-bottom: 6px; }
 .keyboard-hint { color: var(--text3); font-size: 10px; }
+.mcfoto-score { font-size: 13px; color: var(--text2); margin-bottom: 8px; text-align: center; }
+.mcfoto-card { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem; margin: 0.4rem 0 1rem; }
+.mcfoto-photos { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; max-width: 100%; max-height: 100%; overflow: auto; margin-bottom: 10px; }
+.mcfoto-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mcfoto-option.correct { background: var(--green-light); border-color: var(--green); color: var(--green-dark); }
+.mcfoto-option.wrong { background: #fff0ee; border-color: var(--flag); color: var(--flag); }
 .quiz-tab-shell { max-width: 980px; margin: 0 auto; }
 .quiz-tab-title { font-size: 18px; font-weight: 700; margin-bottom: 0.85rem; }
 body.quiz-open { overflow: hidden; }
@@ -283,6 +178,10 @@ body.quiz-open { overflow: hidden; }
 .type-quiz-answer { text-align: center; font-size: 13px; color: var(--text2); margin-top: 6px; }
 .quiz-setup-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 0.25rem 0 0.75rem; }
 .quiz-setup-note { font-size: 12px; color: var(--text2); }
+.daily-progress { margin-bottom: 0.85rem; }
+.daily-progress-label { font-size: 12px; color: var(--text2); margin-bottom: 5px; }
+.daily-progress-track { width: 100%; max-width: 240px; height: 6px; border-radius: 999px; background: var(--surface2); overflow: hidden; }
+.daily-progress-fill { height: 100%; background: var(--green); border-radius: 999px; transition: width 0.25s ease; }
 .quiz-session-summary { margin-bottom: 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; font-size: 12px; color: var(--text2); line-height: 1.55; }
 .quiz-empty-message { font-size: 14px; color: var(--text2); }
 .quiz-empty { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; }
@@ -435,6 +334,7 @@ body.quiz-open { overflow: hidden; }
     <div class="sync-dot" id="sync-dot"></div>
     <span id="sync-label">nepřipojeno</span>
   </div>
+  <div class="streak-badge" id="streak-indicator" style="display:none;"></div>
   <button class="settings-icon-btn" type="button" onclick="openSettingsModal()" aria-label="Otevřít nastavení" title="Nastavení">⚙️</button>
 </div>
 
@@ -553,11 +453,13 @@ body.quiz-open { overflow: hidden; }
             <option value="flagged">Jen 🚩 Nevím</option>
             <option value="review">Jen k opakování</option>
             <option value="flagged_review">🚩 Nevím + k opakování</option>
+            <option value="scheduled">📅 Naplánované k opakování</option>
             <option value="learned">Jen naučeno ✓</option>
             <option value="not_new">Vše kromě nových</option>
           </select>
           <div class="quiz-mode-toggle">
             <button id="qm-foto" class="active" onclick="setQuizMode('foto')">Foto → název</button>
+            <button id="qm-mcfoto" onclick="setQuizMode('mcfoto')">Foto výběr</button>
             <button id="qm-lat" onclick="setQuizMode('lat')">LAT → CZ</button>
             <button id="qm-cz" onclick="setQuizMode('cz')">CZ → LAT</button>
             <button id="qm-fam" onclick="setQuizMode('fam')">Čeleď</button>
@@ -571,6 +473,10 @@ body.quiz-open { overflow: hidden; }
         <div class="quiz-setup-actions">
           <button class="btn green" id="quiz-start-btn" onclick="startQuiz()">Spustit kvíz</button>
           <div class="quiz-setup-note" id="quiz-setup-note"></div>
+        </div>
+        <div class="daily-progress" id="daily-progress-box">
+          <div class="daily-progress-label" id="daily-progress-label">Dnes: 0/20 kartiček</div>
+          <div class="daily-progress-track"><div class="daily-progress-fill" id="daily-progress-fill" style="width:0%;"></div></div>
         </div>
         <div id="quiz-session-summary" class="quiz-session-summary" style="display:none;"></div>
     </div>
@@ -696,6 +602,13 @@ body.quiz-open { overflow: hidden; }
       </div>
 
       <div class="settings-section">
+        <h3>Denní challenge</h3>
+        <label>Denní cíl (kartičky)</label>
+        <input type="number" id="daily-goal-input" min="1" step="1" value="20" onchange="updateDailyGoal(this.value)">
+        <div id="daily-goal-status" style="font-size:12px;color:var(--text3);margin-top:6px;"></div>
+      </div>
+
+      <div class="settings-section">
         <h3>Přihlášení / Profil</h3>
         <div id="auth-profile" style="font-size:12px;color:var(--text2);margin-bottom:8px;">Anonymní režim</div>
         <div class="settings-actions">
@@ -751,6 +664,20 @@ create policy if not exists "anon update botanika_sync" on botanika_sync for upd
           Storage bucket vytvoř v Supabase jako public bucket jménem <b>botanika-photos</b>.
         </div>
       </div>
+
+      <div class="settings-section">
+        <h3>Data</h3>
+        <div class="settings-actions">
+          <button class="btn" onclick="exportJSON()">Export JSON</button>
+          <button class="btn" onclick="exportCSV()">Export CSV</button>
+        </div>
+        <label style="margin-top:10px;">Import JSON</label>
+        <input type="file" id="import-json-file" accept=".json,application/json">
+        <div class="settings-actions">
+          <button class="btn green" onclick="importJSON(event)">Import JSON</button>
+        </div>
+        <div id="data-transfer-status" style="font-size:12px;color:var(--text3);margin-top:6px;"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -776,8 +703,9 @@ let syncTimer = null;
 let quizList = [], quizIdx = 0, quizFlipped = false, quizMode = 'foto', quizPhotoSize = 'compact';
 let quizTypeAutoAdvanceTimer = null;
 let quizSessionActive = false;
-let quizSessionStats = { startedAt: 0, total: 0, actions: 0, flagged: 0, review: 0, learned: 0, flips: 0 };
+let quizSessionStats = { startedAt: 0, total: 0, actions: 0, flagged: 0, review: 0, learned: 0, flips: 0, dailyGoalReached: false };
 let quizLastSummary = null;
+let mcfotoCorrect = 0, mcfotoAnswered = 0, mcfotoLocked = false, mcfotoChoices = [], mcfotoCorrectLatin = '';
 let dirty = false;
 let activeGroup = '';
 let activeQuizGroups = [];
@@ -796,6 +724,7 @@ const SB_BUCKET = 'botanika-photos';
 const LOCAL_USERDATA_KEY = 'botanika_user_data_v1';
 const LOCAL_AUTH_PROFILE_KEY = 'botanika_auth_profile_v1';
 const LOCAL_SORT_MODE_KEY = 'botanika_sort_mode_v1';
+const DEFAULT_DAILY_GOAL = 20;
 // Large offset keeps custom cards without `addedAt` grouped above base cards in "added" sorting.
 const CUSTOM_PLANT_ADDED_ORDER_OFFSET = 1_000_000_000_000;
 
@@ -808,15 +737,28 @@ function getNameOverrides() {
   return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
 }
 
+function getFieldOverrides() {
+  const raw = userData.__fieldOverrides;
+  return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+}
+
 function getAllPlants() {
-  const overrides = getNameOverrides();
+  const nameOverrides = getNameOverrides();
+  const fieldOverrides = getFieldOverrides();
   const base = PLANTS.map(p => {
-    const patch = overrides[p.latin];
-    if (!patch || typeof patch !== 'object') return p;
-    return {
-      ...p,
-      czech: typeof patch.czech === 'string' ? patch.czech : p.czech
-    };
+    const namePatch = nameOverrides[p.latin];
+    const fieldPatch = fieldOverrides[p.latin];
+    if ((!namePatch || typeof namePatch !== 'object') && (!fieldPatch || typeof fieldPatch !== 'object')) return p;
+    const merged = {...p};
+    if (namePatch && typeof namePatch === 'object' && typeof namePatch.czech === 'string') merged.czech = namePatch.czech;
+    if (fieldPatch && typeof fieldPatch === 'object') {
+      if (typeof fieldPatch.czech === 'string') merged.czech = fieldPatch.czech;
+      if (typeof fieldPatch.habitat === 'string') merged.habitat = fieldPatch.habitat;
+      if (typeof fieldPatch.life_form === 'string') merged.life_form = fieldPatch.life_form;
+      if (typeof fieldPatch.toxic === 'string') merged.toxic = fieldPatch.toxic;
+      if (Array.isArray(fieldPatch.tags)) merged.tags = fieldPatch.tags;
+    }
+    return merged;
   });
   return [...base, ...getCustomPlants()];
 }
@@ -839,7 +781,135 @@ const SK = latin => 'p_' + latin.replace(/\s/g,'_').replace(/[^a-zA-Z0-9_]/g,'')
 function D(latin) {
   const raw = userData[SK(latin)] || {};
   const photos = Array.isArray(raw.photos) ? raw.photos : (raw.photo ? [raw.photo] : []);
-  return {status:'new', funfact:'', flagged:false, repeatFreq:'auto', wrongCount:0, correctStreak:0, ...raw, photos};
+  return {
+    status:'new',
+    funfact:'',
+    flagged:false,
+    repeatFreq:'auto',
+    wrongCount:0,
+    correctStreak:0,
+    srInterval:1,
+    srEaseFactor:2.5,
+    srNextReview:0,
+    srRepetitions:0,
+    ...raw,
+    photos
+  };
+}
+
+function getDateYMD(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getRelativeDateYMD(deltaDays) {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  date.setDate(date.getDate() + deltaDays);
+  return getDateYMD(date);
+}
+
+function asPositiveInt(value, fallback) {
+  const n = Number.parseInt(value, 10);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
+function getStreakData() {
+  const raw = userData.__streak;
+  const streak = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  const normalized = {
+    currentStreak: asPositiveInt(streak.currentStreak, 0),
+    lastStudyDate: typeof streak.lastStudyDate === 'string' ? streak.lastStudyDate : '',
+    longestStreak: asPositiveInt(streak.longestStreak, 0),
+    todayActions: asPositiveInt(streak.todayActions, 0),
+    todayDate: typeof streak.todayDate === 'string' ? streak.todayDate : '',
+    dailyGoal: asPositiveInt(streak.dailyGoal, DEFAULT_DAILY_GOAL)
+  };
+  userData.__streak = normalized;
+  return normalized;
+}
+
+function getDailyGoal(streak = getStreakData()) {
+  return asPositiveInt(streak.dailyGoal, DEFAULT_DAILY_GOAL);
+}
+
+function getCurrentStreakForDisplay(streak = getStreakData()) {
+  const today = getRelativeDateYMD(0);
+  const yesterday = getRelativeDateYMD(-1);
+  if (streak.lastStudyDate === today || streak.lastStudyDate === yesterday) return streak.currentStreak;
+  return 0;
+}
+
+function getTodayActions(streak = getStreakData()) {
+  const today = getRelativeDateYMD(0);
+  return streak.todayDate === today ? streak.todayActions : 0;
+}
+
+function renderStreakIndicator() {
+  const el = document.getElementById('streak-indicator');
+  if (!el) return;
+  const streak = getCurrentStreakForDisplay();
+  if (streak >= 2) {
+    el.style.display = '';
+    el.textContent = `🔥 ${streak} dní`;
+  } else {
+    el.style.display = 'none';
+    el.textContent = '';
+  }
+}
+
+function renderDailyProgress() {
+  const streak = getStreakData();
+  const goal = getDailyGoal(streak);
+  const todayActions = getTodayActions(streak);
+  const pct = Math.max(0, Math.min(100, Math.round((todayActions / goal) * 100)));
+  const label = document.getElementById('daily-progress-label');
+  const fill = document.getElementById('daily-progress-fill');
+  const goalInput = document.getElementById('daily-goal-input');
+  if (label) label.textContent = `Dnes: ${todayActions}/${goal} kartiček`;
+  if (fill) fill.style.width = `${pct}%`;
+  if (goalInput) goalInput.value = String(goal);
+}
+
+function updateDailyGoal(value) {
+  const streak = getStreakData();
+  const goal = asPositiveInt(value, DEFAULT_DAILY_GOAL);
+  streak.dailyGoal = goal;
+  userData.__streak = streak;
+  scheduleSave();
+  const status = document.getElementById('daily-goal-status');
+  if (status) status.textContent = `Denní cíl nastaven na ${goal} kartiček.`;
+  renderDailyProgress();
+}
+
+function trackDailyActivity() {
+  const streak = getStreakData();
+  const today = getRelativeDateYMD(0);
+  const yesterday = getRelativeDateYMD(-1);
+  const goal = getDailyGoal(streak);
+  const previousTodayActions = getTodayActions(streak);
+
+  if (streak.todayDate === today) {
+    streak.todayActions += 1;
+  } else if (streak.todayDate === yesterday) {
+    streak.currentStreak += 1;
+    streak.todayDate = today;
+    streak.todayActions = 1;
+  } else {
+    streak.currentStreak = 1;
+    streak.todayDate = today;
+    streak.todayActions = 1;
+  }
+
+  streak.lastStudyDate = today;
+  if (streak.currentStreak > streak.longestStreak) streak.longestStreak = streak.currentStreak;
+  userData.__streak = streak;
+  scheduleSave();
+  renderStreakIndicator();
+  renderDailyProgress();
+  return {goalReachedNow: previousTodayActions < goal && streak.todayActions >= goal};
 }
 
 // ── Init ──
@@ -1121,6 +1191,42 @@ function setData(latin, patch) {
   scheduleSave();
 }
 
+function sm2Update(latin, quality) {
+  const q = Math.max(0, Math.min(5, Number(quality) || 0));
+  const d = D(latin);
+  let interval = Math.max(1, Math.round(Number(d.srInterval) || 1));
+  let repetitions = Math.max(0, Math.round(Number(d.srRepetitions) || 0));
+  const efCurrent = Math.max(1.3, Number(d.srEaseFactor) || 2.5);
+
+  if (q <= 2) {
+    repetitions = 0;
+    interval = 1;
+  } else {
+    repetitions += 1;
+    if (repetitions === 1) interval = 1;
+    else if (repetitions === 2) interval = 6;
+    else {
+      const qualityFactor = q === 3 ? 0.85 : q === 5 ? 1.25 : 1;
+      interval = Math.max(1, Math.round(interval * efCurrent * qualityFactor));
+    }
+  }
+
+  const delta = 0.1 - (5 - q) * (0.08 + (5 - q) * 0.02);
+  const srEaseFactor = Math.max(1.3, efCurrent + delta);
+  const srNextReview = Date.now() + interval * 86400000;
+
+  setData(latin, {srInterval: interval, srEaseFactor, srNextReview, srRepetitions: repetitions});
+}
+
+function nextReviewText(latin) {
+  const d = D(latin);
+  const ts = Number(d.srNextReview) || 0;
+  if (ts <= Date.now()) return 'dnes';
+  const days = Math.ceil((ts - Date.now()) / 86400000);
+  if (days <= 0) return 'dnes';
+  return `za ${days} dní`;
+}
+
 function migratePlantDataKey(oldLatin, newLatin) {
   if (oldLatin === newLatin) return;
   const oldKey = SK(oldLatin);
@@ -1131,65 +1237,171 @@ function migratePlantDataKey(oldLatin, newLatin) {
   delete userData[oldKey];
 }
 
-function editPlantNamesFromTable(latin) {
+function buildSelectOptions(order, selected, includeBlank = false) {
+  const values = Array.isArray(order) ? [...order] : [];
+  if (selected && !values.includes(selected)) values.unshift(selected);
+  return (includeBlank ? '<option value="">—</option>' : '')
+    + values.map(v => `<option value="${esc(v)}"${v===selected?' selected':''}>${esc(v)}</option>`).join('');
+}
+
+function editPlantFromTable(latin) {
   const plant = getAllPlants().find(p => p.latin === latin);
   if (!plant) return;
+  const custom = getCustomPlants();
+  const isCustom = custom.some(p => p.latin === latin);
+  const latinEnc = encodeURIComponent(latin);
+  const tagsStr = Array.isArray(plant.tags) ? plant.tags.join(', ') : '';
+  lastFocusedBeforeModal = document.activeElement;
+  document.getElementById('modal-inner').innerHTML = `
+    <div class="modal-head">
+      <div>
+        <div id="modal-title" style="font-size:16px;font-weight:600;">Upravit rostlinu</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px;">${isCustom ? 'Vlastní rostlina' : 'Vestavěná rostlina'}</div>
+      </div>
+      <button class="btn-close" id="modal-close-btn" aria-label="Zavřít úpravu rostliny" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="settings-grid">
+        <label>Latinský název</label>
+        <input type="text" id="edit-plant-latin" value="${esc(plant.latin)}" ${isCustom ? '' : 'disabled'}>
+        <label>Český název</label>
+        <input type="text" id="edit-plant-czech" value="${esc(plant.czech || '')}">
+        <label>Čeleď LAT</label>
+        <input type="text" id="edit-plant-family-lat" value="${esc(plant.family_lat || '')}" ${isCustom ? '' : 'disabled'}>
+        <label>Čeleď CZ</label>
+        <input type="text" id="edit-plant-family-cz" value="${esc(plant.family_cz || '')}" ${isCustom ? '' : 'disabled'}>
+        <label>Evoluční skupina</label>
+        <select id="edit-plant-group" ${isCustom ? '' : 'disabled'}>${buildSelectOptions(GROUP_ORDER, plant.group || '')}</select>
+        <label>Biotop</label>
+        <input type="text" id="edit-plant-habitat" value="${esc(plant.habitat || '')}">
+        <label>Životní forma</label>
+        <select id="edit-plant-life-form">${buildSelectOptions(LF_ORDER, plant.life_form || '', true)}</select>
+        <label>Toxicita</label>
+        <select id="edit-plant-toxic">${buildSelectOptions(TOX_ORDER, plant.toxic || '', true)}</select>
+        <label>Tagy (oddělené čárkou)</label>
+        <input type="text" id="edit-plant-tags" value="${esc(tagsStr)}">
+      </div>
+      <div class="settings-actions" style="margin-top:12px;">
+        <button class="btn btn-save" type="button" onclick="savePlantFromTableForm('${latinEnc}')">Uložit změny</button>
+        ${isCustom ? `<button class="btn" type="button" onclick="deleteCustomPlantFromTable('${latinEnc}')">Smazat</button>` : ''}
+      </div>
+      <div id="edit-plant-status" style="font-size:12px;color:var(--text3);margin-top:6px;"></div>
+    </div>`;
+  document.getElementById('modal').style.display = 'flex';
+  requestAnimationFrame(() => document.getElementById('modal-close-btn')?.focus());
+}
 
-  const nextLatinRaw = prompt('Latinský název:', plant.latin);
-  if (nextLatinRaw === null) return;
-  const nextCzechRaw = prompt('Český název:', plant.czech);
-  if (nextCzechRaw === null) return;
+function savePlantFromTableForm(originalLatinEnc) {
+  const originalLatin = decodeURIComponent(originalLatinEnc || '');
+  const status = document.getElementById('edit-plant-status');
+  const custom = getCustomPlants();
+  const customIdx = custom.findIndex(p => p.latin === originalLatin);
+  const isCustom = customIdx >= 0;
 
-  const nextLatin = nextLatinRaw.trim();
-  const nextCzech = nextCzechRaw.trim();
-  const status = document.getElementById('table-edit-status');
+  const latin = document.getElementById('edit-plant-latin')?.value.trim() || '';
+  const czech = document.getElementById('edit-plant-czech')?.value.trim() || '';
+  const family_lat = document.getElementById('edit-plant-family-lat')?.value.trim() || '';
+  const family_cz = document.getElementById('edit-plant-family-cz')?.value.trim() || '';
+  const group = document.getElementById('edit-plant-group')?.value || '';
+  const habitat = document.getElementById('edit-plant-habitat')?.value.trim() || '';
+  const life_form = document.getElementById('edit-plant-life-form')?.value || '';
+  const toxic = document.getElementById('edit-plant-toxic')?.value || '';
+  const tagsRaw = document.getElementById('edit-plant-tags')?.value.trim() || '';
+  const tags = tagsRaw ? tagsRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
 
-  if (!nextLatin || !nextCzech) {
-    if (status) status.textContent = 'LAT i CZ název musí být vyplněný.';
+  if (!czech) {
+    if (status) status.textContent = 'Český název musí být vyplněný.';
     return;
   }
 
-  const custom = getCustomPlants();
-  const customIdx = custom.findIndex(p => p.latin === latin);
-
-  if (customIdx >= 0) {
-    const duplicateCustom = custom.some((p, idx) => idx !== customIdx && p.latin.toLowerCase() === nextLatin.toLowerCase());
-    const duplicateBase = PLANTS.some(p => p.latin.toLowerCase() === nextLatin.toLowerCase());
-    const duplicate = duplicateCustom || duplicateBase;
+  if (isCustom) {
+    if (!latin || !family_lat || !family_cz) {
+      if (status) status.textContent = 'LAT název i obě čeledi musí být vyplněné.';
+      return;
+    }
+    const duplicate = getAllPlants().some(p => p.latin.toLowerCase() === latin.toLowerCase() && p.latin !== originalLatin);
     if (duplicate) {
       if (status) status.textContent = 'Rostlina s tímto LAT názvem už existuje.';
       return;
     }
-    custom[customIdx].latin = nextLatin;
-    custom[customIdx].czech = nextCzech;
+    custom[customIdx] = {
+      ...custom[customIdx],
+      latin,
+      czech,
+      family_lat,
+      family_cz,
+      group,
+      habitat,
+      life_form,
+      toxic,
+      tags
+    };
     userData.__customPlants = custom;
-    migratePlantDataKey(latin, nextLatin);
+    migratePlantDataKey(originalLatin, latin);
     scheduleSave();
     populateSelects();
     renderAll();
-    if (status) status.textContent = 'Názvy upraveny ✓';
+    closeModal();
+    const tableStatus = document.getElementById('table-edit-status');
+    if (tableStatus) tableStatus.textContent = 'Rostlina upravena ✓';
     return;
   }
 
-  if (nextLatin !== latin) {
-    if (status) status.textContent = 'U vestavěných rostlin lze zatím upravit jen český název.';
-    return;
-  }
-
-  const basePlant = PLANTS.find(p => p.latin === latin);
+  const basePlant = PLANTS.find(p => p.latin === originalLatin);
   if (!basePlant) return;
 
-  const overrides = getNameOverrides();
-  if (nextCzech === basePlant.czech) {
-    delete overrides[latin];
-  } else {
-    overrides[latin] = {czech: nextCzech};
+  const fieldOverrides = getFieldOverrides();
+  const patch = {};
+  if (czech !== (basePlant.czech || '')) patch.czech = czech;
+  if (habitat !== (basePlant.habitat || '')) patch.habitat = habitat;
+  if (life_form !== (basePlant.life_form || '')) patch.life_form = life_form;
+  if (toxic !== (basePlant.toxic || '')) patch.toxic = toxic;
+  const baseTags = Array.isArray(basePlant.tags) ? basePlant.tags : [];
+  if (JSON.stringify(tags) !== JSON.stringify(baseTags)) patch.tags = tags;
+
+  if (Object.keys(patch).length) fieldOverrides[originalLatin] = patch;
+  else delete fieldOverrides[originalLatin];
+  userData.__fieldOverrides = fieldOverrides;
+
+  const nameOverrides = getNameOverrides();
+  if (Object.prototype.hasOwnProperty.call(nameOverrides, originalLatin)) {
+    delete nameOverrides[originalLatin];
+    userData.__nameOverrides = nameOverrides;
   }
-  userData.__nameOverrides = overrides;
+
   scheduleSave();
   populateSelects();
   renderAll();
-  if (status) status.textContent = 'Název upraven ✓';
+  closeModal();
+  const tableStatus = document.getElementById('table-edit-status');
+  if (tableStatus) tableStatus.textContent = 'Rostlina upravena ✓';
+}
+
+function deleteCustomPlantFromTable(latinEnc) {
+  const latin = decodeURIComponent(latinEnc || '');
+  const custom = getCustomPlants();
+  const idx = custom.findIndex(p => p.latin === latin);
+  if (idx < 0) return;
+  if (!confirm(`Opravdu smazat vlastní rostlinu „${latin}“?`)) return;
+  custom.splice(idx, 1);
+  userData.__customPlants = custom;
+  const fieldOverrides = getFieldOverrides();
+  if (Object.prototype.hasOwnProperty.call(fieldOverrides, latin)) {
+    delete fieldOverrides[latin];
+    userData.__fieldOverrides = fieldOverrides;
+  }
+  const nameOverrides = getNameOverrides();
+  if (Object.prototype.hasOwnProperty.call(nameOverrides, latin)) {
+    delete nameOverrides[latin];
+    userData.__nameOverrides = nameOverrides;
+  }
+  delete userData[SK(latin)];
+  scheduleSave();
+  populateSelects();
+  renderAll();
+  closeModal();
+  const status = document.getElementById('table-edit-status');
+  if (status) status.textContent = 'Rostlina smazána ✓';
 }
 
 // ── Populate selects ──
@@ -1330,18 +1542,21 @@ function syncQuizFamilyFromLat() {
 // ── Stats ──
 function renderStats() {
   const allPlants = getAllPlants();
-  let learned=0, review=0, flagged=0, photo=0, total=allPlants.length;
+  const now = Date.now();
+  let learned=0, review=0, flagged=0, photo=0, dueToday=0, total=allPlants.length;
   allPlants.forEach(p => {
     const d = D(p.latin);
     if (d.status==='learned') learned++;
     if (d.status==='review') review++;
     if (d.flagged) flagged++;
     if (d.photos.length) photo++;
+    if ((d.srNextReview || 0) <= now) dueToday++;
   });
   document.getElementById('statsbar').innerHTML =
     `<div class="stat">Celkem: <b>${total}</b></div>
      <div class="stat">Naučeno: <b>${learned}</b></div>
      <div class="stat">K opakování: <b>${review}</b></div>
+     <div class="stat">📅 Dnes k opakování: <b>${dueToday}</b></div>
      <div class="stat flagged">Nevím 🚩: <b>${flagged}</b></div>
      <div class="stat">S fotkou: <b>${photo}</b></div>`;
 }
@@ -1358,7 +1573,7 @@ function cardHTML(p) {
   const firstPhoto = photos[0] || '';
   const countBadge = photos.length > 1 ? `<span class="photo-count-badge">${photos.length} 📷</span>` : '';
   const img = firstPhoto
-    ? `<div class="card-img" style="position:relative"><img src="${esc(firstPhoto)}" alt="" onerror="this.parentNode.innerHTML='bez fotky'">${countBadge}</div>`
+    ? `<div class="card-img" style="position:relative"><img src="${esc(firstPhoto)}" alt="" loading="lazy" onerror="this.parentNode.innerHTML='bez fotky'">${countBadge}</div>`
     : `<div class="card-img">bez fotky</div>`;
   const safe = esc(p.latin);
   const groupBadge = `<span class="badge" style="background:${GROUP_COLORS[p.group]||'#888'};color:#fff;margin-left:auto">${p.group||''}</span>`;
@@ -1371,6 +1586,40 @@ function cardHTML(p) {
       <div class="card-footer">${badge}${flag}${groupBadge}</div>
     </div>
   </div>`;
+}
+
+function fuzzyMatch(query, text) {
+  const q = (query || '').toLowerCase().trim();
+  const t = (text || '').toLowerCase();
+  if (!q) return true;
+
+  const queryWords = q.split(/\s+/).filter(Boolean);
+  const textWords = t.split(/\s+/).filter(Boolean);
+
+  function levenshteinDistance(a, b) {
+    const rows = a.length + 1;
+    const cols = b.length + 1;
+    const dp = Array.from({ length: rows }, () => new Array(cols).fill(0));
+    for (let i = 0; i < rows; i++) dp[i][0] = i;
+    for (let j = 0; j < cols; j++) dp[0][j] = j;
+    for (let i = 1; i < rows; i++) {
+      for (let j = 1; j < cols; j++) {
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        dp[i][j] = Math.min(
+          dp[i - 1][j] + 1,
+          dp[i][j - 1] + 1,
+          dp[i - 1][j - 1] + cost
+        );
+      }
+    }
+    return dp[a.length][b.length];
+  }
+
+  return queryWords.every(word => {
+    if (t.includes(word)) return true;
+    if (word.length <= 4) return false;
+    return textWords.some(tw => levenshteinDistance(word, tw) <= 2);
+  });
 }
 
 function filteredPlants(familySel, familyCzSel, statusSel, searchVal) {
@@ -1393,7 +1642,7 @@ function filteredPlants(familySel, familyCzSel, statusSel, searchVal) {
     if (st==='photo' && !d.photos.length) return false;
     if (q) {
       const searchIn = [p.latin, p.czech, p.family_cz, p.family_lat, p.habitat, p.life_form, ...(p.tags||[])].join(' ').toLowerCase();
-      if (!searchIn.includes(q)) return false;
+      if (!fuzzyMatch(q, searchIn)) return false;
     }
     return true;
   });
@@ -1481,15 +1730,15 @@ function renderTable() {
       <td>${esc(p.life_form||'')}</td>
       <td>${esc(p.toxic||'')}</td>
       <td>${status}</td>
-      <td><button class="btn edit-name-btn" type="button" aria-label="Upravit názvy rostliny" title="Upravit názvy">✏️ Názvy</button></td>
+      <td><button class="btn edit-plant-btn" type="button" aria-label="Upravit rostlinu" title="Upravit rostlinu">✏️ Upravit</button></td>
     </tr>`;
   }).join('');
   body.querySelectorAll('.table-row').forEach(row => {
-    const editBtn = row.querySelector('.edit-name-btn');
+    const editBtn = row.querySelector('.edit-plant-btn');
     if (editBtn) {
       editBtn.addEventListener('click', (event) => {
         event.stopPropagation();
-        editPlantNamesFromTable(decodeURIComponent(row.dataset.latin || ''));
+        editPlantFromTable(decodeURIComponent(row.dataset.latin || ''));
       });
     }
     row.addEventListener('click', () => openModal(decodeURIComponent(row.dataset.latin || '')));
@@ -1497,6 +1746,8 @@ function renderTable() {
 }
 
 function renderAll() {
+  renderStreakIndicator();
+  renderDailyProgress();
   renderStats();
   renderGrid();
   renderFlagged();
@@ -1567,6 +1818,7 @@ function openModal(latin) {
       <div class="repeat-section">
         <div class="repeat-section-label">Opakování</div>
         <div class="repeat-stats">Chyby: <b style="color:var(--flag)">${d.wrongCount||0}×</b> &nbsp;·&nbsp; Po sobě správně: <b style="color:var(--green)">${d.correctStreak||0}×</b></div>
+        <div class="repeat-stats">Další opakování: <b>${nextReviewText(latin)}</b></div>
         <div class="repeat-freq-btns" id="repeat-btns">${buildRepeatBtnsHTML(latin)}</div>
       </div>
     </div>`;
@@ -1584,6 +1836,136 @@ function closeModal() {
 function openSettingsModal() { document.getElementById('settings-modal').style.display = 'flex'; }
 function closeSettingsModal() { document.getElementById('settings-modal').style.display = 'none'; }
 function settingsModalBgClick(e) { if (e.target.id==='settings-modal') closeSettingsModal(); }
+
+function setDataTransferStatus(message) {
+  const el = document.getElementById('data-transfer-status');
+  if (el) el.textContent = message || '';
+}
+
+function triggerDownload(filename, mimeType, content) {
+  const blob = new Blob([content], {type: mimeType});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function escapeCSVCell(value) {
+  const text = value == null ? '' : String(value);
+  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function exportJSON() {
+  try {
+    const now = new Date();
+    const payload = {
+      userData,
+      customPlants: getCustomPlants(),
+      exportedAt: now.toISOString()
+    };
+    const filename = `botanika-export-${now.toISOString().slice(0, 10)}.json`;
+    triggerDownload(filename, 'application/json;charset=utf-8', JSON.stringify(payload, null, 2));
+    setDataTransferStatus('JSON export vytvořen ✓');
+  } catch (e) {
+    console.error('exportJSON failed:', e);
+    setDataTransferStatus('JSON export selhal.');
+  }
+}
+
+function exportCSV() {
+  try {
+    const headers = ['latin', 'czech', 'family_lat', 'family_cz', 'group', 'habitat', 'life_form', 'toxic', 'status', 'flagged', 'photos_count', 'funfact', 'wrongCount', 'correctStreak'];
+    const rows = getAllPlants().map(p => {
+      const d = D(p.latin);
+      return [
+        p.latin,
+        p.czech,
+        p.family_lat,
+        p.family_cz,
+        p.group || '',
+        p.habitat || '',
+        p.life_form || '',
+        p.toxic || '',
+        d.status || 'new',
+        d.flagged ? 'true' : 'false',
+        Array.isArray(d.photos) ? d.photos.length : 0,
+        d.funfact || '',
+        Number(d.wrongCount || 0),
+        Number(d.correctStreak || 0)
+      ];
+    });
+    const csv = [headers, ...rows].map(row => row.map(escapeCSVCell).join(',')).join('\n');
+    const filename = `botanika-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    triggerDownload(filename, 'text/csv;charset=utf-8', '\uFEFF' + csv);
+    setDataTransferStatus('CSV export vytvořen ✓');
+  } catch (e) {
+    console.error('exportCSV failed:', e);
+    setDataTransferStatus('CSV export selhal.');
+  }
+}
+
+function mergeCustomPlants(existingPlants, incomingPlants) {
+  const existing = Array.isArray(existingPlants) ? existingPlants : [];
+  const incoming = Array.isArray(incomingPlants) ? incomingPlants : [];
+  if (!incoming.length) return existing;
+  const byLatin = new Map();
+  existing.forEach(p => {
+    if (p && typeof p === 'object' && typeof p.latin === 'string' && p.latin.trim()) {
+      byLatin.set(p.latin.trim().toLowerCase(), p);
+    }
+  });
+  incoming.forEach(p => {
+    if (p && typeof p === 'object' && typeof p.latin === 'string' && p.latin.trim()) {
+      byLatin.set(p.latin.trim().toLowerCase(), p);
+    }
+  });
+  return [...byLatin.values()];
+}
+
+function importJSON(event) {
+  event?.preventDefault?.();
+  const input = document.getElementById('import-json-file');
+  const file = input?.files?.[0];
+  if (!file) {
+    setDataTransferStatus('Vyberte JSON soubor.');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const parsed = JSON.parse(String(reader.result || '{}'));
+      if (!parsed || typeof parsed !== 'object' || !parsed.userData || typeof parsed.userData !== 'object' || Array.isArray(parsed.userData)) {
+        setDataTransferStatus('Neplatný JSON: chybí `userData` objekt.');
+        return;
+      }
+      if (!confirm('Importovat data a sloučit je s aktuálními daty?')) {
+        setDataTransferStatus('Import zrušen.');
+        return;
+      }
+      const mergedUserData = {...userData, ...parsed.userData};
+      const incomingCustomPlants = Array.isArray(parsed.customPlants)
+        ? parsed.customPlants
+        : Array.isArray(parsed.userData.__customPlants) ? parsed.userData.__customPlants : [];
+      const mergedCustomPlants = mergeCustomPlants(userData.__customPlants, incomingCustomPlants);
+      if (mergedCustomPlants.length) mergedUserData.__customPlants = mergedCustomPlants;
+      userData = mergedUserData;
+      scheduleSave();
+      populateSelects();
+      renderAll();
+      if (input) input.value = '';
+      setDataTransferStatus('Import hotový ✓');
+    } catch (e) {
+      console.error('importJSON failed:', e);
+      setDataTransferStatus('Import selhal: neplatný JSON.');
+    }
+  };
+  reader.onerror = () => setDataTransferStatus('Import selhal: soubor nelze načíst.');
+  reader.readAsText(file);
+}
 
 function dataUrlToBlob(dataUrl) {
   const parts = dataUrl.split(',');
@@ -1684,7 +2066,7 @@ function buildGalleryHTML(latin) {
   return `<div class="photo-gallery">` +
     d.photos.map((src, i) => {
       const s = src.startsWith('data:') ? src : esc(src);
-      return `<div class="photo-thumb"><img src="${s}" onerror="this.parentNode.style.background='var(--surface2)'" alt=""><button class="photo-delete-btn" onclick="removePhoto('${sl}',${i})" title="Odstranit">✕</button></div>`;
+      return `<div class="photo-thumb"><img src="${s}" loading="lazy" onerror="this.parentNode.style.background='var(--surface2)'" alt=""><button class="photo-delete-btn" onclick="removePhoto('${sl}',${i})" title="Odstranit">✕</button></div>`;
     }).join('') + `</div>`;
 }
 
@@ -1837,9 +2219,9 @@ function quizOverlayBgClick(e) {
 // ── Quiz ──
 function setQuizMode(m) {
   quizMode = m;
-  ['foto','lat','cz','fam','type'].forEach(k => document.getElementById('qm-'+k).classList.toggle('active',k===m));
+  ['foto','mcfoto','lat','cz','fam','type'].forEach(k => document.getElementById('qm-'+k).classList.toggle('active',k===m));
   const photoSizeToggle = document.getElementById('quiz-photo-size-toggle');
-  if (photoSizeToggle) photoSizeToggle.style.display = m === 'foto' ? 'inline-flex' : 'none';
+  if (photoSizeToggle) photoSizeToggle.style.display = (m === 'foto' || m === 'mcfoto') ? 'inline-flex' : 'none';
   resetQuiz();
 }
 
@@ -1858,7 +2240,7 @@ function renderQuizSetup() {
   const setupNote = document.getElementById('quiz-setup-note');
   const summaryBox = document.getElementById('quiz-session-summary');
   const photoSizeToggle = document.getElementById('quiz-photo-size-toggle');
-  if (photoSizeToggle) photoSizeToggle.style.display = quizMode === 'foto' ? 'inline-flex' : 'none';
+  if (photoSizeToggle) photoSizeToggle.style.display = (quizMode === 'foto' || quizMode === 'mcfoto') ? 'inline-flex' : 'none';
   if (setupPanel) setupPanel.style.display = quizSessionActive ? 'none' : '';
   if (setupNote && !quizSessionActive) setupNote.textContent = `V balíčku je ${quizList.length} kartiček.`;
   if (summaryBox) {
@@ -1870,10 +2252,11 @@ function renderQuizSetup() {
       summaryBox.innerHTML = '';
     }
   }
+  renderDailyProgress();
 }
 
 function resetQuizStats() {
-  quizSessionStats = { startedAt: Date.now(), total: quizList.length, actions: 0, flagged: 0, review: 0, learned: 0, flips: 0 };
+  quizSessionStats = { startedAt: Date.now(), total: quizList.length, actions: 0, flagged: 0, review: 0, learned: 0, flips: 0, dailyGoalReached: false };
 }
 
 function trackQuizAction(type) {
@@ -1889,6 +2272,11 @@ function startQuiz() {
   quizIdx = 0;
   quizFlipped = false;
   quizLastSummary = null;
+  mcfotoCorrect = 0;
+  mcfotoAnswered = 0;
+  mcfotoLocked = false;
+  mcfotoChoices = [];
+  mcfotoCorrectLatin = '';
   quizSessionActive = quizList.length > 0;
   if (quizSessionActive) resetQuizStats();
   lastFocusedBeforeQuiz = document.activeElement;
@@ -1907,6 +2295,7 @@ function finishQuizSession() {
     <b>📊 Statistiky posledního kvízu</b><br>
     Kartičky v balíčku: <b>${quizSessionStats.total}</b> · Akce celkem: <b>${quizSessionStats.actions}</b> · Čas: <b>${timeLabel}</b><br>
     🚩 Nevím: <b>${quizSessionStats.flagged}</b> · 🔁 Opakovat: <b>${quizSessionStats.review}</b> · ✓ Umím: <b>${quizSessionStats.learned}</b>
+    ${quizSessionStats.dailyGoalReached ? '<br>🎉 Denní cíl splněn! Skvělá práce.' : ''}
   `;
   quizSessionActive = false;
   quizFlipped = false;
@@ -1918,6 +2307,7 @@ function getQuizPlants() {
   const fam = document.getElementById('quiz-family').value;
   const famCz = document.getElementById('quiz-family-cz').value;
   const src = document.getElementById('quiz-source').value;
+  const now = Date.now();
   return getAllPlants().filter(p => {
     const d = D(p.latin);
     if (activeQuizGroups.length && !activeQuizGroups.includes(p.group)) return false;
@@ -1926,10 +2316,11 @@ function getQuizPlants() {
     if (activeQuizToxes.length && !activeQuizToxes.includes(p.toxic)) return false;
     if (fam && p.family_lat !== fam) return false;
     if (famCz && p.family_cz !== famCz) return false;
-    if (src==='photo' && !d.photos.length) return false;
+    if ((src==='photo' || quizMode==='mcfoto') && !d.photos.length) return false;
     if (src==='flagged' && !d.flagged) return false;
     if (src==='review' && d.status!=='review') return false;
     if (src==='flagged_review' && !d.flagged && d.status!=='review') return false;
+    if (src==='scheduled' && (d.srNextReview || 0) > now) return false;
     if (src==='learned' && d.status!=='learned') return false;
     if (src==='not_new' && !d.flagged && d.status!=='review' && d.status!=='learned') return false;
     return true;
@@ -1944,8 +2335,74 @@ function buildQuizDeck() {
 function resetQuiz() {
   quizList = buildQuizDeck();
   quizIdx = 0; quizFlipped = false;
+  mcfotoCorrect = 0;
+  mcfotoAnswered = 0;
+  mcfotoLocked = false;
+  mcfotoChoices = [];
+  mcfotoCorrectLatin = '';
   renderQuizSetup();
   renderQuiz();
+}
+
+function buildMcFotoChoices(correctPlant) {
+  const rest = quizList.filter(item => item.latin !== correctPlant.latin);
+  const picked = [];
+  const used = new Set();
+  const familyMatches = shuffle(rest.filter(item => item.family_lat === correctPlant.family_lat));
+  const groupMatches = shuffle(rest.filter(item =>
+    item.group && item.group === correctPlant.group && item.family_lat !== correctPlant.family_lat
+  ));
+  const others = shuffle(rest);
+  const pushUnique = (list) => {
+    for (const item of list) {
+      if (picked.length >= 3) break;
+      if (used.has(item.latin)) continue;
+      used.add(item.latin);
+      picked.push(item);
+    }
+  };
+  pushUnique(familyMatches);
+  pushUnique(groupMatches);
+  pushUnique(others);
+  while (picked.length < 3 && others.length) {
+    picked.push(others[Math.floor(Math.random() * others.length)]);
+  }
+  return shuffle([correctPlant, ...picked.slice(0, 3)]);
+}
+
+function answerMcFoto(index) {
+  if (quizMode !== 'mcfoto' || mcfotoLocked || !mcfotoChoices.length) return;
+  const chosen = mcfotoChoices[index];
+  if (!chosen) return;
+  mcfotoLocked = true;
+  mcfotoAnswered++;
+  const isCorrect = chosen.latin === mcfotoCorrectLatin;
+  const correctIndex = mcfotoChoices.findIndex(opt => opt.latin === mcfotoCorrectLatin);
+  const clickedBtn = document.getElementById('mcfoto-opt-' + index);
+  const correctBtn = document.getElementById('mcfoto-opt-' + correctIndex);
+  document.querySelectorAll('.mcfoto-option').forEach(btn => btn.disabled = true);
+  if (isCorrect) {
+    mcfotoCorrect++;
+    clickedBtn?.classList.add('correct');
+    trackQuizAction('learned');
+    const d = D(mcfotoCorrectLatin);
+    const newStreak = (d.correctStreak || 0) + 1;
+    setData(mcfotoCorrectLatin, {status:'learned', flagged:false, correctStreak:newStreak, wrongCount:0});
+    renderFlagged();
+    renderStats();
+    document.getElementById('mcfoto-score').innerHTML = `Správně: <b>${mcfotoCorrect}</b> / <b>${mcfotoAnswered}</b>`;
+    setTimeout(() => { mcfotoLocked = false; qNext(); }, 800);
+    return;
+  }
+  trackQuizAction('review');
+  clickedBtn?.classList.add('wrong');
+  correctBtn?.classList.add('correct');
+  const d = D(mcfotoCorrectLatin);
+  const newWrongCount = (d.wrongCount || 0) + 1;
+  setData(mcfotoCorrectLatin, {status:'review', wrongCount:newWrongCount, correctStreak:0});
+  renderStats();
+  document.getElementById('mcfoto-score').innerHTML = `Správně: <b>${mcfotoCorrect}</b> / <b>${mcfotoAnswered}</b>`;
+  setTimeout(() => { mcfotoLocked = false; qNext(); }, 1500);
 }
 
 function getQuizPhotoSizingTokens(area) {
@@ -2086,11 +2543,12 @@ function renderQuiz() {
     area.innerHTML = `<div class="quiz-empty"><div class="quiz-empty-message">Nastav filtry a spusť samostatné okno kvízu.</div></div>`;
     return;
   }
-  const largePhotoMode = quizMode === 'foto' && quizPhotoSize === 'large';
+  const usesPhotoCard = quizMode === 'foto' || quizMode === 'mcfoto';
+  const largePhotoMode = usesPhotoCard && quizPhotoSize === 'large';
   area.classList.toggle('foto-large', largePhotoMode);
   const photoSizing = getQuizPhotoSizingTokens(area);
   if (!quizList.length) {
-    const msg = quizMode==='foto'
+    const msg = (quizMode==='foto' || quizMode==='mcfoto')
       ? 'Žádné kartičky s fotkou. Přidej fotky v záložce Kartičky.'
       : 'Žádné kartičky pro tento filtr.';
     area.innerHTML = `<div class="quiz-empty"><div class="quiz-empty-message">${msg}</div><button class="btn green" onclick="resetQuiz()">Načíst znovu</button></div>`;
@@ -2126,13 +2584,47 @@ function renderQuiz() {
     if (input) input.focus();
     return;
   }
-  const quizPhotoSources = quizMode === 'foto'
+  const quizPhotoSources = (quizMode === 'foto' || quizMode === 'mcfoto')
     ? d.photos.map(src => src.startsWith('data:') ? src : esc(src))
     : [];
 
   let frontHTML = '', backHTML = '';
 
-  if (quizMode === 'foto') {
+  if (quizMode === 'mcfoto') {
+    if (quizList.length < 4) {
+      area.innerHTML = `<div class="quiz-empty"><div class="quiz-empty-message">Pro režim Foto výběr jsou potřeba alespoň 4 kartičky s fotkou v aktuálním balíčku.</div><button class="btn green" onclick="resetQuiz()">Načíst znovu</button></div>`;
+      return;
+    }
+    const frontMaxHeight = largePhotoMode ? photoSizing.frontLarge : photoSizing.frontCompact;
+    const frontRadius = largePhotoMode ? 10 : 8;
+    const photoCount = quizPhotoSources.length;
+    const frontPhotoMaxHeight = photoCount > 1 ? Math.max(70, Math.floor(frontMaxHeight / 2.2)) : frontMaxHeight;
+    let frontPhotoMaxWidth = '100%';
+    if (photoCount > 2) frontPhotoMaxWidth = '31%';
+    else if (photoCount === 2) frontPhotoMaxWidth = '48%';
+    const frontPhotoStyle = `max-height:${frontPhotoMaxHeight}px;max-width:${frontPhotoMaxWidth};width:auto;object-fit:contain;border-radius:${frontRadius}px;`;
+    const options = buildMcFotoChoices(p);
+    mcfotoChoices = options;
+    mcfotoCorrectLatin = p.latin;
+    area.innerHTML = `
+      <div class="quiz-stage">
+        <div class="quiz-meta">
+          <span>${quizIdx+1} / ${quizList.length}</span>
+        </div>
+        <div class="progress"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <div class="mcfoto-score" id="mcfoto-score">Správně: <b>${mcfotoCorrect}</b> / <b>${mcfotoAnswered}</b></div>
+        <div class="mcfoto-card">
+          <div class="mcfoto-photos">${
+            quizPhotoSources.map(src => `<img class="flip-img" style="${frontPhotoStyle}" src="${src}" onerror="this.style.display='none'">`).join('')
+          }</div>
+          <div class="mcfoto-options">
+            ${options.map((opt, idx) => `<button class="btn mcfoto-option" id="mcfoto-opt-${idx}" onclick="answerMcFoto(${idx})">${esc(opt.czech)}</button>`).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+    return;
+  } else if (quizMode === 'foto') {
     const frontMaxHeight = largePhotoMode ? photoSizing.frontLarge : photoSizing.frontCompact;
     const latinSize = largePhotoMode ? photoSizing.latinLarge : photoSizing.latinCompact;
     const frontRadius = largePhotoMode ? 10 : 8;
@@ -2207,15 +2699,18 @@ function flipQuiz() {
   document.getElementById('qflip')?.classList.toggle('flipped', quizFlipped);
 }
 
-function qNext() { quizIdx=(quizIdx+1)%quizList.length; quizFlipped=false; renderQuiz(); }
-function qPrev() { quizIdx=(quizIdx-1+quizList.length)%quizList.length; quizFlipped=false; renderQuiz(); }
+function qNext() { quizIdx=(quizIdx+1)%quizList.length; quizFlipped=false; mcfotoLocked=false; renderQuiz(); }
+function qPrev() { quizIdx=(quizIdx-1+quizList.length)%quizList.length; quizFlipped=false; mcfotoLocked=false; renderQuiz(); }
 
 // Anki/Quizlet style: re-insert "Nevím" card back soon (2-4 positions ahead)
 function qFlag() {
   trackQuizAction('flagged');
+  const activity = trackDailyActivity();
+  if (activity.goalReachedNow) quizSessionStats.dailyGoalReached = true;
   const latin = quizList[quizIdx].latin;
   const d = D(latin);
   setData(latin, {flagged:true, wrongCount:(d.wrongCount||0)+1, correctStreak:0});
+  sm2Update(latin, 0);
   renderFlagged(); renderStats();
   const card = quizList.splice(quizIdx, 1)[0];
   const insertAt = Math.min(quizIdx + 2 + Math.floor(Math.random()*3), quizList.length);
@@ -2226,7 +2721,10 @@ function qFlag() {
 
 // Anki/Quizlet style: move "Opakovat" card to end of deck
 function qReview() {
-  setData(quizList[quizIdx].latin,{status:'review'}); renderStats();
+  const latin = quizList[quizIdx].latin;
+  setData(latin,{status:'review'});
+  sm2Update(latin, 2);
+  renderStats();
   const card = quizList.splice(quizIdx, 1)[0];
   quizList.push(card);
   if (quizIdx >= quizList.length) quizIdx = 0;
@@ -2236,10 +2734,13 @@ function qReview() {
 // Intelligent repeat: reinsert based on frequency setting and auto-tracking
 function qMarkReview() {
   trackQuizAction('review');
+  const activity = trackDailyActivity();
+  if (activity.goalReachedNow) quizSessionStats.dailyGoalReached = true;
   const latin = quizList[quizIdx].latin;
   const d = D(latin);
   const newWrongCount = (d.wrongCount || 0) + 1;
   setData(latin, {status:'review', wrongCount: newWrongCount, correctStreak: 0});
+  sm2Update(latin, 2);
   renderStats();
 
   const freq = d.repeatFreq || 'auto';
@@ -2269,10 +2770,13 @@ function qMarkReview() {
 
 function qLearned() {
   trackQuizAction('learned');
+  const activity = trackDailyActivity();
+  if (activity.goalReachedNow) quizSessionStats.dailyGoalReached = true;
   const latin = quizList[quizIdx].latin;
   const d = D(latin);
   const newStreak = (d.correctStreak || 0) + 1;
   setData(latin, {status:'learned', flagged:false, correctStreak: newStreak, wrongCount: 0});
+  sm2Update(latin, 4);
   renderFlagged(); renderStats(); qNext();
 }
 
@@ -2615,11 +3119,22 @@ document.addEventListener('keydown', e => {
   const tag = e.target.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
   if (!quizList || !quizList.length) return;
+  if (quizMode === 'mcfoto') {
+    if (['1','2','3','4'].includes(e.key)) {
+      e.preventDefault();
+      answerMcFoto(Number(e.key) - 1);
+    }
+    return;
+  }
   if (e.key === 'ArrowLeft')  { e.preventDefault(); qMarkReview(); }
   else if (e.key === 'ArrowRight') { e.preventDefault(); qLearned(); }
   else if (e.key === 'ArrowUp')    { e.preventDefault(); qFlag(); }
   else if (e.key === ' ')          { e.preventDefault(); flipQuiz(); }
 });
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
 </script>
 </body>
 </html>
