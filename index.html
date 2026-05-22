@@ -44,6 +44,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 5px 11px; font-size: 12px; color: var(--text2); }
 .stat b { color: var(--text); font-weight: 600; }
 .stat.flagged b { color: var(--flag); }
+.weak-families { flex-basis: 100%; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 7px 9px; font-size: 12px; color: var(--text2); }
+.weak-title { font-weight: 600; color: var(--text); }
+.weak-badge { font-size: 11px; padding: 3px 8px; border-radius: 999px; font-weight: 600; }
+.weak-red { background: #fde8e8; color: #a32d2d; border: 1px solid #f3c4c4; }
+.weak-amber { background: var(--amber-light); color: #854F0B; border: 1px solid #f0c37b; }
+.weak-green { background: var(--green-light); color: var(--green-dark); border: 1px solid #9fe1cb; }
+.weak-none { font-size: 11px; color: var(--text3); }
 
 .filterbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
 .filterbar input, .filterbar select { font-size: 13px; padding: 7px 10px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); outline: none; }
@@ -444,6 +451,7 @@ body.quiz-open { overflow: hidden; }
             <option value="scheduled">📅 Naplánované k opakování</option>
             <option value="learned">Jen naučeno ✓</option>
             <option value="not_new">Vše kromě nových</option>
+            <option value="weak_spots">🎯 Slabá místa</option>
           </select>
           <div class="quiz-mode-toggle">
             <button id="qm-foto" class="active" onclick="setQuizMode('foto')">Foto → název</button>
@@ -1177,6 +1185,51 @@ function setData(latin, patch) {
   scheduleSave();
 }
 
+function getFamilyStats() {
+  const raw = userData.__familyStats;
+  return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+}
+
+function getFamilyPerformance(familyLat) {
+  const raw = getFamilyStats()[familyLat] || {};
+  const correct = Math.max(0, Number(raw.correct) || 0);
+  const wrong = Math.max(0, Number(raw.wrong) || 0);
+  const total = correct + wrong;
+  const ratio = total ? (correct / total) : null;
+  return { correct, wrong, total, ratio };
+}
+
+function recordFamilyQuizResult(plant, isCorrect) {
+  const familyLat = plant?.family_lat;
+  if (!familyLat) return;
+  const stats = Object.assign({}, getFamilyStats());
+  const prev = getFamilyPerformance(familyLat);
+  stats[familyLat] = {
+    correct: prev.correct + (isCorrect ? 1 : 0),
+    wrong: prev.wrong + (isCorrect ? 0 : 1),
+    lastTested: Date.now()
+  };
+  userData.__familyStats = stats;
+}
+
+function getWeakFamilies(limit = 3, minAttempts = 3) {
+  return Object.keys(getFamilyStats())
+    .map(family_lat => ({ family_lat, ...getFamilyPerformance(family_lat) }))
+    .filter(item => item.total >= minAttempts && item.ratio !== null)
+    .sort((a, b) => (a.ratio - b.ratio) || (b.total - a.total) || a.family_lat.localeCompare(b.family_lat, 'la'))
+    .slice(0, limit);
+}
+
+function getFamilyTone(ratio) {
+  if (ratio < 0.5) return 'red';
+  if (ratio <= 0.75) return 'amber';
+  return 'green';
+}
+
+function getFamilySuccessLabel(familyLat) {
+  const perf = getFamilyPerformance(familyLat);
+  return perf.total ? `${Math.round((perf.ratio || 0) * 100)} %` : '—';
+}
 function sm2Update(latin, quality) {
   const q = Math.max(0, Math.min(5, Number(quality) || 0));
   const d = D(latin);
@@ -1538,13 +1591,18 @@ function renderStats() {
     if (d.photos.length) photo++;
     if ((d.srNextReview || 0) <= now) dueToday++;
   });
+  const weakFamilies = getWeakFamilies(3, 3);
+  const weakHtml = weakFamilies.length
+    ? weakFamilies.map(f => `<span class="weak-badge weak-${getFamilyTone(f.ratio)}">${esc(f.family_lat)} ${Math.round((f.ratio || 0) * 100)} %</span>`).join('')
+    : '<span class="weak-none">zatím málo dat</span>';
   document.getElementById('statsbar').innerHTML =
     `<div class="stat">Celkem: <b>${total}</b></div>
      <div class="stat">Naučeno: <b>${learned}</b></div>
      <div class="stat">K opakování: <b>${review}</b></div>
      <div class="stat">📅 Dnes k opakování: <b>${dueToday}</b></div>
      <div class="stat flagged">Nevím 🚩: <b>${flagged}</b></div>
-     <div class="stat">S fotkou: <b>${photo}</b></div>`;
+     <div class="stat">S fotkou: <b>${photo}</b></div>
+     <div class="weak-families"><span class="weak-title">Nejtěžší čeledi:</span>${weakHtml}</div>`;
 }
 
 // ── Card rendering ──
@@ -2315,7 +2373,17 @@ function getQuizPlants() {
 
 function buildQuizDeck() {
   const plants = getQuizPlants();
-  return shuffle(plants);
+  const src = document.getElementById('quiz-source').value;
+  if (src !== 'weak_spots') return shuffle(plants);
+  const weak = [];
+  const rest = [];
+  plants.forEach(p => {
+    const perf = getFamilyPerformance(p.family_lat);
+    if (perf.total > 0 && perf.ratio !== null && perf.ratio < 0.7) weak.push(p);
+    else rest.push(p);
+  });
+  if (!weak.length) return shuffle(plants);
+  return [...shuffle(weak), ...shuffle(rest)];
 }
 
 function resetQuiz() {
@@ -2551,8 +2619,10 @@ function qFlag() {
   trackQuizAction('flagged');
   const activity = trackDailyActivity();
   if (activity.goalReachedNow) quizSessionStats.dailyGoalReached = true;
-  const latin = quizList[quizIdx].latin;
+  const current = quizList[quizIdx];
+  const latin = current.latin;
   const d = D(latin);
+  recordFamilyQuizResult(current, false);
   setData(latin, {flagged:true, wrongCount:(d.wrongCount||0)+1, correctStreak:0});
   sm2Update(latin, 0);
   renderFlagged(); renderStats();
@@ -2580,8 +2650,10 @@ function qMarkReview() {
   trackQuizAction('review');
   const activity = trackDailyActivity();
   if (activity.goalReachedNow) quizSessionStats.dailyGoalReached = true;
-  const latin = quizList[quizIdx].latin;
+  const current = quizList[quizIdx];
+  const latin = current.latin;
   const d = D(latin);
+  recordFamilyQuizResult(current, false);
   const newWrongCount = (d.wrongCount || 0) + 1;
   setData(latin, {status:'review', wrongCount: newWrongCount, correctStreak: 0});
   sm2Update(latin, 2);
@@ -2616,8 +2688,10 @@ function qLearned() {
   trackQuizAction('learned');
   const activity = trackDailyActivity();
   if (activity.goalReachedNow) quizSessionStats.dailyGoalReached = true;
-  const latin = quizList[quizIdx].latin;
+  const current = quizList[quizIdx];
+  const latin = current.latin;
   const d = D(latin);
+  recordFamilyQuizResult(current, true);
   const newStreak = (d.correctStreak || 0) + 1;
   setData(latin, {status:'learned', flagged:false, correctStreak: newStreak, wrongCount: 0});
   sm2Update(latin, 4);
@@ -2730,7 +2804,7 @@ function renderMatchPtoF() {
         <div class="match-col-title">Čeledi</div>
         ${families.map(f => `
           <div class="match-item" id="fam-${esc(f.lat)}" onclick="matchSelectFamily('${esc(f.lat)}')">
-            ${f.cz}<br><span style="font-size:11px;color:var(--text3);font-style:italic">${f.lat}</span>
+            ${f.cz} <span style="font-size:10px;color:var(--text3);font-weight:600">(${getFamilySuccessLabel(f.lat)})</span><br><span style="font-size:11px;color:var(--text3);font-style:italic">${f.lat}</span>
           </div>`).join('')}
       </div>
     </div>`;
@@ -2790,7 +2864,7 @@ function renderMatchFtoP() {
         <div class="match-col-title">Čeledi</div>
         ${famItems.map(f => `
           <div class="match-item" id="mfam-${esc(f.fam)}" onclick="matchFtoPSelectFam('${esc(f.fam)}')">
-            ${f.family_cz}<br><span style="font-size:11px;color:var(--text3);font-style:italic">${f.fam}</span>
+            ${f.family_cz} <span style="font-size:10px;color:var(--text3);font-weight:600">(${getFamilySuccessLabel(f.fam)})</span><br><span style="font-size:11px;color:var(--text3);font-style:italic">${f.fam}</span>
             <div style="font-size:10px;color:var(--text3);margin-top:3px" id="mfam-count-${esc(f.fam)}">0 / ${f.plants.length} přiřazeno</div>
           </div>`).join('')}
       </div>
