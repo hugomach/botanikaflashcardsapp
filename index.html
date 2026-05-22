@@ -140,6 +140,12 @@ textarea { resize: vertical; }
 .quiz-empty .btn { margin-top: 12px; }
 .quiz-hint { text-align: center; font-size: 11px; color: var(--text3); margin-bottom: 6px; }
 .keyboard-hint { color: var(--text3); font-size: 10px; }
+.mcfoto-score { font-size: 13px; color: var(--text2); margin-bottom: 8px; text-align: center; }
+.mcfoto-card { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem; margin: 0.4rem 0 1rem; }
+.mcfoto-photos { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; max-width: 100%; max-height: 100%; overflow: auto; margin-bottom: 10px; }
+.mcfoto-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mcfoto-option.correct { background: var(--green-light); border-color: var(--green); color: var(--green-dark); }
+.mcfoto-option.wrong { background: #fff0ee; border-color: var(--flag); color: var(--flag); }
 .quiz-tab-shell { max-width: 980px; margin: 0 auto; }
 .quiz-tab-title { font-size: 18px; font-weight: 700; margin-bottom: 0.85rem; }
 body.quiz-open { overflow: hidden; }
@@ -432,6 +438,7 @@ body.quiz-open { overflow: hidden; }
           </select>
           <div class="quiz-mode-toggle">
             <button id="qm-foto" class="active" onclick="setQuizMode('foto')">Foto → název</button>
+            <button id="qm-mcfoto" onclick="setQuizMode('mcfoto')">Foto výběr</button>
             <button id="qm-lat" onclick="setQuizMode('lat')">LAT → CZ</button>
             <button id="qm-cz" onclick="setQuizMode('cz')">CZ → LAT</button>
             <button id="qm-fam" onclick="setQuizMode('fam')">Čeleď</button>
@@ -664,6 +671,7 @@ let quizList = [], quizIdx = 0, quizFlipped = false, quizMode = 'foto', quizPhot
 let quizSessionActive = false;
 let quizSessionStats = { startedAt: 0, total: 0, actions: 0, flagged: 0, review: 0, learned: 0, flips: 0 };
 let quizLastSummary = null;
+let mcfotoCorrect = 0, mcfotoAnswered = 0, mcfotoLocked = false, mcfotoChoices = [], mcfotoCorrectLatin = '';
 let dirty = false;
 let activeGroup = '';
 let activeQuizGroups = [];
@@ -1940,9 +1948,9 @@ function quizOverlayBgClick(e) {
 // ── Quiz ──
 function setQuizMode(m) {
   quizMode = m;
-  ['foto','lat','cz','fam'].forEach(k => document.getElementById('qm-'+k).classList.toggle('active',k===m));
+  ['foto','mcfoto','lat','cz','fam'].forEach(k => document.getElementById('qm-'+k).classList.toggle('active',k===m));
   const photoSizeToggle = document.getElementById('quiz-photo-size-toggle');
-  if (photoSizeToggle) photoSizeToggle.style.display = m === 'foto' ? 'inline-flex' : 'none';
+  if (photoSizeToggle) photoSizeToggle.style.display = (m === 'foto' || m === 'mcfoto') ? 'inline-flex' : 'none';
   resetQuiz();
 }
 
@@ -1961,7 +1969,7 @@ function renderQuizSetup() {
   const setupNote = document.getElementById('quiz-setup-note');
   const summaryBox = document.getElementById('quiz-session-summary');
   const photoSizeToggle = document.getElementById('quiz-photo-size-toggle');
-  if (photoSizeToggle) photoSizeToggle.style.display = quizMode === 'foto' ? 'inline-flex' : 'none';
+  if (photoSizeToggle) photoSizeToggle.style.display = (quizMode === 'foto' || quizMode === 'mcfoto') ? 'inline-flex' : 'none';
   if (setupPanel) setupPanel.style.display = quizSessionActive ? 'none' : '';
   if (setupNote && !quizSessionActive) setupNote.textContent = `V balíčku je ${quizList.length} kartiček.`;
   if (summaryBox) {
@@ -1992,6 +2000,11 @@ function startQuiz() {
   quizIdx = 0;
   quizFlipped = false;
   quizLastSummary = null;
+  mcfotoCorrect = 0;
+  mcfotoAnswered = 0;
+  mcfotoLocked = false;
+  mcfotoChoices = [];
+  mcfotoCorrectLatin = '';
   quizSessionActive = quizList.length > 0;
   if (quizSessionActive) resetQuizStats();
   lastFocusedBeforeQuiz = document.activeElement;
@@ -2030,7 +2043,7 @@ function getQuizPlants() {
     if (activeQuizToxes.length && !activeQuizToxes.includes(p.toxic)) return false;
     if (fam && p.family_lat !== fam) return false;
     if (famCz && p.family_cz !== famCz) return false;
-    if (src==='photo' && !d.photos.length) return false;
+    if ((src==='photo' || quizMode==='mcfoto') && !d.photos.length) return false;
     if (src==='flagged' && !d.flagged) return false;
     if (src==='review' && d.status!=='review') return false;
     if (src==='flagged_review' && !d.flagged && d.status!=='review') return false;
@@ -2049,8 +2062,74 @@ function buildQuizDeck() {
 function resetQuiz() {
   quizList = buildQuizDeck();
   quizIdx = 0; quizFlipped = false;
+  mcfotoCorrect = 0;
+  mcfotoAnswered = 0;
+  mcfotoLocked = false;
+  mcfotoChoices = [];
+  mcfotoCorrectLatin = '';
   renderQuizSetup();
   renderQuiz();
+}
+
+function buildMcFotoChoices(correctPlant) {
+  const rest = quizList.filter(item => item.latin !== correctPlant.latin);
+  const picked = [];
+  const used = new Set();
+  const familyMatches = shuffle(rest.filter(item => item.family_lat === correctPlant.family_lat));
+  const groupMatches = shuffle(rest.filter(item =>
+    item.group && item.group === correctPlant.group && item.family_lat !== correctPlant.family_lat
+  ));
+  const others = shuffle(rest);
+  const pushUnique = (list) => {
+    for (const item of list) {
+      if (picked.length >= 3) break;
+      if (used.has(item.latin)) continue;
+      used.add(item.latin);
+      picked.push(item);
+    }
+  };
+  pushUnique(familyMatches);
+  pushUnique(groupMatches);
+  pushUnique(others);
+  while (picked.length < 3 && others.length) {
+    picked.push(others[Math.floor(Math.random() * others.length)]);
+  }
+  return shuffle([correctPlant, ...picked.slice(0, 3)]);
+}
+
+function answerMcFoto(index) {
+  if (quizMode !== 'mcfoto' || mcfotoLocked || !mcfotoChoices.length) return;
+  const chosen = mcfotoChoices[index];
+  if (!chosen) return;
+  mcfotoLocked = true;
+  mcfotoAnswered++;
+  const isCorrect = chosen.latin === mcfotoCorrectLatin;
+  const correctIndex = mcfotoChoices.findIndex(opt => opt.latin === mcfotoCorrectLatin);
+  const clickedBtn = document.getElementById('mcfoto-opt-' + index);
+  const correctBtn = document.getElementById('mcfoto-opt-' + correctIndex);
+  document.querySelectorAll('.mcfoto-option').forEach(btn => btn.disabled = true);
+  if (isCorrect) {
+    mcfotoCorrect++;
+    clickedBtn?.classList.add('correct');
+    trackQuizAction('learned');
+    const d = D(mcfotoCorrectLatin);
+    const newStreak = (d.correctStreak || 0) + 1;
+    setData(mcfotoCorrectLatin, {status:'learned', flagged:false, correctStreak:newStreak, wrongCount:0});
+    renderFlagged();
+    renderStats();
+    document.getElementById('mcfoto-score').innerHTML = `Správně: <b>${mcfotoCorrect}</b> / <b>${mcfotoAnswered}</b>`;
+    setTimeout(() => { mcfotoLocked = false; qNext(); }, 800);
+    return;
+  }
+  trackQuizAction('review');
+  clickedBtn?.classList.add('wrong');
+  correctBtn?.classList.add('correct');
+  const d = D(mcfotoCorrectLatin);
+  const newWrongCount = (d.wrongCount || 0) + 1;
+  setData(mcfotoCorrectLatin, {status:'review', wrongCount:newWrongCount, correctStreak:0});
+  renderStats();
+  document.getElementById('mcfoto-score').innerHTML = `Správně: <b>${mcfotoCorrect}</b> / <b>${mcfotoAnswered}</b>`;
+  setTimeout(() => { mcfotoLocked = false; qNext(); }, 1500);
 }
 
 function getQuizPhotoSizingTokens(area) {
@@ -2076,11 +2155,12 @@ function renderQuiz() {
     area.innerHTML = `<div class="quiz-empty"><div class="quiz-empty-message">Nastav filtry a spusť samostatné okno kvízu.</div></div>`;
     return;
   }
-  const largePhotoMode = quizMode === 'foto' && quizPhotoSize === 'large';
+  const usesPhotoCard = quizMode === 'foto' || quizMode === 'mcfoto';
+  const largePhotoMode = usesPhotoCard && quizPhotoSize === 'large';
   area.classList.toggle('foto-large', largePhotoMode);
   const photoSizing = getQuizPhotoSizingTokens(area);
   if (!quizList.length) {
-    const msg = quizMode==='foto'
+    const msg = (quizMode==='foto' || quizMode==='mcfoto')
       ? 'Žádné kartičky s fotkou. Přidej fotky v záložce Kartičky.'
       : 'Žádné kartičky pro tento filtr.';
     area.innerHTML = `<div class="quiz-empty"><div class="quiz-empty-message">${msg}</div><button class="btn green" onclick="resetQuiz()">Načíst znovu</button></div>`;
@@ -2089,13 +2169,47 @@ function renderQuiz() {
   const p = quizList[quizIdx];
   const d = D(p.latin);
   const pct = Math.round(((quizIdx+1)/quizList.length)*100);
-  const quizPhotoSources = quizMode === 'foto'
+  const quizPhotoSources = (quizMode === 'foto' || quizMode === 'mcfoto')
     ? d.photos.map(src => src.startsWith('data:') ? src : esc(src))
     : [];
 
   let frontHTML = '', backHTML = '';
 
-  if (quizMode === 'foto') {
+  if (quizMode === 'mcfoto') {
+    if (quizList.length < 4) {
+      area.innerHTML = `<div class="quiz-empty"><div class="quiz-empty-message">Pro režim Foto výběr jsou potřeba alespoň 4 kartičky s fotkou v aktuálním balíčku.</div><button class="btn green" onclick="resetQuiz()">Načíst znovu</button></div>`;
+      return;
+    }
+    const frontMaxHeight = largePhotoMode ? photoSizing.frontLarge : photoSizing.frontCompact;
+    const frontRadius = largePhotoMode ? 10 : 8;
+    const photoCount = quizPhotoSources.length;
+    const frontPhotoMaxHeight = photoCount > 1 ? Math.max(70, Math.floor(frontMaxHeight / 2.2)) : frontMaxHeight;
+    let frontPhotoMaxWidth = '100%';
+    if (photoCount > 2) frontPhotoMaxWidth = '31%';
+    else if (photoCount === 2) frontPhotoMaxWidth = '48%';
+    const frontPhotoStyle = `max-height:${frontPhotoMaxHeight}px;max-width:${frontPhotoMaxWidth};width:auto;object-fit:contain;border-radius:${frontRadius}px;`;
+    const options = buildMcFotoChoices(p);
+    mcfotoChoices = options;
+    mcfotoCorrectLatin = p.latin;
+    area.innerHTML = `
+      <div class="quiz-stage">
+        <div class="quiz-meta">
+          <span>${quizIdx+1} / ${quizList.length}</span>
+        </div>
+        <div class="progress"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <div class="mcfoto-score" id="mcfoto-score">Správně: <b>${mcfotoCorrect}</b> / <b>${mcfotoAnswered}</b></div>
+        <div class="mcfoto-card">
+          <div class="mcfoto-photos">${
+            quizPhotoSources.map(src => `<img class="flip-img" style="${frontPhotoStyle}" src="${src}" onerror="this.style.display='none'">`).join('')
+          }</div>
+          <div class="mcfoto-options">
+            ${options.map((opt, idx) => `<button class="btn mcfoto-option" id="mcfoto-opt-${idx}" onclick="answerMcFoto(${idx})">${esc(opt.czech)}</button>`).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+    return;
+  } else if (quizMode === 'foto') {
     const frontMaxHeight = largePhotoMode ? photoSizing.frontLarge : photoSizing.frontCompact;
     const latinSize = largePhotoMode ? photoSizing.latinLarge : photoSizing.latinCompact;
     const frontRadius = largePhotoMode ? 10 : 8;
@@ -2170,8 +2284,8 @@ function flipQuiz() {
   document.getElementById('qflip')?.classList.toggle('flipped', quizFlipped);
 }
 
-function qNext() { quizIdx=(quizIdx+1)%quizList.length; quizFlipped=false; renderQuiz(); }
-function qPrev() { quizIdx=(quizIdx-1+quizList.length)%quizList.length; quizFlipped=false; renderQuiz(); }
+function qNext() { quizIdx=(quizIdx+1)%quizList.length; quizFlipped=false; mcfotoLocked=false; renderQuiz(); }
+function qPrev() { quizIdx=(quizIdx-1+quizList.length)%quizList.length; quizFlipped=false; mcfotoLocked=false; renderQuiz(); }
 
 // Anki/Quizlet style: re-insert "Nevím" card back soon (2-4 positions ahead)
 function qFlag() {
@@ -2584,6 +2698,13 @@ document.addEventListener('keydown', e => {
   const tag = e.target.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
   if (!quizList || !quizList.length) return;
+  if (quizMode === 'mcfoto') {
+    if (['1','2','3','4'].includes(e.key)) {
+      e.preventDefault();
+      answerMcFoto(Number(e.key) - 1);
+    }
+    return;
+  }
   if (e.key === 'ArrowLeft')  { e.preventDefault(); qMarkReview(); }
   else if (e.key === 'ArrowRight') { e.preventDefault(); qLearned(); }
   else if (e.key === 'ArrowUp')    { e.preventDefault(); qFlag(); }
