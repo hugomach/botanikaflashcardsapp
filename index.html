@@ -330,6 +330,22 @@ body.quiz-open { overflow: hidden; }
 .repeat-freq-btns { display: flex; gap: 5px; flex-wrap: wrap; }
 .repeat-freq-btns .btn { font-size: 11px; padding: 5px 9px; }
 .repeat-freq-btns .btn.active { background: var(--green); color: #fff; border-color: var(--green); }
+
+/* Confusion pairs */
+.confusion-section { margin-top: 16px; }
+.confusion-section-label { font-size: 11px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+.confusion-pair-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 8px; background: var(--surface2); border-radius: var(--radius); }
+.confusion-thumb { width: 56px; height: 44px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
+.confusion-thumb-empty { width: 56px; height: 44px; background: var(--surface); border-radius: 6px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--text3); border: 1px solid var(--border); }
+.confusion-pair-info { flex: 1; min-width: 0; }
+.confusion-pair-latin { font-size: 12px; font-style: italic; }
+.confusion-pair-czech { font-size: 11px; color: var(--text2); }
+.confusion-pair-note { margin-top: 4px; font-size: 11px; padding: 4px 7px; width: 100%; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); outline: none; font-family: inherit; }
+.confusion-pair-note:focus { border-color: var(--green); }
+.confusion-add-row { display: flex; gap: 6px; margin-top: 4px; }
+.confusion-add-row select { flex: 1; font-size: 12px; padding: 6px 8px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); outline: none; }
+.confusion-add-row select:focus { border-color: var(--green); }
+.flip-confusion { font-size: 11px; color: var(--flag); text-align: center; max-width: 90%; margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -463,6 +479,7 @@ body.quiz-open { overflow: hidden; }
             <option value="scheduled">📅 Naplánované k opakování</option>
             <option value="learned">Jen naučeno ✓</option>
             <option value="not_new">Vše kromě nových</option>
+            <option value="confusion">🔀 Záměnné páry</option>
             <option value="weak_spots">🎯 Slabá místa</option>
           </select>
           <div class="quiz-mode-toggle">
@@ -754,6 +771,41 @@ function getCustomPlants() {
 function getNameOverrides() {
   const raw = userData.__nameOverrides;
   return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+}
+
+// ── Confusion pairs helpers ──
+function getConfusionPairs() {
+  return Array.isArray(userData.__confusionPairs) ? userData.__confusionPairs : [];
+}
+
+function getConfusionPartnersFor(latin) {
+  return getConfusionPairs().reduce((acc, pair, idx) => {
+    if (pair.a === latin) acc.push({ partner: pair.b, note: pair.note || '', idx });
+    else if (pair.b === latin) acc.push({ partner: pair.a, note: pair.note || '', idx });
+    return acc;
+  }, []);
+}
+
+function addConfusionPair(latinA, latinB) {
+  const pairs = getConfusionPairs();
+  const exists = pairs.some(p => (p.a === latinA && p.b === latinB) || (p.a === latinB && p.b === latinA));
+  if (exists) return false;
+  pairs.push({ a: latinA, b: latinB, note: '' });
+  userData.__confusionPairs = pairs;
+  scheduleSave();
+  return true;
+}
+
+function removeConfusionPair(idx) {
+  const pairs = getConfusionPairs();
+  pairs.splice(idx, 1);
+  userData.__confusionPairs = pairs;
+  scheduleSave();
+}
+
+function saveConfusionPairNote(idx, note) {
+  const pairs = getConfusionPairs();
+  if (pairs[idx]) { pairs[idx].note = note; userData.__confusionPairs = pairs; scheduleSave(); }
 }
 
 function getFieldOverrides() {
@@ -1878,6 +1930,7 @@ function openModal(latin) {
 
       <label style="margin-top:12px;">Zajímavost / poznámka</label>
       <textarea id="m-fact" rows="3" placeholder="Přidejte zajímavost, tip k určení…">${esc(d.funfact||'')}</textarea>
+      <div id="confusion-section" class="confusion-section">${buildConfusionPairsHTML(latin)}</div>
       <div class="action-row" style="margin-top:12px;">
         <button class="btn amber" onclick="setStatus('${sl}','review')">🔄 Opakování</button>
         <button class="btn green" onclick="setStatus('${sl}','learned')">✓ Naučeno</button>
@@ -2392,6 +2445,11 @@ function getQuizPlants() {
     if (src==='scheduled' && (d.srNextReview || 0) > now) return false;
     if (src==='learned' && d.status!=='learned') return false;
     if (src==='not_new' && !d.flagged && d.status!=='review' && d.status!=='learned') return false;
+    if (src==='confusion') {
+      const pairs = getConfusionPairs();
+      const inPair = pairs.some(pair => pair.a === p.latin || pair.b === p.latin);
+      if (!inPair) return false;
+    }
     return true;
   });
 }
@@ -2666,6 +2724,10 @@ function renderQuiz() {
   const quizPhotoSources = (quizMode === 'foto' || quizMode === 'mcfoto')
     ? d.photos.map(src => src.startsWith('data:') ? src : esc(src))
     : [];
+  const confusionPartners = getConfusionPartnersFor(p.latin);
+  const confusionHint = confusionPartners.length
+    ? `<div class="flip-confusion">Neplést si s: ${confusionPartners.map(cp => `<i>${esc(cp.partner)}</i>${cp.note ? ` (${esc(cp.note)})` : ''}`).join(', ')}</div>`
+    : '';
 
   let frontHTML = '', backHTML = '';
 
@@ -2730,7 +2792,8 @@ function renderQuiz() {
       <div class="flip-a">${p.czech}</div>
       <div class="flip-a" style="font-size:${latinSize}px;font-style:italic;">${p.latin}</div>
       <div class="flip-family">${p.family_cz} · ${p.family_lat}</div>
-      ${d.funfact ? `<div class="flip-fact">${esc(d.funfact)}</div>` : ''}`;
+      ${d.funfact ? `<div class="flip-fact">${esc(d.funfact)}</div>` : ''}
+      ${confusionHint}`;
   } else {
     const photo = d.photos[0] || '';
     const photoSrc = photo ? (photo.startsWith('data:') ? photo : esc(photo)) : '';
@@ -2744,7 +2807,8 @@ function renderQuiz() {
       ${photoSrc ? `<img class="flip-img" src="${photoSrc}" onerror="this.style.display='none'">` : ''}
       <div class="flip-a ${aCls}">${aText}</div>
       <div class="flip-family">${p.family_cz} · ${p.family_lat}</div>
-      ${d.funfact ? `<div class="flip-fact">${esc(d.funfact)}</div>` : ''}`;
+      ${d.funfact ? `<div class="flip-fact">${esc(d.funfact)}</div>` : ''}
+      ${confusionHint}`;
   }
 
   const hintFront = quizMode==='foto' ? '<div class="flip-hint" style="margin-top:6px;">klepni pro odpověď</div>' : '';
@@ -2884,6 +2948,67 @@ function setRepeatFreq(latin, freq) {
   setData(latin, {repeatFreq: freq});
   const container = document.getElementById('repeat-btns');
   if (container) container.innerHTML = buildRepeatBtnsHTML(latin);
+}
+
+// ── Confusion pairs modal UI ──
+function buildConfusionPairsHTML(latin) {
+  const sl = latin.replace(/'/g,"\\'");
+  const partners = getConfusionPartnersFor(latin);
+  const allPlants = getAllPlants();
+
+  const pairsHTML = partners.map(({partner, note, idx}) => {
+    const partnerPlant = allPlants.find(p => p.latin === partner);
+    if (!partnerPlant) return '';
+    const pd = D(partner);
+    const thumb = pd.photos[0] || '';
+    const thumbSrc = thumb ? (thumb.startsWith('data:') ? thumb : esc(thumb)) : '';
+    const thumbEl = thumbSrc
+      ? `<img class="confusion-thumb" src="${thumbSrc}" onerror="this.style.display='none'">`
+      : `<div class="confusion-thumb-empty">—</div>`;
+    return `<div class="confusion-pair-row">
+      ${thumbEl}
+      <div class="confusion-pair-info">
+        <div class="confusion-pair-latin">${esc(partnerPlant.latin)}</div>
+        <div class="confusion-pair-czech">${esc(partnerPlant.czech)}</div>
+        <input class="confusion-pair-note" type="text" placeholder="Poznámka k rozdílu…" value="${esc(note)}" oninput="saveConfusionPairNote(${idx}, this.value)">
+      </div>
+      <button class="btn" style="flex-shrink:0;font-size:11px;padding:4px 8px;" onclick="removeConfusionPairAndRefresh('${sl}',${idx})">✕</button>
+    </div>`;
+  }).join('');
+
+  const optionsHTML = allPlants
+    .filter(p => p.latin !== latin)
+    .map(p => `<option value="${esc(p.latin)}">${esc(p.latin)} — ${esc(p.czech)}</option>`)
+    .join('');
+
+  return `<div class="confusion-section-label">Neplést si s…</div>
+    ${pairsHTML}
+    <div class="confusion-add-row">
+      <select id="confusion-pick">
+        <option value="">— Vybrat rostlinu…</option>
+        ${optionsHTML}
+      </select>
+      <button class="btn" onclick="addConfusionPairFromModal('${sl}')">Přidat</button>
+    </div>`;
+}
+
+function refreshConfusionSection(latin) {
+  const wrap = document.getElementById('confusion-section');
+  if (wrap) wrap.innerHTML = buildConfusionPairsHTML(latin);
+}
+
+function addConfusionPairFromModal(latin) {
+  const sel = document.getElementById('confusion-pick');
+  const partner = sel?.value;
+  if (!partner) return;
+  const added = addConfusionPair(latin, partner);
+  if (!added) { alert('Tento pár již existuje.'); return; }
+  refreshConfusionSection(latin);
+}
+
+function removeConfusionPairAndRefresh(latin, idx) {
+  removeConfusionPair(idx);
+  refreshConfusionSection(latin);
 }
 
 function startFlaggedQuiz() {
