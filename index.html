@@ -61,6 +61,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .card-latin { font-size: 14px; font-weight: 500; font-style: italic; line-height: 1.3; }
 .card-czech { font-size: 12px; color: var(--text2); margin-top: 2px; }
 .card-family { font-size: 11px; color: var(--text3); margin-top: 3px; }
+.card-key-feature { font-size: 11px; color: var(--text2); margin-top: 4px; }
 .card-footer { display: flex; align-items: center; gap: 5px; margin-top: 8px; flex-wrap: wrap; }
 .badge { font-size: 10px; padding: 2px 7px; border-radius: 999px; font-weight: 500; }
 .b-learned { background: var(--green-light); color: var(--green-dark); }
@@ -248,6 +249,8 @@ textarea { resize: vertical; }
 .flip-a { font-size: 18px; font-weight: 600; color: var(--green-dark); text-align: center; font-style: italic; }
 .flip-a.cz { font-style: normal; }
 .flip-family { font-size: 12px; color: var(--green); }
+.flip-ident-tips { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; width: 100%; max-width: 92%; }
+.flip-ident-tip { font-size: 11px; color: var(--green-dark); background: rgba(29, 158, 117, 0.12); border-radius: 8px; padding: 3px 7px; text-align: left; line-height: 1.35; }
 .flip-fact { font-size: 11px; color: var(--green-dark); font-style: italic; text-align: center; max-width: 90%; }
 .flip-img { max-width: 100%; max-height: var(--quiz-photo-back-compact-max); border-radius: 6px; object-fit: cover; }
 .quiz-btns { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; }
@@ -412,6 +415,8 @@ body.quiz-open { overflow: hidden; }
 .repeat-freq-btns { display: flex; gap: 5px; flex-wrap: wrap; }
 .repeat-freq-btns .btn { font-size: 11px; padding: 5px 9px; }
 .repeat-freq-btns .btn.active { background: var(--green); color: #fff; border-color: var(--green); }
+.ident-tip-grid { display: grid; gap: 6px; margin-top: 6px; }
+.ident-tip-grid label { margin-top: 0; margin-bottom: 2px; }
 </style>
 </head>
 <body>
@@ -828,6 +833,63 @@ function D(latin) {
   return {status:'new', funfact:'', flagged:false, repeatFreq:'auto', wrongCount:0, correctStreak:0, ...raw, photos};
 }
 
+function suggestKeyFeatureFromTags(tags) {
+  if (!Array.isArray(tags) || !tags.length) return '';
+  const cleaned = tags.map(t => String(t || '').trim()).filter(Boolean);
+  const hintParts = ['míza','miza','latex','trn','ostn','chlup','jež','vůně','vune','zápach','zapach','lepiv','žahav','bodlin','jehlic','šiška','stonek','lodyh','list','květ','kvet','plod','semeno','oranž','žlut','fial','červen','bíl'];
+  const hit = cleaned.find(tag => {
+    const low = tag.toLowerCase();
+    return hintParts.some(part => low.includes(part));
+  });
+  return hit || cleaned[0] || '';
+}
+
+function getStoredIdentTips(latin) {
+  const all = userData.__identTips;
+  if (!all || typeof all !== 'object' || Array.isArray(all)) return {};
+  const tip = all[latin];
+  if (!tip || typeof tip !== 'object' || Array.isArray(tip)) return {};
+  return tip;
+}
+
+function getIdentificationTips(latin, tags = []) {
+  const stored = getStoredIdentTips(latin);
+  const flower = typeof stored.flower === 'string' ? stored.flower : '';
+  const leaf = typeof stored.leaf === 'string' ? stored.leaf : '';
+  const keyFeature = (typeof stored.keyFeature === 'string' && stored.keyFeature.trim())
+    ? stored.keyFeature
+    : suggestKeyFeatureFromTags(tags);
+  return {flower, leaf, keyFeature};
+}
+
+function setIdentificationTips(latin, tips) {
+  const flower = String(tips?.flower || '').trim();
+  const leaf = String(tips?.leaf || '').trim();
+  const keyFeature = String(tips?.keyFeature || '').trim();
+  const hasAny = !!(flower || leaf || keyFeature);
+  const all = (userData.__identTips && typeof userData.__identTips === 'object' && !Array.isArray(userData.__identTips))
+    ? userData.__identTips
+    : {};
+  if (hasAny) {
+    all[latin] = {flower, leaf, keyFeature};
+    userData.__identTips = all;
+    return;
+  }
+  if (all[latin]) {
+    delete all[latin];
+    if (Object.keys(all).length) userData.__identTips = all;
+    else delete userData.__identTips;
+  }
+}
+
+function getQuizIdentTipsHTML(tips) {
+  const lines = [];
+  if (tips.keyFeature) lines.push(`<div class="flip-ident-tip"><b>Poznej podle:</b> ${esc(tips.keyFeature)}</div>`);
+  if (tips.flower) lines.push(`<div class="flip-ident-tip"><b>Květ:</b> ${esc(tips.flower)}</div>`);
+  if (tips.leaf) lines.push(`<div class="flip-ident-tip"><b>List:</b> ${esc(tips.leaf)}</div>`);
+  return lines.length ? `<div class="flip-ident-tips">${lines.join('')}</div>` : '';
+}
+
 // ── Init ──
 window.onload = async () => {
   clearAuthUrlFragment();
@@ -1115,6 +1177,11 @@ function migratePlantDataKey(oldLatin, newLatin) {
   if (!userData[oldKey]) return;
   userData[newKey] = Object.assign({}, userData[newKey] || {}, userData[oldKey]);
   delete userData[oldKey];
+  const identTips = userData.__identTips;
+  if (identTips && typeof identTips === 'object' && !Array.isArray(identTips) && identTips[oldLatin]) {
+    identTips[newLatin] = Object.assign({}, identTips[newLatin] || {}, identTips[oldLatin]);
+    delete identTips[oldLatin];
+  }
 }
 
 function editPlantNamesFromTable(latin) {
@@ -1335,6 +1402,7 @@ function renderStats() {
 // ── Card rendering ──
 function cardHTML(p) {
   const d = D(p.latin);
+  const tips = getIdentificationTips(p.latin, p.tags || []);
   const cls = d.flagged ? 'flagged-card' : d.status==='learned' ? 'learned' : d.status==='review' ? 'review' : '';
   const badge = d.status==='learned' ? '<span class="badge b-learned">naučeno</span>'
     : d.status==='review' ? '<span class="badge b-review">opakování</span>'
@@ -1348,12 +1416,14 @@ function cardHTML(p) {
     : `<div class="card-img">bez fotky</div>`;
   const safe = esc(p.latin);
   const groupBadge = `<span class="badge" style="background:${GROUP_COLORS[p.group]||'#888'};color:#fff;margin-left:auto">${p.group||''}</span>`;
+  const keyFeatureLine = tips.keyFeature ? `<div class="card-key-feature">Poznej podle: ${esc(tips.keyFeature)}</div>` : '';
   return `<div class="card ${cls}" onclick="openModal('${safe}')">
     ${img}
     <div class="card-body">
       <div class="card-latin">${p.latin}</div>
       <div class="card-czech">${p.czech}</div>
       <div class="card-family">${p.family_cz} · <i>${p.family_lat}</i></div>
+      ${keyFeatureLine}
       <div class="card-footer">${badge}${flag}${groupBadge}</div>
     </div>
   </div>`;
@@ -1505,6 +1575,7 @@ function openModal(latin) {
     return;
   }
   const d = D(latin);
+  const tips = getIdentificationTips(latin, p.tags || []);
   const enc = encodeURIComponent(latin);
   const sl = latin.replace(/'/g,"\\'");
   lastFocusedBeforeModal = document.activeElement;
@@ -1541,6 +1612,22 @@ function openModal(latin) {
         <a class="ext-link" href="https://cs.wikipedia.org/w/index.php?search=${enc}" target="_blank">📖 Wikipedia</a>
       </div>
       <button class="btn" style="margin-top:8px;width:100%;" onclick="savePhotoUrl('${sl}')">Přidat URL</button>
+
+      <label style="margin-top:12px;">Určovací znaky</label>
+      <div class="ident-tip-grid">
+        <div>
+          <label for="m-tip-flower">Květ</label>
+          <input type="text" id="m-tip-flower" value="${esc(tips.flower || '')}" placeholder="bílý, 5 okvětních lístků">
+        </div>
+        <div>
+          <label for="m-tip-leaf">List</label>
+          <input type="text" id="m-tip-leaf" value="${esc(tips.leaf || '')}" placeholder="střídavé, zpeřené, palisté">
+        </div>
+        <div>
+          <label for="m-tip-key-feature">Poznej podle</label>
+          <input type="text" id="m-tip-key-feature" value="${esc(tips.keyFeature || '')}" placeholder="oranžová míza na řezu stonku">
+        </div>
+      </div>
 
       <label style="margin-top:12px;">Zajímavost / poznámka</label>
       <textarea id="m-fact" rows="3" placeholder="Přidejte zajímavost, tip k určení…">${esc(d.funfact||'')}</textarea>
@@ -1742,21 +1829,27 @@ function savePhotoUrl(latin) {
   }
 }
 
+function saveModalDetails(latin, patch = {}) {
+  const funfact = document.getElementById('m-fact')?.value || D(latin).funfact || '';
+  const flower = document.getElementById('m-tip-flower')?.value || '';
+  const leaf = document.getElementById('m-tip-leaf')?.value || '';
+  const keyFeature = document.getElementById('m-tip-key-feature')?.value || '';
+  setIdentificationTips(latin, {flower, leaf, keyFeature});
+  setData(latin, {funfact, ...patch});
+}
+
 function saveFunfact(latin) {
-  const funfact = document.getElementById('m-fact')?.value || '';
-  setData(latin, {funfact});
+  saveModalDetails(latin);
   closeModal(); renderAll();
 }
 
 function saveModal(latin) {
-  const funfact = document.getElementById('m-fact')?.value || '';
-  setData(latin, {funfact});
+  saveModalDetails(latin);
   closeModal(); renderAll();
 }
 
 function setStatus(latin, status) {
-  const funfact = document.getElementById('m-fact')?.value || D(latin).funfact;
-  setData(latin, {status, funfact});
+  saveModalDetails(latin, {status});
   closeModal(); renderAll();
 }
 
@@ -1969,6 +2062,8 @@ function renderQuiz() {
   }
   const p = quizList[quizIdx];
   const d = D(p.latin);
+  const identTips = getIdentificationTips(p.latin, p.tags || []);
+  const identTipsHTML = getQuizIdentTipsHTML(identTips);
   const pct = Math.round(((quizIdx+1)/quizList.length)*100);
   const quizPhotoSources = quizMode === 'foto'
     ? d.photos.map(src => src.startsWith('data:') ? src : esc(src))
@@ -2003,6 +2098,7 @@ function renderQuiz() {
       <div class="flip-a">${p.czech}</div>
       <div class="flip-a" style="font-size:${latinSize}px;font-style:italic;">${p.latin}</div>
       <div class="flip-family">${p.family_cz} · ${p.family_lat}</div>
+      ${identTipsHTML}
       ${d.funfact ? `<div class="flip-fact">${esc(d.funfact)}</div>` : ''}`;
   } else {
     const photo = d.photos[0] || '';
@@ -2017,6 +2113,7 @@ function renderQuiz() {
       ${photoSrc ? `<img class="flip-img" src="${photoSrc}" onerror="this.style.display='none'">` : ''}
       <div class="flip-a ${aCls}">${aText}</div>
       <div class="flip-family">${p.family_cz} · ${p.family_lat}</div>
+      ${identTipsHTML}
       ${d.funfact ? `<div class="flip-fact">${esc(d.funfact)}</div>` : ''}`;
   }
 
