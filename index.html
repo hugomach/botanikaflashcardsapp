@@ -191,6 +191,23 @@ body.quiz-open { overflow: hidden; }
 .daily-progress-fill { height: 100%; background: var(--green); border-radius: 999px; transition: width 0.25s ease; }
 .quiz-session-summary { margin-bottom: 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; font-size: 12px; color: var(--text2); line-height: 1.55; }
 .quiz-empty-message { font-size: 14px; color: var(--text2); }
+.quiz-setup-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.exam-config { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text2); }
+.exam-config input { width: 76px; padding: 6px 8px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); }
+.exam-timer { font-weight: 700; color: var(--text); }
+.exam-timer.warning { color: var(--flag); }
+.exam-form-grid { display: grid; gap: 8px; margin: 0.75rem 0 0.85rem; }
+.exam-result-summary { font-size: 13px; line-height: 1.6; margin-bottom: 0.85rem; color: var(--text2); }
+.exam-grade { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 0.75rem; }
+.exam-result-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.exam-result-table th, .exam-result-table td { border: 1px solid var(--border); padding: 7px 8px; vertical-align: top; text-align: left; }
+.exam-result-table th { background: var(--surface2); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text3); }
+.exam-result-ok { color: var(--green-dark); background: var(--green-light); font-weight: 600; }
+.exam-result-bad { color: var(--flag); background: #fff0ee; font-weight: 600; }
+.exam-history-title { font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+.exam-history-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.exam-history-table th, .exam-history-table td { border: 1px solid var(--border); padding: 5px 7px; text-align: left; }
+.exam-history-table th { background: var(--surface2); color: var(--text3); text-transform: uppercase; font-size: 10px; letter-spacing: 0.04em; }
 .quiz-empty { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; }
 
 /* Group filter chips */
@@ -516,7 +533,14 @@ body.quiz-open { overflow: hidden; }
           </div>
         </div>
         <div class="quiz-setup-actions">
-          <button class="btn green" id="quiz-start-btn" onclick="startQuiz()">Spustit kvíz</button>
+          <div class="quiz-setup-left">
+            <div class="exam-config">Otázek <input id="exam-question-count" type="number" min="1" max="200" value="20"></div>
+            <div class="exam-config">Limit (min) <input id="exam-time-limit" type="number" min="1" max="180" value="20"></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn green" id="quiz-start-btn" onclick="startQuiz()">Spustit kvíz</button>
+            <button class="btn" id="exam-start-btn" onclick="startExamSimulation()">🎓 Simulace zkoušky</button>
+          </div>
           <div class="quiz-setup-note" id="quiz-setup-note"></div>
         </div>
         <div class="daily-progress" id="daily-progress-box">
@@ -524,6 +548,7 @@ body.quiz-open { overflow: hidden; }
           <div class="daily-progress-track"><div class="daily-progress-fill" id="daily-progress-fill" style="width:0%;"></div></div>
         </div>
         <div id="quiz-session-summary" class="quiz-session-summary" style="display:none;"></div>
+        <div id="exam-history" class="quiz-session-summary" style="display:none;"></div>
     </div>
   </div>
 </div>
@@ -768,6 +793,15 @@ let quizTypeAutoAdvanceTimer = null;
 let quizSessionActive = false;
 let quizSessionStats = { startedAt: 0, total: 0, actions: 0, flagged: 0, review: 0, learned: 0, flips: 0, dailyGoalReached: false };
 let quizLastSummary = null;
+let examSessionActive = false;
+let examList = [];
+let examIdx = 0;
+let examAnswers = [];
+let examStartedAt = 0;
+let examDeadlineAt = 0;
+let examTimerHandle = null;
+let examResultHTML = '';
+let examLastConfig = {count: 20, minutes: 20};
 let mcfotoCorrect = 0, mcfotoAnswered = 0, mcfotoLocked = false, mcfotoChoices = [], mcfotoCorrectLatin = '';
 let dirty = false;
 let activeGroup = '';
@@ -800,6 +834,15 @@ function getNameOverrides() {
   return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
 }
 
+function getExamHistory() {
+  return Array.isArray(userData.__examHistory) ? userData.__examHistory : [];
+}
+
+function saveExamHistoryEntry(entry) {
+  const history = getExamHistory();
+  userData.__examHistory = [entry, ...history];
+  scheduleSave();
+}
 // ── Confusion pairs helpers ──
 function getConfusionPairs() {
   return Array.isArray(userData.__confusionPairs) ? userData.__confusionPairs : [];
@@ -834,7 +877,6 @@ function saveConfusionPairNote(idx, note) {
   const pairs = getConfusionPairs();
   if (pairs[idx]) { pairs[idx].note = note; userData.__confusionPairs = pairs; scheduleSave(); }
 }
-
 function getFieldOverrides() {
   const raw = userData.__fieldOverrides;
   return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
@@ -2354,6 +2396,17 @@ function setQuizOverlayOpen(isOpen) {
 }
 
 function closeQuizOverlay() {
+  if (examSessionActive) {
+    const shouldQuit = confirm('Ukončit simulaci zkoušky bez vyhodnocení?');
+    if (!shouldQuit) return;
+    clearExamTimer();
+    examSessionActive = false;
+    examList = [];
+    examAnswers = [];
+    examIdx = 0;
+    examResultHTML = '';
+    renderQuizSetup();
+  }
   if (quizSessionActive) {
     finishQuizSession();
     return;
@@ -2388,17 +2441,52 @@ function renderQuizSetup() {
   const setupPanel = document.getElementById('quiz-setup-panel');
   const setupNote = document.getElementById('quiz-setup-note');
   const summaryBox = document.getElementById('quiz-session-summary');
+  const examHistoryBox = document.getElementById('exam-history');
   const photoSizeToggle = document.getElementById('quiz-photo-size-toggle');
+  const overlayTitle = document.getElementById('quiz-overlay-title');
+  const examEligibleCount = getExamPlants().filter(p => D(p.latin).photos.length).length;
+  const examCountInput = document.getElementById('exam-question-count');
+  const requestedExamCount = Math.max(1, Number.parseInt(examCountInput?.value || '20', 10) || 20);
   if (photoSizeToggle) photoSizeToggle.style.display = (quizMode === 'foto' || quizMode === 'mcfoto') ? 'inline-flex' : 'none';
-  if (setupPanel) setupPanel.style.display = quizSessionActive ? 'none' : '';
-  if (setupNote && !quizSessionActive) setupNote.textContent = `V balíčku je ${quizList.length} kartiček.`;
+  if (overlayTitle) {
+    overlayTitle.textContent = examSessionActive
+      ? '🎓 Simulace zkoušky'
+      : (examResultHTML ? '🎓 Výsledky simulace' : 'Kvíz');
+  }
+  if (setupPanel) setupPanel.style.display = (quizSessionActive || examSessionActive) ? 'none' : '';
+  if (setupNote && !quizSessionActive && !examSessionActive) {
+    setupNote.textContent = `V balíčku je ${quizList.length} kartiček. Pro simulaci je dostupných ${Math.min(requestedExamCount, examEligibleCount)} z ${examEligibleCount} rostlin s fotkou.`;
+  }
   if (summaryBox) {
-    if (quizLastSummary && !quizSessionActive) {
+    if (quizLastSummary && !quizSessionActive && !examSessionActive) {
       summaryBox.style.display = '';
       summaryBox.innerHTML = quizLastSummary;
     } else {
       summaryBox.style.display = 'none';
       summaryBox.innerHTML = '';
+    }
+  }
+  if (examHistoryBox) {
+    const history = getExamHistory().slice(0, 5);
+    if (history.length && !quizSessionActive && !examSessionActive) {
+      examHistoryBox.style.display = '';
+      examHistoryBox.innerHTML = `
+        <div class="exam-history-title">Posledních 5 simulací</div>
+        <table class="exam-history-table">
+          <thead><tr><th>Datum</th><th>Skóre</th><th>Úspěšnost</th><th>Čas</th></tr></thead>
+          <tbody>${history.map(h => {
+            const pct = h.total ? Math.round((Number(h.score || 0) / Number(h.total || 1)) * 100) : 0;
+            const secs = Math.max(0, Number(h.timeSeconds || 0));
+            const mins = Math.floor(secs / 60);
+            const sec = secs % 60;
+            const dateLabel = new Date(h.date || Date.now()).toLocaleString('cs-CZ');
+            return `<tr><td>${esc(dateLabel)}</td><td>${Number(h.score || 0)}/${Number(h.total || 0)}</td><td>${pct}%</td><td>${mins}:${String(sec).padStart(2, '0')}</td></tr>`;
+          }).join('')}</tbody>
+        </table>
+      `;
+    } else {
+      examHistoryBox.style.display = 'none';
+      examHistoryBox.innerHTML = '';
     }
   }
   renderDailyProgress();
@@ -2416,7 +2504,217 @@ function trackQuizAction(type) {
   if (type === 'learned') quizSessionStats.learned++;
 }
 
+function clearExamTimer() {
+  if (examTimerHandle) clearInterval(examTimerHandle);
+  examTimerHandle = null;
+}
+
+function formatClock(totalSeconds) {
+  const secs = Math.max(0, Number(totalSeconds) || 0);
+  const mins = Math.floor(secs / 60);
+  const sec = secs % 60;
+  return `${mins}:${String(sec).padStart(2, '0')}`;
+}
+
+function getExamRemainingSeconds() {
+  return Math.max(0, Math.ceil((examDeadlineAt - Date.now()) / 1000));
+}
+
+function updateExamCountdownLabel() {
+  const el = document.getElementById('exam-countdown');
+  if (!el) return;
+  const remaining = getExamRemainingSeconds();
+  el.textContent = `⏳ ${formatClock(remaining)}`;
+  el.classList.toggle('warning', remaining <= 120);
+}
+
+function startExamTimer() {
+  clearExamTimer();
+  updateExamCountdownLabel();
+  examTimerHandle = setInterval(() => {
+    if (!examSessionActive) {
+      clearExamTimer();
+      return;
+    }
+    if (Date.now() >= examDeadlineAt) {
+      finishExamSimulation({timedOut: true});
+      return;
+    }
+    updateExamCountdownLabel();
+  }, 1000);
+}
+
+function normalizeExamText(value) {
+  return String(value || '')
+    .toLocaleLowerCase('cs')
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim();
+}
+
+function examMatch(userValue, expectedValue) {
+  return normalizeExamText(userValue) === normalizeExamText(expectedValue);
+}
+
+function getExamPlants() {
+  const fam = document.getElementById('quiz-family').value;
+  const famCz = document.getElementById('quiz-family-cz').value;
+  return getAllPlants().filter(p => {
+    if (activeQuizGroups.length && !activeQuizGroups.includes(p.group)) return false;
+    if (activeQuizLFs.length && !activeQuizLFs.includes(p.life_form)) return false;
+    if (activeQuizHabs.length && !activeQuizHabs.some(h => p.habitat.includes(h))) return false;
+    if (activeQuizToxes.length && !activeQuizToxes.includes(p.toxic)) return false;
+    if (fam && p.family_lat !== fam) return false;
+    if (famCz && p.family_cz !== famCz) return false;
+    return true;
+  });
+}
+
+function startExamSimulation() {
+  const countInput = document.getElementById('exam-question-count');
+  const minutesInput = document.getElementById('exam-time-limit');
+  const requestedCount = Math.max(1, Number.parseInt(countInput?.value || '20', 10) || 20);
+  const requestedMinutes = Math.max(1, Number.parseInt(minutesInput?.value || '20', 10) || 20);
+  const pool = getExamPlants().filter(p => D(p.latin).photos.length);
+  if (!pool.length) {
+    alert('Pro simulaci nejsou dostupné žádné rostliny s fotkou v aktuálním filtru.');
+    return;
+  }
+  examLastConfig = {count: requestedCount, minutes: requestedMinutes};
+  examList = shuffle(pool).slice(0, Math.min(requestedCount, pool.length));
+  examIdx = 0;
+  examAnswers = [];
+  examStartedAt = Date.now();
+  examDeadlineAt = examStartedAt + (requestedMinutes * 60 * 1000);
+  examResultHTML = '';
+  quizSessionActive = false;
+  quizFlipped = false;
+  lastFocusedBeforeQuiz = document.activeElement;
+  examSessionActive = true;
+  setQuizOverlayOpen(true);
+  startExamTimer();
+  renderQuizSetup();
+  renderQuiz();
+}
+
+function getExamGradeLabel(percent) {
+  if (percent < 50) return 'Potřebuješ víc procvičovat';
+  if (percent < 70) return 'Skoro tam';
+  if (percent < 90) return 'Dobře!';
+  return 'Výborně, jsi připraven/a na zkoušku!';
+}
+
+function appendMissedExamAnswers() {
+  for (let i = examAnswers.length; i < examList.length; i++) {
+    const p = examList[i];
+    examAnswers.push({
+      latin: p.latin,
+      czechExpected: p.czech,
+      familyCzExpected: p.family_cz,
+      familyLatExpected: p.family_lat,
+      userCzech: '',
+      userLatin: '',
+      userFamily: '',
+      namesCorrect: false,
+      familyCorrect: false
+    });
+  }
+}
+
+function finishExamSimulation({timedOut = false} = {}) {
+  if (!examSessionActive) return;
+  clearExamTimer();
+  if (timedOut) appendMissedExamAnswers();
+  const elapsedSeconds = Math.max(0, Math.round((Date.now() - examStartedAt) / 1000));
+  const namesScore = examAnswers.filter(a => a.namesCorrect).length;
+  const familyScore = examAnswers.filter(a => a.familyCorrect).length;
+  const totalScore = namesScore + familyScore;
+  const totalPossible = examList.length * 2;
+  const percent = totalPossible ? Math.round((totalScore / totalPossible) * 100) : 0;
+  const gradeLabel = getExamGradeLabel(percent);
+  saveExamHistoryEntry({
+    date: new Date().toISOString(),
+    score: totalScore,
+    total: totalPossible,
+    timeSeconds: elapsedSeconds
+  });
+  examResultHTML = `
+    <div class="quiz-stage">
+      <div class="exam-result-summary">
+        <b>Celkové skóre:</b> ${percent}% (${totalScore}/${totalPossible})<br>
+        <b>Čas:</b> ${formatClock(elapsedSeconds)}${timedOut ? ' · <b style="color:var(--flag);">Čas vypršel</b>' : ''}<br>
+        <b>Rozpad:</b> Jména: ${namesScore}/${examList.length}, Čeledi: ${familyScore}/${examList.length}
+      </div>
+      <div class="exam-grade">${esc(gradeLabel)}</div>
+      <div style="overflow:auto;">
+        <table class="exam-result-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Rostlina</th><th>Tvoje jména</th><th>Správná jména</th><th>Tvoje čeleď</th><th>Správná čeleď</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${examAnswers.map((a, i) => `
+              <tr>
+                <td>${i + 1}</td>
+                <td><i>${esc(a.latin)}</i></td>
+                <td class="${a.namesCorrect ? 'exam-result-ok' : 'exam-result-bad'}">${esc(a.userCzech || '—')} · <i>${esc(a.userLatin || '—')}</i></td>
+                <td><b>${esc(a.czechExpected)}</b> · <i>${esc(a.latin)}</i></td>
+                <td class="${a.familyCorrect ? 'exam-result-ok' : 'exam-result-bad'}">${esc(a.userFamily || '—')}</td>
+                <td>${esc(a.familyCzExpected)} · <i>${esc(a.familyLatExpected)}</i></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn" onclick="closeQuizOverlay()">Zavřít</button>
+        <button class="btn green" onclick="startExamSimulation()">Spustit znovu</button>
+      </div>
+    </div>
+  `;
+  examSessionActive = false;
+  examIdx = 0;
+  examList = [];
+  examAnswers = [];
+  renderQuizSetup();
+  renderQuiz();
+}
+
+function submitExamAnswer(event) {
+  if (event) event.preventDefault();
+  if (!examSessionActive) return;
+  const p = examList[examIdx];
+  if (!p) return;
+  const userCzech = document.getElementById('exam-czech')?.value.trim() || '';
+  const userLatin = document.getElementById('exam-latin')?.value.trim() || '';
+  const userFamily = document.getElementById('exam-family')?.value.trim() || '';
+  const namesCorrect = examMatch(userCzech, p.czech) && examMatch(userLatin, p.latin);
+  const familyCorrect = examMatch(userFamily, p.family_cz) || examMatch(userFamily, p.family_lat);
+  examAnswers.push({
+    latin: p.latin,
+    czechExpected: p.czech,
+    familyCzExpected: p.family_cz,
+    familyLatExpected: p.family_lat,
+    userCzech,
+    userLatin,
+    userFamily,
+    namesCorrect,
+    familyCorrect
+  });
+  examIdx++;
+  if (examIdx >= examList.length) {
+    finishExamSimulation();
+    return;
+  }
+  renderQuiz();
+}
+
 function startQuiz() {
+  clearExamTimer();
+  examSessionActive = false;
+  examResultHTML = '';
   quizList = buildQuizDeck();
   quizIdx = 0;
   quizFlipped = false;
@@ -2497,6 +2795,8 @@ function buildQuizDeck() {
 }
 
 function resetQuiz() {
+  if (examSessionActive) return;
+  examResultHTML = '';
   quizList = buildQuizDeck();
   quizIdx = 0; quizFlipped = false;
   mcfotoCorrect = 0;
@@ -2701,6 +3001,48 @@ function renderQuiz() {
   if (quizTypeAutoAdvanceTimer) {
     clearTimeout(quizTypeAutoAdvanceTimer);
     quizTypeAutoAdvanceTimer = null;
+  }
+  if (examSessionActive) {
+    area.classList.remove('foto-large');
+    if (!examList.length) {
+      area.innerHTML = `<div class="quiz-empty"><div class="quiz-empty-message">Pro simulaci nejsou žádné otázky.</div></div>`;
+      return;
+    }
+    const p = examList[examIdx];
+    const d = D(p.latin);
+    const photo = d.photos[0] || '';
+    const photoSrc = photo ? (photo.startsWith('data:') ? photo : esc(photo)) : '';
+    const pct = Math.round(((examIdx + 1) / examList.length) * 100);
+    area.innerHTML = `
+      <div class="quiz-stage">
+        <div class="quiz-meta">
+          <span>${examIdx + 1} / ${examList.length}</span>
+          <span class="exam-timer" id="exam-countdown">⏳ ${formatClock(getExamRemainingSeconds())}</span>
+        </div>
+        <div class="progress"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:10px;">
+          ${photoSrc ? `<img src="${photoSrc}" alt="Foto rostliny" style="width:100%;max-height:340px;object-fit:cover;border-radius:10px;">` : '<div style="font-size:12px;color:var(--text3);">bez fotky</div>'}
+        </div>
+        <form id="exam-form" onsubmit="submitExamAnswer(event)">
+          <div class="exam-form-grid">
+            <input type="text" id="exam-czech" placeholder="Český název" autocomplete="off" required>
+            <input type="text" id="exam-latin" placeholder="Latinský název" autocomplete="off" required>
+            <input type="text" id="exam-family" placeholder="Čeleď (CZ nebo LAT)" autocomplete="off" required>
+          </div>
+          <button class="btn green" type="submit">Potvrdit odpověď</button>
+        </form>
+      </div>
+    `;
+    requestAnimationFrame(() => {
+      updateExamCountdownLabel();
+      document.getElementById('exam-czech')?.focus();
+    });
+    return;
+  }
+  if (examResultHTML) {
+    area.classList.remove('foto-large');
+    area.innerHTML = examResultHTML;
+    return;
   }
   if (!quizSessionActive) {
     area.classList.remove('foto-large');
