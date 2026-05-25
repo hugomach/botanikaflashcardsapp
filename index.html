@@ -789,6 +789,7 @@ let sbUserKey = null;
 let sb = null;
 let syncTimer = null;
 let quizList = [], quizIdx = 0, quizFlipped = false, quizMode = 'foto', quizPhotoSize = 'compact';
+let quizTypeTarget = 'czech';
 let quizTypeAutoAdvanceTimer = null;
 let quizSessionActive = false;
 let quizSessionStats = { startedAt: 0, total: 0, actions: 0, flagged: 0, review: 0, learned: 0, flips: 0, dailyGoalReached: false };
@@ -2419,7 +2420,45 @@ function quizOverlayBgClick(e) {
 }
 
 // ── Quiz ──
+function getQuizTypeTargetFromMode(mode) {
+  if (mode === 'cz') return 'latin';
+  if (mode === 'fam') return 'family_lat';
+  return 'czech';
+}
+
+function getQuizTypeConfig(p) {
+  if (quizTypeTarget === 'latin') {
+    return {
+      target: 'latin',
+      promptLabel: 'Napiš latinský název:',
+      placeholder: 'Napiš latinský název…',
+      correctValue: p.latin,
+      answerHTML: `<b><i>${esc(p.latin)}</i></b>`
+    };
+  }
+  if (quizTypeTarget === 'family_lat') {
+    return {
+      target: 'family_lat',
+      promptLabel: 'Napiš latinský název čeledi:',
+      placeholder: 'Napiš latinský název čeledi…',
+      correctValue: p.family_lat,
+      answerHTML: `<b><i>${esc(p.family_lat)}</i></b>`
+    };
+  }
+  return {
+    target: 'czech',
+    promptLabel: 'Napiš český název:',
+    placeholder: 'Napiš český název…',
+    correctValue: p.czech,
+    answerHTML: `<b>${esc(p.czech)}</b>`
+  };
+}
+
 function setQuizMode(m) {
+  const prevMode = quizMode;
+  if (m === 'type' && prevMode !== 'type') {
+    quizTypeTarget = getQuizTypeTargetFromMode(prevMode);
+  }
   quizMode = m;
   ['foto','mcfoto','lat','cz','fam','type'].forEach(k => document.getElementById('qm-'+k).classList.toggle('active',k===m));
   const photoSizeToggle = document.getElementById('quiz-photo-size-toggle');
@@ -2924,9 +2963,10 @@ function onQuizTypeInputKeydown(event) {
 function showQuizTypeAnswer() {
   const p = getQuizTypePlant();
   if (!p) return;
+  const typeConfig = getQuizTypeConfig(p);
   const answerEl = document.getElementById('quiz-type-answer');
   if (!answerEl) return;
-  answerEl.innerHTML = `Správná odpověď: <b><i>${esc(p.latin)}</i></b>`;
+  answerEl.innerHTML = `Správná odpověď: ${typeConfig.answerHTML}`;
 }
 
 function typeQuizCountAsCorrect() {
@@ -2953,8 +2993,9 @@ function checkQuizTypeAnswer() {
   const feedback = document.getElementById('quiz-type-feedback');
   const actions = document.getElementById('quiz-type-actions');
   if (!input || !checkBtn || !feedback || !actions || checkBtn.disabled) return;
+  const typeConfig = getQuizTypeConfig(p);
   const given = normalizeQuizTypeAnswer(input.value);
-  const correct = normalizeQuizTypeAnswer(p.latin);
+  const correct = normalizeQuizTypeAnswer(typeConfig.correctValue);
   if (!given) {
     feedback.className = 'type-quiz-feedback bad';
     feedback.textContent = 'Napiš odpověď.';
@@ -2965,7 +3006,7 @@ function checkQuizTypeAnswer() {
   input.disabled = true;
   checkBtn.disabled = true;
   actions.innerHTML = '';
-  const escapedCorrect = esc(p.latin);
+  const answerHTML = typeConfig.answerHTML;
 
   if (given === correct) {
     feedback.className = 'type-quiz-feedback ok';
@@ -2981,9 +3022,12 @@ function checkQuizTypeAnswer() {
   }
 
   const distance = levenshtein(given, correct);
-  if (distance <= 2) {
+  const levenshteinTolerance = typeConfig.target === 'czech'
+    ? (correct.length <= 15 ? 2 : 3)
+    : 2;
+  if (distance <= levenshteinTolerance) {
     feedback.className = 'type-quiz-feedback almost';
-    feedback.innerHTML = `Skoro! Správně je: <b><i>${escapedCorrect}</i></b>`;
+    feedback.innerHTML = `Skoro! Správně je: ${answerHTML}`;
     actions.innerHTML = `
       <button class="btn green" onclick="typeQuizCountAsCorrect()">Počítat jako správně</button>
       <button class="btn" onclick="typeQuizNextWrong()">Další</button>
@@ -2992,7 +3036,7 @@ function checkQuizTypeAnswer() {
   }
 
   feedback.className = 'type-quiz-feedback bad';
-  feedback.innerHTML = `Špatně. Správně je: <b><i>${escapedCorrect}</i></b>`;
+  feedback.innerHTML = `Špatně. Správně je: ${answerHTML}`;
   actions.innerHTML = `<button class="btn" onclick="typeQuizNextWrong()">Další</button>`;
 }
 
@@ -3064,11 +3108,19 @@ function renderQuiz() {
   const d = D(p.latin);
   const pct = Math.round(((quizIdx+1)/quizList.length)*100);
   if (quizMode === 'type') {
+    const typeConfig = getQuizTypeConfig(p);
     const photo = d.photos[0] || '';
     const photoSrc = photo ? (photo.startsWith('data:') ? photo : esc(photo)) : '';
-    const questionHTML = photoSrc
-      ? `<img class="type-quiz-photo" src="${photoSrc}" alt="${esc(p.czech)}" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<div class=&quot;flip-q cz&quot;>${esc(p.czech)}</div>')">`
-      : `<div class="flip-q cz">${esc(p.czech)}</div>`;
+    let questionHTML = '';
+    if (typeConfig.target === 'family_lat') {
+      questionHTML = `<div class="flip-q"><i>${esc(p.latin)}</i></div>`;
+    } else if (typeConfig.target === 'latin') {
+      questionHTML = `<div class="flip-q cz">${esc(p.czech)}</div>`;
+    } else {
+      questionHTML = photoSrc
+        ? `<img class="type-quiz-photo" src="${photoSrc}" alt="${esc(p.latin)}" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<div class=&quot;flip-q&quot;><i>${esc(p.latin)}</i></div>')">`
+        : `<div class="flip-q"><i>${esc(p.latin)}</i></div>`;
+    }
     area.innerHTML = `
       <div class="quiz-stage">
         <div class="quiz-meta">
@@ -3076,8 +3128,9 @@ function renderQuiz() {
         </div>
         <div class="progress"><div class="progress-fill" style="width:${pct}%"></div></div>
         <div class="type-quiz-card">${questionHTML}</div>
+        <div class="flip-hint">${typeConfig.promptLabel}</div>
         <div class="type-quiz-input-wrap">
-          <input id="quiz-type-input" type="text" placeholder="Napiš latinský název…" onkeydown="onQuizTypeInputKeydown(event)" autocomplete="off" autocapitalize="off" spellcheck="false">
+          <input id="quiz-type-input" type="text" placeholder="${typeConfig.placeholder}" onkeydown="onQuizTypeInputKeydown(event)" autocomplete="off" autocapitalize="off" spellcheck="false">
           <button class="btn green" id="quiz-type-check" onclick="checkQuizTypeAnswer()">Zkontrolovat</button>
         </div>
         <div id="quiz-type-feedback" class="type-quiz-feedback"></div>
