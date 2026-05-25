@@ -157,6 +157,36 @@ textarea { resize: vertical; }
 .mcfoto-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .mcfoto-option.correct { background: var(--green-light); border-color: var(--green); color: var(--green-dark); }
 .mcfoto-option.wrong { background: #fff0ee; border-color: var(--flag); color: var(--flag); }
+.mcfoto-question { margin-top: 10px; }
+.mcfoto-question:first-of-type { margin-top: 0; }
+.mcfoto-qtitle { font-size: 13px; font-weight: 600; margin-bottom: 7px; color: var(--text); }
+.mcfoto-feedback { font-size: 12px; margin-top: 6px; }
+.mcfoto-feedback.ok { color: var(--green-dark); }
+.mcfoto-feedback.bad { color: var(--flag); }
+.mcfoto-answer-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 4px 0; font-size: 12px; }
+.mcfoto-answer-row b { color: var(--text); }
+.mcfoto-answer-user { color: var(--text2); font-style: italic; }
+.mcfoto-missed-families { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+.mcfoto-missed-family-badge { font-size: 11px; padding: 3px 8px; border-radius: 999px; border: 1px solid #f0c37b; background: var(--amber-light); color: #854F0B; font-weight: 600; }
+.mcfoto-breakdown { display: grid; gap: 10px; margin-top: 8px; }
+.mcfoto-breakdown h4 { font-size: 12px; margin-bottom: 5px; color: var(--text); }
+.mcfoto-breakdown ul { margin: 0; padding-left: 18px; font-size: 12px; color: var(--text2); }
+.mcfoto-breakdown li { margin-bottom: 3px; }
+.mcfoto-result-full { animation: mcfotoFlashGreen 0.6s ease; }
+.mcfoto-result-half { animation: mcfotoFlashAmber 0.6s ease; }
+.mcfoto-result-zero { animation: mcfotoFlashRed 0.6s ease; }
+@keyframes mcfotoFlashGreen {
+  0% { border-color: var(--green); box-shadow: 0 0 0 2px rgba(29,158,117,0.25); }
+  100% { border-color: var(--border); box-shadow: none; }
+}
+@keyframes mcfotoFlashAmber {
+  0% { border-color: var(--amber); box-shadow: 0 0 0 2px rgba(239,159,39,0.25); }
+  100% { border-color: var(--border); box-shadow: none; }
+}
+@keyframes mcfotoFlashRed {
+  0% { border-color: var(--flag); box-shadow: 0 0 0 2px rgba(232,93,60,0.25); }
+  100% { border-color: var(--border); box-shadow: none; }
+}
 .quiz-tab-shell { max-width: 980px; margin: 0 auto; }
 .quiz-tab-title { font-size: 18px; font-weight: 700; margin-bottom: 0.85rem; }
 body.quiz-open { overflow: hidden; }
@@ -803,7 +833,10 @@ let examDeadlineAt = 0;
 let examTimerHandle = null;
 let examResultHTML = '';
 let examLastConfig = {count: 20, minutes: 20};
-let mcfotoCorrect = 0, mcfotoAnswered = 0, mcfotoLocked = false, mcfotoChoices = [], mcfotoCorrectLatin = '';
+let mcfotoPoints = 0, mcfotoAnswered = 0, mcfotoNameCorrect = 0, mcfotoFamilyCorrect = 0, mcfotoLocked = false;
+let mcfotoNameChoices = [], mcfotoFamilyChoices = [], mcfotoCorrectLatin = '';
+let mcfotoNameSelection = null, mcfotoFamilySelection = null, mcfotoNameAnswered = false, mcfotoFamilyAnswered = false;
+let mcfotoResults = [], mcfotoFinished = false;
 let dirty = false;
 let activeGroup = '';
 let activeQuizGroups = [];
@@ -2758,11 +2791,20 @@ function startQuiz() {
   quizIdx = 0;
   quizFlipped = false;
   quizLastSummary = null;
-  mcfotoCorrect = 0;
+  mcfotoPoints = 0;
   mcfotoAnswered = 0;
+  mcfotoNameCorrect = 0;
+  mcfotoFamilyCorrect = 0;
   mcfotoLocked = false;
-  mcfotoChoices = [];
+  mcfotoNameChoices = [];
+  mcfotoFamilyChoices = [];
   mcfotoCorrectLatin = '';
+  mcfotoNameSelection = null;
+  mcfotoFamilySelection = null;
+  mcfotoNameAnswered = false;
+  mcfotoFamilyAnswered = false;
+  mcfotoResults = [];
+  mcfotoFinished = false;
   quizSessionActive = quizList.length > 0;
   if (quizSessionActive) resetQuizStats();
   lastFocusedBeforeQuiz = document.activeElement;
@@ -2838,22 +2880,43 @@ function resetQuiz() {
   examResultHTML = '';
   quizList = buildQuizDeck();
   quizIdx = 0; quizFlipped = false;
-  mcfotoCorrect = 0;
+  mcfotoPoints = 0;
   mcfotoAnswered = 0;
+  mcfotoNameCorrect = 0;
+  mcfotoFamilyCorrect = 0;
   mcfotoLocked = false;
-  mcfotoChoices = [];
+  mcfotoNameChoices = [];
+  mcfotoFamilyChoices = [];
   mcfotoCorrectLatin = '';
+  mcfotoNameSelection = null;
+  mcfotoFamilySelection = null;
+  mcfotoNameAnswered = false;
+  mcfotoFamilyAnswered = false;
+  mcfotoResults = [];
+  mcfotoFinished = false;
   renderQuizSetup();
   renderQuiz();
 }
 
-function buildMcFotoChoices(correctPlant) {
+function formatMcFotoPoints(points) {
+  return Number.isInteger(points) ? String(points) : points.toFixed(1);
+}
+
+function getMcFotoScoreHTML() {
+  return `Správně: <b>${formatMcFotoPoints(mcfotoPoints)}</b> / <b>${mcfotoAnswered}</b> (název: <b>${mcfotoNameCorrect}</b>/<b>${mcfotoAnswered}</b>, čeleď: <b>${mcfotoFamilyCorrect}</b>/<b>${mcfotoAnswered}</b>)`;
+}
+
+function mcfotoFamilyLabel(item) {
+  return `${item.family_cz || item.family_lat || '—'} (${item.family_lat || '—'})`;
+}
+
+function buildMcFotoNameChoices(correctPlant) {
   const rest = quizList.filter(item => item.latin !== correctPlant.latin);
   const picked = [];
   const used = new Set();
-  const familyMatches = shuffle(rest.filter(item => item.family_lat === correctPlant.family_lat));
-  const groupMatches = shuffle(rest.filter(item =>
-    item.group && item.group === correctPlant.group && item.family_lat !== correctPlant.family_lat
+  const groupMatches = shuffle(rest.filter(item => item.group && item.group === correctPlant.group));
+  const familyMatches = shuffle(rest.filter(item =>
+    item.family_lat === correctPlant.family_lat && (!item.group || item.group !== correctPlant.group)
   ));
   const others = shuffle(rest);
   const pushUnique = (list) => {
@@ -2864,48 +2927,191 @@ function buildMcFotoChoices(correctPlant) {
       picked.push(item);
     }
   };
-  pushUnique(familyMatches);
   pushUnique(groupMatches);
+  pushUnique(familyMatches);
   pushUnique(others);
-  while (picked.length < 3 && others.length) {
-    picked.push(others[Math.floor(Math.random() * others.length)]);
-  }
   return shuffle([correctPlant, ...picked.slice(0, 3)]);
 }
 
+function buildMcFotoFamilyChoices(correctPlant) {
+  const familyFromPlants = (plants) => {
+    const map = new Map();
+    plants.forEach(item => {
+      if (!item.family_lat || item.family_lat === correctPlant.family_lat) return;
+      if (!map.has(item.family_lat)) {
+        map.set(item.family_lat, {family_lat: item.family_lat, family_cz: item.family_cz || item.family_lat, group: item.group || ''});
+      }
+    });
+    return Array.from(map.values());
+  };
+  const inDeck = quizList.filter(item => item.latin !== correctPlant.latin);
+  const picked = [];
+  const used = new Set();
+  const sameGroup = shuffle(familyFromPlants(inDeck.filter(item => item.group && item.group === correctPlant.group)));
+  const othersInDeck = shuffle(familyFromPlants(inDeck));
+  const allFallback = shuffle(familyFromPlants(getAllPlants().filter(item => item.latin !== correctPlant.latin)));
+  const pushUnique = (list) => {
+    for (const family of list) {
+      if (picked.length >= 3) break;
+      if (used.has(family.family_lat)) continue;
+      used.add(family.family_lat);
+      picked.push(family);
+    }
+  };
+  pushUnique(sameGroup);
+  pushUnique(othersInDeck);
+  pushUnique(allFallback);
+  const correctFamily = {
+    family_lat: correctPlant.family_lat,
+    family_cz: correctPlant.family_cz || correctPlant.family_lat,
+    group: correctPlant.group || ''
+  };
+  return shuffle([correctFamily, ...picked.slice(0, 3)]);
+}
+
+function initMcFotoCardState(plant) {
+  mcfotoCorrectLatin = plant.latin;
+  mcfotoNameChoices = buildMcFotoNameChoices(plant);
+  mcfotoFamilyChoices = buildMcFotoFamilyChoices(plant);
+  mcfotoNameSelection = null;
+  mcfotoFamilySelection = null;
+  mcfotoNameAnswered = false;
+  mcfotoFamilyAnswered = false;
+  mcfotoLocked = false;
+}
+
 function answerMcFoto(index) {
-  if (quizMode !== 'mcfoto' || mcfotoLocked || !mcfotoChoices.length) return;
-  const chosen = mcfotoChoices[index];
-  if (!chosen) return;
-  mcfotoLocked = true;
-  mcfotoAnswered++;
-  const isCorrect = chosen.latin === mcfotoCorrectLatin;
-  const correctIndex = mcfotoChoices.findIndex(opt => opt.latin === mcfotoCorrectLatin);
-  const clickedBtn = document.getElementById('mcfoto-opt-' + index);
-  const correctBtn = document.getElementById('mcfoto-opt-' + correctIndex);
-  document.querySelectorAll('.mcfoto-option').forEach(btn => btn.disabled = true);
-  if (isCorrect) {
-    mcfotoCorrect++;
-    clickedBtn?.classList.add('correct');
-    trackQuizAction('learned');
-    const d = D(mcfotoCorrectLatin);
-    const newStreak = (d.correctStreak || 0) + 1;
-    setData(mcfotoCorrectLatin, {status:'learned', flagged:false, correctStreak:newStreak, wrongCount:0});
-    renderFlagged();
-    renderStats();
-    document.getElementById('mcfoto-score').innerHTML = `Správně: <b>${mcfotoCorrect}</b> / <b>${mcfotoAnswered}</b>`;
-    setTimeout(() => { mcfotoLocked = false; qNext(); }, 800);
+  if (quizMode !== 'mcfoto' || mcfotoLocked) return;
+  if (!mcfotoNameAnswered) {
+    answerMcFotoName(index);
     return;
   }
-  trackQuizAction('review');
-  clickedBtn?.classList.add('wrong');
-  correctBtn?.classList.add('correct');
-  const d = D(mcfotoCorrectLatin);
-  const newWrongCount = (d.wrongCount || 0) + 1;
-  setData(mcfotoCorrectLatin, {status:'review', wrongCount:newWrongCount, correctStreak:0});
+  if (!mcfotoFamilyAnswered) {
+    answerMcFotoFamily(index);
+  }
+}
+
+function answerMcFotoName(index) {
+  if (quizMode !== 'mcfoto' || mcfotoLocked || mcfotoNameAnswered || !mcfotoNameChoices.length) return;
+  const chosen = mcfotoNameChoices[index];
+  if (!chosen) return;
+  mcfotoNameSelection = chosen;
+  mcfotoNameAnswered = true;
+  renderQuiz();
+}
+
+function answerMcFotoFamily(index) {
+  if (quizMode !== 'mcfoto' || mcfotoLocked || !mcfotoNameAnswered || mcfotoFamilyAnswered || !mcfotoFamilyChoices.length) return;
+  const chosen = mcfotoFamilyChoices[index];
+  if (!chosen) return;
+  const plant = quizList[quizIdx];
+  if (!plant) return;
+  mcfotoFamilySelection = chosen;
+  mcfotoFamilyAnswered = true;
+  mcfotoLocked = true;
+  finalizeMcFotoCard(plant);
+}
+
+function buildMcFotoSummaryPhotos(plant, maxHeight = 170) {
+  const d = D(plant.latin);
+  const sources = d.photos.map(src => src.startsWith('data:') ? src : esc(src));
+  if (!sources.length) return '<div style="font-size:12px;color:var(--text3);">bez fotky</div>';
+  const maxWidth = sources.length > 1 ? '48%' : '100%';
+  return sources.map(src => `<img class="flip-img" style="max-height:${maxHeight}px;max-width:${maxWidth};width:auto;object-fit:contain;border-radius:8px;" src="${src}" onerror="this.style.display='none'">`).join('');
+}
+
+function finalizeMcFotoCard(plant) {
+  const nameCorrect = !!mcfotoNameSelection && mcfotoNameSelection.latin === plant.latin;
+  const familyCorrect = !!mcfotoFamilySelection && mcfotoFamilySelection.family_lat === plant.family_lat;
+  const activity = trackDailyActivity();
+  if (activity.goalReachedNow) quizSessionStats.dailyGoalReached = true;
+  mcfotoAnswered++;
+  if (nameCorrect) mcfotoNameCorrect++;
+  if (familyCorrect) mcfotoFamilyCorrect++;
+
+  let pointsEarned = 0;
+  let resultKey = 'zero';
+  if (nameCorrect && familyCorrect) {
+    pointsEarned = 1;
+    resultKey = 'full';
+  } else if (nameCorrect) {
+    pointsEarned = 0.5;
+    resultKey = 'half';
+  }
+  mcfotoPoints += pointsEarned;
+  const d = D(plant.latin);
+  if (resultKey === 'full') {
+    trackQuizAction('learned');
+    recordFamilyQuizResult(plant, true);
+    const newStreak = (d.correctStreak || 0) + 1;
+    setData(plant.latin, {status:'learned', flagged:false, correctStreak:newStreak, wrongCount:0});
+    sm2Update(plant.latin, 4);
+    renderFlagged();
+  } else {
+    trackQuizAction('review');
+    recordFamilyQuizResult(plant, familyCorrect);
+    const newWrongCount = (d.wrongCount || 0) + 1;
+    setData(plant.latin, {status:'review', wrongCount:newWrongCount, correctStreak:0});
+    sm2Update(plant.latin, nameCorrect ? 2 : 1);
+  }
   renderStats();
-  document.getElementById('mcfoto-score').innerHTML = `Správně: <b>${mcfotoCorrect}</b> / <b>${mcfotoAnswered}</b>`;
-  setTimeout(() => { mcfotoLocked = false; qNext(); }, 1500);
+
+  const familyLabel = mcfotoFamilyLabel(plant);
+  mcfotoResults.push({
+    latin: plant.latin,
+    czech: plant.czech,
+    familyLabel,
+    nameCorrect,
+    familyCorrect,
+    nameAnswer: mcfotoNameSelection ? mcfotoNameSelection.czech : '',
+    familyAnswer: mcfotoFamilySelection ? mcfotoFamilyLabel(mcfotoFamilySelection) : '',
+    pointsEarned,
+    resultKey
+  });
+
+  const area = document.getElementById('quiz-area');
+  if (!area) return;
+  const resultClass = resultKey === 'full' ? 'mcfoto-result-full' : resultKey === 'half' ? 'mcfoto-result-half' : 'mcfoto-result-zero';
+  const progressPct = Math.round((mcfotoAnswered / Math.max(1, quizList.length)) * 100);
+  area.innerHTML = `
+    <div class="quiz-stage">
+      <div class="quiz-meta">
+        <span>${Math.min(quizIdx + 1, quizList.length)} / ${quizList.length}</span>
+      </div>
+      <div class="progress"><div class="progress-fill" style="width:${progressPct}%"></div></div>
+      <div class="mcfoto-score">${getMcFotoScoreHTML()}</div>
+      <div class="mcfoto-card ${resultClass}">
+        <div class="mcfoto-photos">${buildMcFotoSummaryPhotos(plant)}</div>
+        <div class="mcfoto-answer-row"><b>${esc(plant.czech)}</b> · <i>${esc(plant.latin)}</i></div>
+        <div class="mcfoto-answer-row"><span>${esc(familyLabel)}</span></div>
+        <div class="mcfoto-answer-row">
+          <b>${nameCorrect ? '✅' : '❌'} Název</b>
+          <span class="mcfoto-answer-user">${esc(mcfotoNameSelection?.czech || '—')}</span>
+        </div>
+        <div class="mcfoto-answer-row">
+          <b>${familyCorrect ? '✅' : '❌'} Čeleď</b>
+          <span class="mcfoto-answer-user">${esc(mcfotoFamilySelection ? mcfotoFamilyLabel(mcfotoFamilySelection) : '—')}</span>
+        </div>
+      </div>
+    </div>
+  `;
+  setTimeout(() => {
+    if (quizMode !== 'mcfoto') return;
+    if (mcfotoAnswered >= quizList.length) {
+      mcfotoFinished = true;
+      renderQuiz();
+      return;
+    }
+    quizIdx = Math.min(quizIdx + 1, quizList.length - 1);
+    mcfotoCorrectLatin = '';
+    mcfotoLocked = false;
+    renderQuiz();
+  }, 1500);
+}
+
+function buildMcFotoBreakdownList(items, emptyText) {
+  if (!items.length) return `<li>${esc(emptyText)}</li>`;
+  return items.map(item => `<li><b>${esc(item.czech)}</b> · <i>${esc(item.latin)}</i> <span style="color:var(--text3);">(${esc(item.familyLabel)})</span></li>`).join('');
 }
 
 function getQuizPhotoSizingTokens(area) {
@@ -3158,6 +3364,60 @@ function renderQuiz() {
       area.innerHTML = `<div class="quiz-empty"><div class="quiz-empty-message">Pro režim Foto výběr jsou potřeba alespoň 4 kartičky s fotkou v aktuálním balíčku.</div><button class="btn green" onclick="resetQuiz()">Načíst znovu</button></div>`;
       return;
     }
+    if (mcfotoFinished) {
+      const full = mcfotoResults.filter(r => r.resultKey === 'full');
+      const half = mcfotoResults.filter(r => r.resultKey === 'half');
+      const zero = mcfotoResults.filter(r => r.resultKey === 'zero');
+      const missedFamilyMap = new Map();
+      mcfotoResults.forEach(item => {
+        if (item.resultKey === 'full') return;
+        const key = item.familyLabel || '—';
+        missedFamilyMap.set(key, (missedFamilyMap.get(key) || 0) + 1);
+      });
+      const missedFamilyEntries = Array.from(missedFamilyMap.entries()).sort((a, b) => (b[1] - a[1]) || a[0].localeCompare(b[0], 'cs'));
+      const repeatLabel = missedFamilyEntries.length
+        ? `Budeš si muset zopakovat ${missedFamilyEntries.map(([family]) => family).join(', ')}.`
+        : 'Skvělé — žádné slabé čeledi v tomto kole.';
+      area.innerHTML = `
+        <div class="quiz-stage">
+          <div class="quiz-meta">
+            <span>Hotovo · ${quizList.length} / ${quizList.length}</span>
+          </div>
+          <div class="progress"><div class="progress-fill" style="width:100%"></div></div>
+          <div class="mcfoto-score">${getMcFotoScoreHTML()}</div>
+          <div class="mcfoto-card">
+            <div style="font-size:13px;line-height:1.65;color:var(--text2);">
+              <b>Celkové body:</b> ${formatMcFotoPoints(mcfotoPoints)} / ${quizList.length}<br>
+              <b>Plně správně:</b> ${full.length} · <b>Název ano / čeleď ne:</b> ${half.length} · <b>Minuto:</b> ${zero.length}
+            </div>
+            <div class="mcfoto-breakdown">
+              <div>
+                <h4>✅ Plně správně</h4>
+                <ul>${buildMcFotoBreakdownList(full, 'V tomto kole zatím nic.')}</ul>
+              </div>
+              <div>
+                <h4>🟠 Název ano, čeleď ne</h4>
+                <ul>${buildMcFotoBreakdownList(half, 'Tady žádné položky nejsou.')}</ul>
+              </div>
+              <div>
+                <h4>❌ Minuto (název špatně)</h4>
+                <ul>${buildMcFotoBreakdownList(zero, 'Nic jsi úplně neminul/a.')}</ul>
+              </div>
+            </div>
+            <div style="margin-top:10px;font-size:12px;color:var(--text2);"><b>${esc(repeatLabel)}</b></div>
+            ${missedFamilyEntries.length ? `
+              <div class="mcfoto-missed-families">
+                ${missedFamilyEntries.map(([family, count]) => `<span class="mcfoto-missed-family-badge">${esc(family)} · ${count}×</span>`).join('')}
+              </div>
+            ` : ''}
+            <div class="type-quiz-actions" style="justify-content:flex-end;margin-top:12px;">
+              <button class="btn" onclick="resetQuiz()">Hrát znovu</button>
+            </div>
+          </div>
+        </div>
+      `;
+      return;
+    }
     const frontMaxHeight = largePhotoMode ? photoSizing.frontLarge : photoSizing.frontCompact;
     const frontRadius = largePhotoMode ? 10 : 8;
     const photoCount = quizPhotoSources.length;
@@ -3166,22 +3426,50 @@ function renderQuiz() {
     if (photoCount > 2) frontPhotoMaxWidth = '31%';
     else if (photoCount === 2) frontPhotoMaxWidth = '48%';
     const frontPhotoStyle = `max-height:${frontPhotoMaxHeight}px;max-width:${frontPhotoMaxWidth};width:auto;object-fit:contain;border-radius:${frontRadius}px;`;
-    const options = buildMcFotoChoices(p);
-    mcfotoChoices = options;
-    mcfotoCorrectLatin = p.latin;
+    if (mcfotoCorrectLatin !== p.latin || !mcfotoNameChoices.length || !mcfotoFamilyChoices.length) initMcFotoCardState(p);
+    const nameCorrectIndex = mcfotoNameChoices.findIndex(opt => opt.latin === p.latin);
+    const familyCorrectIndex = mcfotoFamilyChoices.findIndex(opt => opt.family_lat === p.family_lat);
+    const selectedNameIndex = mcfotoNameSelection ? mcfotoNameChoices.findIndex(opt => opt.latin === mcfotoNameSelection.latin) : -1;
+    const selectedFamilyIndex = mcfotoFamilySelection ? mcfotoFamilyChoices.findIndex(opt => opt.family_lat === mcfotoFamilySelection.family_lat) : -1;
+    const nameIsCorrect = selectedNameIndex === nameCorrectIndex && selectedNameIndex !== -1;
     area.innerHTML = `
       <div class="quiz-stage">
         <div class="quiz-meta">
           <span>${quizIdx+1} / ${quizList.length}</span>
         </div>
         <div class="progress"><div class="progress-fill" style="width:${pct}%"></div></div>
-        <div class="mcfoto-score" id="mcfoto-score">Správně: <b>${mcfotoCorrect}</b> / <b>${mcfotoAnswered}</b></div>
+        <div class="mcfoto-score" id="mcfoto-score">${getMcFotoScoreHTML()}</div>
         <div class="mcfoto-card">
           <div class="mcfoto-photos">${
             quizPhotoSources.map(src => `<img class="flip-img" style="${frontPhotoStyle}" src="${src}" onerror="this.style.display='none'">`).join('')
           }</div>
-          <div class="mcfoto-options">
-            ${options.map((opt, idx) => `<button class="btn mcfoto-option" id="mcfoto-opt-${idx}" onclick="answerMcFoto(${idx})">${esc(opt.czech)}</button>`).join('')}
+          <div class="mcfoto-question">
+            <div class="mcfoto-qtitle">Jaký je český název?</div>
+            <div class="mcfoto-options">
+              ${mcfotoNameChoices.map((opt, idx) => {
+                const isCorrect = idx === nameCorrectIndex;
+                const isPicked = idx === selectedNameIndex;
+                const classes = ['btn', 'mcfoto-option'];
+                if (mcfotoNameAnswered && isCorrect) classes.push('correct');
+                if (mcfotoNameAnswered && isPicked && !isCorrect) classes.push('wrong');
+                return `<button class="${classes.join(' ')}" id="mcfoto-opt-name-${idx}" onclick="answerMcFotoName(${idx})" ${mcfotoNameAnswered ? 'disabled' : ''}>${esc(opt.czech)}</button>`;
+              }).join('')}
+            </div>
+            ${mcfotoNameAnswered ? `<div class="mcfoto-feedback ${nameIsCorrect ? 'ok' : 'bad'}">${nameIsCorrect ? '✅ Správně.' : `❌ Správně je <b>${esc(p.czech)}</b>.`}</div>` : ''}
+          </div>
+          <div class="mcfoto-question" ${mcfotoNameAnswered ? '' : 'style="display:none;"'}>
+            <div class="mcfoto-qtitle">Do jaké čeledi patří?</div>
+            <div class="mcfoto-options">
+              ${mcfotoFamilyChoices.map((opt, idx) => {
+                const isCorrect = idx === familyCorrectIndex;
+                const isPicked = idx === selectedFamilyIndex;
+                const classes = ['btn', 'mcfoto-option'];
+                if (mcfotoFamilyAnswered && isCorrect) classes.push('correct');
+                if (mcfotoFamilyAnswered && isPicked && !isCorrect) classes.push('wrong');
+                return `<button class="${classes.join(' ')}" id="mcfoto-opt-family-${idx}" onclick="answerMcFotoFamily(${idx})" ${(mcfotoFamilyAnswered || !mcfotoNameAnswered) ? 'disabled' : ''}>${esc(mcfotoFamilyLabel(opt))}</button>`;
+              }).join('')}
+            </div>
+            ${mcfotoFamilyAnswered ? `<div class="mcfoto-feedback ${(selectedFamilyIndex === familyCorrectIndex && selectedFamilyIndex !== -1) ? 'ok' : 'bad'}">${(selectedFamilyIndex === familyCorrectIndex && selectedFamilyIndex !== -1) ? '✅ Správně.' : `❌ Správně je <b>${esc(mcfotoFamilyLabel(p))}</b>.`}</div>` : ''}
           </div>
         </div>
       </div>
@@ -3264,8 +3552,20 @@ function flipQuiz() {
   document.getElementById('qflip')?.classList.toggle('flipped', quizFlipped);
 }
 
-function qNext() { quizIdx=(quizIdx+1)%quizList.length; quizFlipped=false; mcfotoLocked=false; renderQuiz(); }
-function qPrev() { quizIdx=(quizIdx-1+quizList.length)%quizList.length; quizFlipped=false; mcfotoLocked=false; renderQuiz(); }
+function qNext() {
+  quizIdx = (quizIdx + 1) % quizList.length;
+  quizFlipped = false;
+  mcfotoLocked = false;
+  mcfotoCorrectLatin = '';
+  renderQuiz();
+}
+function qPrev() {
+  quizIdx = (quizIdx - 1 + quizList.length) % quizList.length;
+  quizFlipped = false;
+  mcfotoLocked = false;
+  mcfotoCorrectLatin = '';
+  renderQuiz();
+}
 
 // Anki/Quizlet style: re-insert "Nevím" card back soon (2-4 positions ahead)
 function qFlag() {
