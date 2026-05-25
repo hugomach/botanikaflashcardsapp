@@ -324,6 +324,26 @@ body.quiz-open { overflow: hidden; }
 .match-mode-toggle { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 0.75rem; }
 .match-mode-toggle button { padding: 5px 12px; font-size: 12px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text2); cursor: pointer; }
 .match-mode-toggle button.active { background: var(--green); color: #fff; border-color: var(--green); }
+.match-overview-shell { margin-top: 0.5rem; }
+.match-overview-list { display: grid; gap: 8px; }
+.family-overview-card { border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); padding: 10px 12px; cursor: pointer; transition: border-color 0.12s, box-shadow 0.12s; }
+.family-overview-card:hover { border-color: var(--green); box-shadow: 0 2px 8px rgba(29,158,117,0.12); }
+.family-overview-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.family-overview-main { flex: 1; min-width: 0; }
+.family-overview-name { font-size: 14px; font-weight: 600; }
+.family-overview-name i { font-style: italic; font-weight: 500; }
+.family-overview-meta { margin-top: 3px; font-size: 12px; color: var(--text3); display: flex; flex-wrap: wrap; gap: 8px; }
+.family-overview-expand { border: 1px solid var(--border2); background: var(--surface2); color: var(--text2); border-radius: 999px; font-size: 11px; padding: 4px 9px; cursor: pointer; white-space: nowrap; }
+.family-overview-expand:hover { border-color: var(--green); color: var(--green-dark); }
+.family-overview-summary { margin-top: 6px; font-size: 12px; color: var(--text2); }
+.family-overview-details { margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 10px; }
+.family-overview-thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 6px; margin-bottom: 10px; }
+.family-overview-thumb { height: 52px; border-radius: 8px; overflow: hidden; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--text3); text-align: center; padding: 3px; }
+.family-overview-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.family-overview-traits { display: grid; gap: 4px; }
+.family-overview-trait { font-size: 12px; color: var(--text2); }
+.family-overview-trait b { color: var(--text); }
+.family-overview-empty { padding: 1rem; border: 1px dashed var(--border); border-radius: var(--radius); color: var(--text3); font-size: 12px; text-align: center; }
 @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
 
 .setup-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem; max-width: 500px; margin: 0 auto; }
@@ -580,14 +600,21 @@ body.quiz-open { overflow: hidden; }
   <div class="match-wrap">
     <div class="match-header">
       <div class="match-score" id="match-score"></div>
-      <button class="btn green" onclick="startMatch()">Nové kolo</button>
+      <button class="btn green" id="match-new-round-btn" onclick="startMatch()">Nové kolo</button>
     </div>
     <div class="match-mode-toggle">
       <button id="mm-ptof" class="active" onclick="setMatchMode('ptof')">Rostlina → čeleď</button>
       <button id="mm-ftop" onclick="setMatchMode('ftop')">Čeleď → rostliny</button>
+      <button id="mm-overview" onclick="setMatchOverviewMode(true)">📋 Přehled čeledí</button>
     </div>
-    <div class="match-directions" id="match-dir">Klikni na rostlinu vlevo, pak na správnou čeleď vpravo.</div>
-    <div id="match-area"></div>
+    <div id="match-game-shell">
+      <div class="match-directions" id="match-dir">Klikni na rostlinu vlevo, pak na správnou čeleď vpravo.</div>
+      <div id="match-area"></div>
+    </div>
+    <div id="match-overview-shell" class="match-overview-shell" style="display:none;">
+      <div class="match-directions">Klikni na kartu čeledi pro spuštění kvízu jen pro tuto čeleď.</div>
+      <div id="match-overview-list" class="match-overview-list"></div>
+    </div>
   </div>
 </div>
 
@@ -2149,19 +2176,211 @@ function startFlaggedQuiz() {
 
 // ── Matching quiz ──
 let matchMode = 'ptof'; // plant-to-family or family-to-plants
+let matchOverviewMode = false;
+let matchExpandedFamilies = new Set();
 let matchSelected = null;
 let matchCorrect = 0;
 let matchTotal = 0;
 let matchPairs = []; // [{plant, family_lat, family_cz}]
 
+function setMatchUiMode() {
+  const gameShell = document.getElementById('match-game-shell');
+  const overviewShell = document.getElementById('match-overview-shell');
+  const score = document.getElementById('match-score');
+  const restartBtn = document.getElementById('match-new-round-btn');
+  if (gameShell) gameShell.style.display = matchOverviewMode ? 'none' : '';
+  if (overviewShell) overviewShell.style.display = matchOverviewMode ? '' : 'none';
+  if (score) score.style.display = matchOverviewMode ? 'none' : '';
+  if (restartBtn) restartBtn.style.display = matchOverviewMode ? 'none' : '';
+  ['ptof','ftop'].forEach(k => document.getElementById('mm-'+k)?.classList.toggle('active', !matchOverviewMode && k===matchMode));
+  document.getElementById('mm-overview')?.classList.toggle('active', matchOverviewMode);
+}
+
 function setMatchMode(m) {
+  matchOverviewMode = false;
   matchMode = m;
-  ['ptof','ftop'].forEach(k => document.getElementById('mm-'+k).classList.toggle('active', k===m));
+  setMatchUiMode();
   const dir = m==='ptof'
     ? 'Klikni na rostlinu vlevo, pak na správnou čeleď vpravo.'
     : 'Klikni na čeleď vlevo, pak na rostliny které do ní patří — postupně všechny.';
   document.getElementById('match-dir').textContent = dir;
   startMatch();
+}
+
+function setMatchOverviewMode(enabled = true) {
+  matchOverviewMode = !!enabled;
+  setMatchUiMode();
+  if (matchOverviewMode) {
+    renderFamilyOverview();
+    return;
+  }
+  startMatch();
+}
+
+function splitTraitValues(value) {
+  if (Array.isArray(value)) {
+    return value.map(v => String(v || '').trim().toLowerCase()).filter(Boolean);
+  }
+  return String(value || '')
+    .split(/[\/,;|]+/)
+    .map(v => v.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function formatTopTraits(items) {
+  if (!items.length) return '—';
+  return items.map(x => `${esc(x.value)} (${x.count})`).join(', ');
+}
+
+function aggregateMostCommon(values, limit = 3) {
+  const counts = new Map();
+  values.forEach(v => counts.set(v, (counts.get(v) || 0) + 1));
+  return [...counts.entries()]
+    .sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0], 'cs'))
+    .slice(0, limit)
+    .map(([value, count]) => ({value, count}));
+}
+
+function getPlantSuccessRate(plant) {
+  const d = D(plant.latin);
+  const wrong = Math.max(0, Number(d.wrongCount) || 0);
+  const correct = Math.max(0, Number(d.correctStreak) || 0);
+  const attempts = wrong + correct;
+  let rate;
+  if (attempts > 0) {
+    rate = correct / attempts;
+  } else if (d.status === 'learned') {
+    rate = 1;
+  } else if (d.status === 'review') {
+    rate = 0.35;
+  } else {
+    rate = 0.5;
+  }
+  if (d.flagged) rate -= 0.25;
+  return Math.min(1, Math.max(0, rate));
+}
+
+function formatPlantCount(count) {
+  if (count === 1) return '1 rostlina';
+  if (count >= 2 && count <= 4) return `${count} rostliny`;
+  return `${count} rostlin`;
+}
+
+function getFamilyOverviewData() {
+  const grouped = new Map();
+  getAllPlants().forEach(plant => {
+    const key = plant.family_lat || `__fam__${plant.family_cz || ''}`;
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key).push(plant);
+  });
+
+  return [...grouped.values()].map(plants => {
+    const family_lat = plants[0]?.family_lat || '';
+    const family_cz = plants[0]?.family_cz || '';
+    const tags = aggregateMostCommon(plants.flatMap(p => splitTraitValues(p.tags || [])), 4);
+    const habitats = aggregateMostCommon(plants.flatMap(p => splitTraitValues(p.habitat)), 3);
+    const lifeForms = aggregateMostCommon(plants.flatMap(p => splitTraitValues(p.life_form)), 3);
+    const toxicities = aggregateMostCommon(plants.flatMap(p => splitTraitValues(p.toxic)), 3);
+    const successRate = plants.reduce((sum, p) => sum + getPlantSuccessRate(p), 0) / Math.max(1, plants.length);
+    const keyPoints = [
+      lifeForms[0]?.value,
+      habitats[0]?.value,
+      tags[0]?.value,
+      tags[1]?.value,
+      toxicities[0]?.value && toxicities[0].value !== 'ne' ? toxicities[0].value : ''
+    ].filter(Boolean);
+    return {
+      family_lat,
+      family_cz,
+      plants,
+      successRate,
+      tags,
+      habitats,
+      lifeForms,
+      toxicities,
+      summary: keyPoints.length ? `Většina: ${keyPoints.join(', ')}` : 'Společné znaky nejsou zatím dostupné.'
+    };
+  }).sort((a,b) => a.successRate - b.successRate || b.plants.length - a.plants.length || a.family_cz.localeCompare(b.family_cz, 'cs'));
+}
+
+function startFamilyOverviewQuiz(familyLatEnc) {
+  const familyLat = decodeURIComponent(familyLatEnc || '');
+  if (!familyLat) return;
+  showTab('quiz');
+  const selLat = document.getElementById('quiz-family');
+  const selCz = document.getElementById('quiz-family-cz');
+  const src = document.getElementById('quiz-source');
+  if (selLat) selLat.value = familyLat;
+  if (selCz) selCz.value = '';
+  if (src) src.value = 'all';
+  resetQuiz();
+  startQuiz();
+}
+
+function toggleMatchFamilyDetails(familyLatEnc, ev) {
+  if (ev) ev.stopPropagation();
+  const key = decodeURIComponent(familyLatEnc || '');
+  if (!key) return;
+  if (matchExpandedFamilies.has(key)) matchExpandedFamilies.delete(key);
+  else matchExpandedFamilies.add(key);
+  renderFamilyOverview();
+}
+
+function onFamilyOverviewCardKey(event, familyLatEnc) {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    startFamilyOverviewQuiz(familyLatEnc);
+  }
+}
+
+function renderFamilyOverview() {
+  const list = document.getElementById('match-overview-list');
+  if (!list) return;
+  const families = getFamilyOverviewData();
+  if (!families.length) {
+    list.innerHTML = `<div class="family-overview-empty">Žádné čeledi k zobrazení.</div>`;
+    return;
+  }
+  list.innerHTML = families.map(f => {
+    const familyLatEsc = esc(f.family_lat || '');
+    const familyCzEsc = esc(f.family_cz || '');
+    const successPct = Math.round(f.successRate * 100);
+    const famEnc = encodeURIComponent(f.family_lat || '');
+    const expanded = matchExpandedFamilies.has(f.family_lat || '');
+    const thumbs = f.plants.map(p => {
+      const photo = D(p.latin).photos[0];
+      const safeAlt = esc(`${p.czech} (${p.latin})`);
+      return photo
+        ? `<div class="family-overview-thumb"><img src="${esc(photo)}" alt="${safeAlt}" loading="lazy" onerror="this.parentNode.textContent='bez fotky'"></div>`
+        : `<div class="family-overview-thumb" title="${safeAlt}">${esc((p.czech || p.latin || '?').slice(0, 2).toUpperCase())}</div>`;
+    }).join('');
+    return `
+      <div class="family-overview-card" role="button" tabindex="0" onclick="startFamilyOverviewQuiz('${famEnc}')" onkeydown="onFamilyOverviewCardKey(event,'${famEnc}')">
+        <div class="family-overview-header">
+          <div class="family-overview-main">
+            <div class="family-overview-name">${familyCzEsc} · <i>${familyLatEsc}</i></div>
+            <div class="family-overview-meta">
+              <span>${formatPlantCount(f.plants.length)}</span>
+              <span>Úspěšnost: ${successPct}%</span>
+            </div>
+            <div class="family-overview-summary"><b>Společné znaky:</b> ${esc(f.summary)}</div>
+          </div>
+          <button class="family-overview-expand" onclick="toggleMatchFamilyDetails('${famEnc}', event)">${expanded ? 'Sbalit' : 'Rozbalit'}</button>
+        </div>
+        ${expanded ? `
+          <div class="family-overview-details">
+            <div class="family-overview-thumbs">${thumbs}</div>
+            <div class="family-overview-traits">
+              <div class="family-overview-trait"><b>Tagy:</b> ${formatTopTraits(f.tags)}</div>
+              <div class="family-overview-trait"><b>Biotop:</b> ${formatTopTraits(f.habitats)}</div>
+              <div class="family-overview-trait"><b>Životní forma:</b> ${formatTopTraits(f.lifeForms)}</div>
+              <div class="family-overview-trait"><b>Toxicita:</b> ${formatTopTraits(f.toxicities)}</div>
+            </div>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
 }
 
 function shuffle(arr) {
@@ -2174,6 +2393,11 @@ function shuffle(arr) {
 }
 
 function startMatch() {
+  setMatchUiMode();
+  if (matchOverviewMode) {
+    renderFamilyOverview();
+    return;
+  }
   matchSelected = null;
   matchCorrect = 0;
   const allPlants = getAllPlants();
@@ -2203,6 +2427,7 @@ function startMatch() {
 }
 
 function updateMatchScore() {
+  if (matchOverviewMode) return;
   document.getElementById('match-score').innerHTML =
     `Správně: <b>${matchCorrect}</b> / <b>${matchTotal}</b>`;
 }
