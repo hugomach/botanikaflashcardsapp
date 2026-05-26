@@ -144,6 +144,8 @@ textarea { resize: vertical; }
 .flip-a { font-size: 18px; font-weight: 600; color: var(--green-dark); text-align: center; font-style: italic; }
 .flip-a.cz { font-style: normal; }
 .flip-family { font-size: 12px; color: var(--green); }
+.flip-ident-tips { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; width: 100%; max-width: 92%; }
+.flip-ident-tip { font-size: 11px; color: var(--green-dark); background: rgba(29, 158, 117, 0.12); border-radius: 8px; padding: 3px 7px; text-align: left; line-height: 1.35; }
 .flip-fact { font-size: 11px; color: var(--green-dark); font-style: italic; text-align: center; max-width: 90%; }
 .flip-img { max-width: 100%; max-height: var(--quiz-photo-back-compact-max); border-radius: 6px; object-fit: cover; }
 .quiz-btns { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; }
@@ -157,36 +159,6 @@ textarea { resize: vertical; }
 .mcfoto-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .mcfoto-option.correct { background: var(--green-light); border-color: var(--green); color: var(--green-dark); }
 .mcfoto-option.wrong { background: #fff0ee; border-color: var(--flag); color: var(--flag); }
-.mcfoto-question { margin-top: 10px; }
-.mcfoto-question:first-of-type { margin-top: 0; }
-.mcfoto-qtitle { font-size: 13px; font-weight: 600; margin-bottom: 7px; color: var(--text); }
-.mcfoto-feedback { font-size: 12px; margin-top: 6px; }
-.mcfoto-feedback.ok { color: var(--green-dark); }
-.mcfoto-feedback.bad { color: var(--flag); }
-.mcfoto-answer-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 4px 0; font-size: 12px; }
-.mcfoto-answer-row b { color: var(--text); }
-.mcfoto-answer-user { color: var(--text2); font-style: italic; }
-.mcfoto-missed-families { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
-.mcfoto-missed-family-badge { font-size: 11px; padding: 3px 8px; border-radius: 999px; border: 1px solid #f0c37b; background: var(--amber-light); color: #854F0B; font-weight: 600; }
-.mcfoto-breakdown { display: grid; gap: 10px; margin-top: 8px; }
-.mcfoto-breakdown h4 { font-size: 12px; margin-bottom: 5px; color: var(--text); }
-.mcfoto-breakdown ul { margin: 0; padding-left: 18px; font-size: 12px; color: var(--text2); }
-.mcfoto-breakdown li { margin-bottom: 3px; }
-.mcfoto-result-full { animation: mcfotoFlashGreen 0.6s ease; }
-.mcfoto-result-half { animation: mcfotoFlashAmber 0.6s ease; }
-.mcfoto-result-zero { animation: mcfotoFlashRed 0.6s ease; }
-@keyframes mcfotoFlashGreen {
-  0% { border-color: var(--green); box-shadow: 0 0 0 2px rgba(29,158,117,0.25); }
-  100% { border-color: var(--border); box-shadow: none; }
-}
-@keyframes mcfotoFlashAmber {
-  0% { border-color: var(--amber); box-shadow: 0 0 0 2px rgba(239,159,39,0.25); }
-  100% { border-color: var(--border); box-shadow: none; }
-}
-@keyframes mcfotoFlashRed {
-  0% { border-color: var(--flag); box-shadow: 0 0 0 2px rgba(232,93,60,0.25); }
-  100% { border-color: var(--border); box-shadow: none; }
-}
 .quiz-tab-shell { max-width: 980px; margin: 0 auto; }
 .quiz-tab-title { font-size: 18px; font-weight: 700; margin-bottom: 0.85rem; }
 body.quiz-open { overflow: hidden; }
@@ -221,23 +193,6 @@ body.quiz-open { overflow: hidden; }
 .daily-progress-fill { height: 100%; background: var(--green); border-radius: 999px; transition: width 0.25s ease; }
 .quiz-session-summary { margin-bottom: 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; font-size: 12px; color: var(--text2); line-height: 1.55; }
 .quiz-empty-message { font-size: 14px; color: var(--text2); }
-.quiz-setup-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.exam-config { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text2); }
-.exam-config input { width: 76px; padding: 6px 8px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); }
-.exam-timer { font-weight: 700; color: var(--text); }
-.exam-timer.warning { color: var(--flag); }
-.exam-form-grid { display: grid; gap: 8px; margin: 0.75rem 0 0.85rem; }
-.exam-result-summary { font-size: 13px; line-height: 1.6; margin-bottom: 0.85rem; color: var(--text2); }
-.exam-grade { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 0.75rem; }
-.exam-result-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.exam-result-table th, .exam-result-table td { border: 1px solid var(--border); padding: 7px 8px; vertical-align: top; text-align: left; }
-.exam-result-table th { background: var(--surface2); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text3); }
-.exam-result-ok { color: var(--green-dark); background: var(--green-light); font-weight: 600; }
-.exam-result-bad { color: var(--flag); background: #fff0ee; font-weight: 600; }
-.exam-history-title { font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
-.exam-history-table { width: 100%; border-collapse: collapse; font-size: 11px; }
-.exam-history-table th, .exam-history-table td { border: 1px solid var(--border); padding: 5px 7px; text-align: left; }
-.exam-history-table th { background: var(--surface2); color: var(--text3); text-transform: uppercase; font-size: 10px; letter-spacing: 0.04em; }
 .quiz-empty { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; }
 
 /* Group filter chips */
@@ -289,26 +244,6 @@ body.quiz-open { overflow: hidden; }
 .match-mode-toggle { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 0.75rem; }
 .match-mode-toggle button { padding: 5px 12px; font-size: 12px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text2); cursor: pointer; }
 .match-mode-toggle button.active { background: var(--green); color: #fff; border-color: var(--green); }
-.match-overview-shell { margin-top: 0.5rem; }
-.match-overview-list { display: grid; gap: 8px; }
-.family-overview-card { border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); padding: 10px 12px; cursor: pointer; transition: border-color 0.12s, box-shadow 0.12s; }
-.family-overview-card:hover { border-color: var(--green); box-shadow: 0 2px 8px rgba(29,158,117,0.12); }
-.family-overview-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-.family-overview-main { flex: 1; min-width: 0; }
-.family-overview-name { font-size: 14px; font-weight: 600; }
-.family-overview-name i { font-style: italic; font-weight: 500; }
-.family-overview-meta { margin-top: 3px; font-size: 12px; color: var(--text3); display: flex; flex-wrap: wrap; gap: 8px; }
-.family-overview-expand { border: 1px solid var(--border2); background: var(--surface2); color: var(--text2); border-radius: 999px; font-size: 11px; padding: 4px 9px; cursor: pointer; white-space: nowrap; }
-.family-overview-expand:hover { border-color: var(--green); color: var(--green-dark); }
-.family-overview-summary { margin-top: 6px; font-size: 12px; color: var(--text2); }
-.family-overview-details { margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 10px; }
-.family-overview-thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 6px; margin-bottom: 10px; }
-.family-overview-thumb { height: 52px; border-radius: 8px; overflow: hidden; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--text3); text-align: center; padding: 3px; }
-.family-overview-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.family-overview-traits { display: grid; gap: 4px; }
-.family-overview-trait { font-size: 12px; color: var(--text2); }
-.family-overview-trait b { color: var(--text); }
-.family-overview-empty { padding: 1rem; border: 1px dashed var(--border); border-radius: var(--radius); color: var(--text3); font-size: 12px; text-align: center; }
 @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
 
 .setup-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem; max-width: 500px; margin: 0 auto; }
@@ -397,6 +332,8 @@ body.quiz-open { overflow: hidden; }
 .repeat-freq-btns { display: flex; gap: 5px; flex-wrap: wrap; }
 .repeat-freq-btns .btn { font-size: 11px; padding: 5px 9px; }
 .repeat-freq-btns .btn.active { background: var(--green); color: #fff; border-color: var(--green); }
+.ident-tip-grid { display: grid; gap: 6px; margin-top: 6px; }
+.ident-tip-grid label { margin-top: 0; margin-bottom: 2px; }
 
 /* Confusion pairs */
 .confusion-section { margin-top: 16px; }
@@ -563,14 +500,7 @@ body.quiz-open { overflow: hidden; }
           </div>
         </div>
         <div class="quiz-setup-actions">
-          <div class="quiz-setup-left">
-            <div class="exam-config">Otázek <input id="exam-question-count" type="number" min="1" max="200" value="20"></div>
-            <div class="exam-config">Limit (min) <input id="exam-time-limit" type="number" min="1" max="180" value="20"></div>
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="btn green" id="quiz-start-btn" onclick="startQuiz()">Spustit kvíz</button>
-            <button class="btn" id="exam-start-btn" onclick="startExamSimulation()">🎓 Simulace zkoušky</button>
-          </div>
+          <button class="btn green" id="quiz-start-btn" onclick="startQuiz()">Spustit kvíz</button>
           <div class="quiz-setup-note" id="quiz-setup-note"></div>
         </div>
         <div class="daily-progress" id="daily-progress-box">
@@ -578,7 +508,6 @@ body.quiz-open { overflow: hidden; }
           <div class="daily-progress-track"><div class="daily-progress-fill" id="daily-progress-fill" style="width:0%;"></div></div>
         </div>
         <div id="quiz-session-summary" class="quiz-session-summary" style="display:none;"></div>
-        <div id="exam-history" class="quiz-session-summary" style="display:none;"></div>
     </div>
   </div>
 </div>
@@ -599,21 +528,14 @@ body.quiz-open { overflow: hidden; }
   <div class="match-wrap">
     <div class="match-header">
       <div class="match-score" id="match-score"></div>
-      <button class="btn green" id="match-new-round-btn" onclick="startMatch()">Nové kolo</button>
+      <button class="btn green" onclick="startMatch()">Nové kolo</button>
     </div>
     <div class="match-mode-toggle">
       <button id="mm-ptof" class="active" onclick="setMatchMode('ptof')">Rostlina → čeleď</button>
       <button id="mm-ftop" onclick="setMatchMode('ftop')">Čeleď → rostliny</button>
-      <button id="mm-overview" onclick="setMatchOverviewMode(true)">📋 Přehled čeledí</button>
     </div>
-    <div id="match-game-shell">
-      <div class="match-directions" id="match-dir">Klikni na rostlinu vlevo, pak na správnou čeleď vpravo.</div>
-      <div id="match-area"></div>
-    </div>
-    <div id="match-overview-shell" class="match-overview-shell" style="display:none;">
-      <div class="match-directions">Klikni na kartu čeledi pro spuštění kvízu jen pro tuto čeleď.</div>
-      <div id="match-overview-list" class="match-overview-list"></div>
-    </div>
+    <div class="match-directions" id="match-dir">Klikni na rostlinu vlevo, pak na správnou čeleď vpravo.</div>
+    <div id="match-area"></div>
   </div>
 </div>
 
@@ -819,24 +741,11 @@ let sbUserKey = null;
 let sb = null;
 let syncTimer = null;
 let quizList = [], quizIdx = 0, quizFlipped = false, quizMode = 'foto', quizPhotoSize = 'compact';
-let quizTypeTarget = 'czech';
 let quizTypeAutoAdvanceTimer = null;
 let quizSessionActive = false;
 let quizSessionStats = { startedAt: 0, total: 0, actions: 0, flagged: 0, review: 0, learned: 0, flips: 0, dailyGoalReached: false };
 let quizLastSummary = null;
-let examSessionActive = false;
-let examList = [];
-let examIdx = 0;
-let examAnswers = [];
-let examStartedAt = 0;
-let examDeadlineAt = 0;
-let examTimerHandle = null;
-let examResultHTML = '';
-let examLastConfig = {count: 20, minutes: 20};
-let mcfotoPoints = 0, mcfotoAnswered = 0, mcfotoNameCorrect = 0, mcfotoFamilyCorrect = 0, mcfotoLocked = false;
-let mcfotoNameChoices = [], mcfotoFamilyChoices = [], mcfotoCorrectLatin = '';
-let mcfotoNameSelection = null, mcfotoFamilySelection = null, mcfotoNameAnswered = false, mcfotoFamilyAnswered = false;
-let mcfotoResults = [], mcfotoFinished = false;
+let mcfotoCorrect = 0, mcfotoAnswered = 0, mcfotoLocked = false, mcfotoChoices = [], mcfotoCorrectLatin = '';
 let dirty = false;
 let activeGroup = '';
 let activeQuizGroups = [];
@@ -868,15 +777,6 @@ function getNameOverrides() {
   return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
 }
 
-function getExamHistory() {
-  return Array.isArray(userData.__examHistory) ? userData.__examHistory : [];
-}
-
-function saveExamHistoryEntry(entry) {
-  const history = getExamHistory();
-  userData.__examHistory = [entry, ...history];
-  scheduleSave();
-}
 // ── Confusion pairs helpers ──
 function getConfusionPairs() {
   return Array.isArray(userData.__confusionPairs) ? userData.__confusionPairs : [];
@@ -911,6 +811,7 @@ function saveConfusionPairNote(idx, note) {
   const pairs = getConfusionPairs();
   if (pairs[idx]) { pairs[idx].note = note; userData.__confusionPairs = pairs; scheduleSave(); }
 }
+
 function getFieldOverrides() {
   const raw = userData.__fieldOverrides;
   return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
@@ -1084,6 +985,63 @@ function trackDailyActivity() {
   renderStreakIndicator();
   renderDailyProgress();
   return {goalReachedNow: previousTodayActions < goal && streak.todayActions >= goal};
+}
+
+function suggestKeyFeatureFromTags(tags) {
+  if (!Array.isArray(tags) || !tags.length) return '';
+  const cleaned = tags.map(t => String(t || '').trim()).filter(Boolean);
+  const hintParts = ['míza','miza','latex','trn','ostn','chlup','jež','vůně','vune','zápach','zapach','lepiv','žahav','bodlin','jehlic','šiška','stonek','lodyh','list','květ','kvet','plod','semeno','oranž','žlut','fial','červen','bíl'];
+  const hit = cleaned.find(tag => {
+    const low = tag.toLowerCase();
+    return hintParts.some(part => low.includes(part));
+  });
+  return hit || cleaned[0] || '';
+}
+
+function getStoredIdentTips(latin) {
+  const all = userData.__identTips;
+  if (!all || typeof all !== 'object' || Array.isArray(all)) return {};
+  const tip = all[latin];
+  if (!tip || typeof tip !== 'object' || Array.isArray(tip)) return {};
+  return tip;
+}
+
+function getIdentificationTips(latin, tags = []) {
+  const stored = getStoredIdentTips(latin);
+  const flower = typeof stored.flower === 'string' ? stored.flower : '';
+  const leaf = typeof stored.leaf === 'string' ? stored.leaf : '';
+  const keyFeature = (typeof stored.keyFeature === 'string' && stored.keyFeature.trim())
+    ? stored.keyFeature
+    : suggestKeyFeatureFromTags(tags);
+  return {flower, leaf, keyFeature};
+}
+
+function setIdentificationTips(latin, tips) {
+  const flower = String(tips?.flower || '').trim();
+  const leaf = String(tips?.leaf || '').trim();
+  const keyFeature = String(tips?.keyFeature || '').trim();
+  const hasAny = !!(flower || leaf || keyFeature);
+  const all = (userData.__identTips && typeof userData.__identTips === 'object' && !Array.isArray(userData.__identTips))
+    ? userData.__identTips
+    : {};
+  if (hasAny) {
+    all[latin] = {flower, leaf, keyFeature};
+    userData.__identTips = all;
+    return;
+  }
+  if (all[latin]) {
+    delete all[latin];
+    if (Object.keys(all).length) userData.__identTips = all;
+    else delete userData.__identTips;
+  }
+}
+
+function getQuizIdentTipsHTML(tips) {
+  const lines = [];
+  if (tips.keyFeature) lines.push(`<div class="flip-ident-tip"><b>Poznej podle:</b> ${esc(tips.keyFeature)}</div>`);
+  if (tips.flower) lines.push(`<div class="flip-ident-tip"><b>Květ:</b> ${esc(tips.flower)}</div>`);
+  if (tips.leaf) lines.push(`<div class="flip-ident-tip"><b>List:</b> ${esc(tips.leaf)}</div>`);
+  return lines.length ? `<div class="flip-ident-tips">${lines.join('')}</div>` : '';
 }
 
 // ── Init ──
@@ -1454,6 +1412,11 @@ function migratePlantDataKey(oldLatin, newLatin) {
   if (!userData[oldKey]) return;
   userData[newKey] = Object.assign({}, userData[newKey] || {}, userData[oldKey]);
   delete userData[oldKey];
+  const identTips = userData.__identTips;
+  if (identTips && typeof identTips === 'object' && !Array.isArray(identTips) && identTips[oldLatin]) {
+    identTips[newLatin] = Object.assign({}, identTips[newLatin] || {}, identTips[oldLatin]);
+    delete identTips[oldLatin];
+  }
 }
 
 function buildSelectOptions(order, selected, includeBlank = false) {
@@ -1788,6 +1751,7 @@ function renderStats() {
 // ── Card rendering ──
 function cardHTML(p) {
   const d = D(p.latin);
+  const tips = getIdentificationTips(p.latin, p.tags || []);
   const cls = d.flagged ? 'flagged-card' : d.status==='learned' ? 'learned' : d.status==='review' ? 'review' : '';
   const badge = d.status==='learned' ? '<span class="badge b-learned">naučeno</span>'
     : d.status==='review' ? '<span class="badge b-review">opakování</span>'
@@ -1801,12 +1765,14 @@ function cardHTML(p) {
     : `<div class="card-img">bez fotky</div>`;
   const safe = esc(p.latin);
   const groupBadge = `<span class="badge" style="background:${GROUP_COLORS[p.group]||'#888'};color:#fff;margin-left:auto">${p.group||''}</span>`;
+  const keyFeatureLine = tips.keyFeature ? `<div class="card-key-feature">Poznej podle: ${esc(tips.keyFeature)}</div>` : '';
   return `<div class="card ${cls}" onclick="openModal('${safe}')">
     ${img}
     <div class="card-body">
       <div class="card-latin">${p.latin}</div>
       <div class="card-czech">${p.czech}</div>
       <div class="card-family">${p.family_cz} · <i>${p.family_lat}</i></div>
+      ${keyFeatureLine}
       <div class="card-footer">${badge}${flag}${groupBadge}</div>
     </div>
   </div>`;
@@ -1994,6 +1960,7 @@ function openModal(latin) {
     return;
   }
   const d = D(latin);
+  const tips = getIdentificationTips(latin, p.tags || []);
   const enc = encodeURIComponent(latin);
   const sl = latin.replace(/'/g,"\\'");
   lastFocusedBeforeModal = document.activeElement;
@@ -2030,6 +1997,22 @@ function openModal(latin) {
         <a class="ext-link" href="https://cs.wikipedia.org/w/index.php?search=${enc}" target="_blank">📖 Wikipedia</a>
       </div>
       <button class="btn" style="margin-top:8px;width:100%;" onclick="savePhotoUrl('${sl}')">Přidat URL</button>
+
+      <label style="margin-top:12px;">Určovací znaky</label>
+      <div class="ident-tip-grid">
+        <div>
+          <label for="m-tip-flower">Květ</label>
+          <input type="text" id="m-tip-flower" value="${esc(tips.flower || '')}" placeholder="bílý, 5 okvětních lístků">
+        </div>
+        <div>
+          <label for="m-tip-leaf">List</label>
+          <input type="text" id="m-tip-leaf" value="${esc(tips.leaf || '')}" placeholder="střídavé, zpeřené, palisté">
+        </div>
+        <div>
+          <label for="m-tip-key-feature">Poznej podle</label>
+          <input type="text" id="m-tip-key-feature" value="${esc(tips.keyFeature || '')}" placeholder="oranžová míza na řezu stonku">
+        </div>
+      </div>
 
       <label style="margin-top:12px;">Zajímavost / poznámka</label>
       <textarea id="m-fact" rows="3" placeholder="Přidejte zajímavost, tip k určení…">${esc(d.funfact||'')}</textarea>
@@ -2363,21 +2346,27 @@ function savePhotoUrl(latin) {
   }
 }
 
+function saveModalDetails(latin, patch = {}) {
+  const funfact = document.getElementById('m-fact')?.value || D(latin).funfact || '';
+  const flower = document.getElementById('m-tip-flower')?.value || '';
+  const leaf = document.getElementById('m-tip-leaf')?.value || '';
+  const keyFeature = document.getElementById('m-tip-key-feature')?.value || '';
+  setIdentificationTips(latin, {flower, leaf, keyFeature});
+  setData(latin, {funfact, ...patch});
+}
+
 function saveFunfact(latin) {
-  const funfact = document.getElementById('m-fact')?.value || '';
-  setData(latin, {funfact});
+  saveModalDetails(latin);
   closeModal(); renderAll();
 }
 
 function saveModal(latin) {
-  const funfact = document.getElementById('m-fact')?.value || '';
-  setData(latin, {funfact});
+  saveModalDetails(latin);
   closeModal(); renderAll();
 }
 
 function setStatus(latin, status) {
-  const funfact = document.getElementById('m-fact')?.value || D(latin).funfact;
-  setData(latin, {status, funfact});
+  saveModalDetails(latin, {status});
   closeModal(); renderAll();
 }
 
@@ -2430,17 +2419,6 @@ function setQuizOverlayOpen(isOpen) {
 }
 
 function closeQuizOverlay() {
-  if (examSessionActive) {
-    const shouldQuit = confirm('Ukončit simulaci zkoušky bez vyhodnocení?');
-    if (!shouldQuit) return;
-    clearExamTimer();
-    examSessionActive = false;
-    examList = [];
-    examAnswers = [];
-    examIdx = 0;
-    examResultHTML = '';
-    renderQuizSetup();
-  }
   if (quizSessionActive) {
     finishQuizSession();
     return;
@@ -2453,45 +2431,7 @@ function quizOverlayBgClick(e) {
 }
 
 // ── Quiz ──
-function getQuizTypeTargetFromMode(mode) {
-  if (mode === 'cz') return 'latin';
-  if (mode === 'fam') return 'family_lat';
-  return 'czech';
-}
-
-function getQuizTypeConfig(p) {
-  if (quizTypeTarget === 'latin') {
-    return {
-      target: 'latin',
-      promptLabel: 'Napiš latinský název:',
-      placeholder: 'Napiš latinský název…',
-      correctValue: p.latin,
-      answerHTML: `<b><i>${esc(p.latin)}</i></b>`
-    };
-  }
-  if (quizTypeTarget === 'family_lat') {
-    return {
-      target: 'family_lat',
-      promptLabel: 'Napiš latinský název čeledi:',
-      placeholder: 'Napiš latinský název čeledi…',
-      correctValue: p.family_lat,
-      answerHTML: `<b><i>${esc(p.family_lat)}</i></b>`
-    };
-  }
-  return {
-    target: 'czech',
-    promptLabel: 'Napiš český název:',
-    placeholder: 'Napiš český název…',
-    correctValue: p.czech,
-    answerHTML: `<b>${esc(p.czech)}</b>`
-  };
-}
-
 function setQuizMode(m) {
-  const prevMode = quizMode;
-  if (m === 'type' && prevMode !== 'type') {
-    quizTypeTarget = getQuizTypeTargetFromMode(prevMode);
-  }
   quizMode = m;
   ['foto','mcfoto','lat','cz','fam','type'].forEach(k => document.getElementById('qm-'+k).classList.toggle('active',k===m));
   const photoSizeToggle = document.getElementById('quiz-photo-size-toggle');
@@ -2513,52 +2453,17 @@ function renderQuizSetup() {
   const setupPanel = document.getElementById('quiz-setup-panel');
   const setupNote = document.getElementById('quiz-setup-note');
   const summaryBox = document.getElementById('quiz-session-summary');
-  const examHistoryBox = document.getElementById('exam-history');
   const photoSizeToggle = document.getElementById('quiz-photo-size-toggle');
-  const overlayTitle = document.getElementById('quiz-overlay-title');
-  const examEligibleCount = getExamPlants().filter(p => D(p.latin).photos.length).length;
-  const examCountInput = document.getElementById('exam-question-count');
-  const requestedExamCount = Math.max(1, Number.parseInt(examCountInput?.value || '20', 10) || 20);
   if (photoSizeToggle) photoSizeToggle.style.display = (quizMode === 'foto' || quizMode === 'mcfoto') ? 'inline-flex' : 'none';
-  if (overlayTitle) {
-    overlayTitle.textContent = examSessionActive
-      ? '🎓 Simulace zkoušky'
-      : (examResultHTML ? '🎓 Výsledky simulace' : 'Kvíz');
-  }
-  if (setupPanel) setupPanel.style.display = (quizSessionActive || examSessionActive) ? 'none' : '';
-  if (setupNote && !quizSessionActive && !examSessionActive) {
-    setupNote.textContent = `V balíčku je ${quizList.length} kartiček. Pro simulaci je dostupných ${Math.min(requestedExamCount, examEligibleCount)} z ${examEligibleCount} rostlin s fotkou.`;
-  }
+  if (setupPanel) setupPanel.style.display = quizSessionActive ? 'none' : '';
+  if (setupNote && !quizSessionActive) setupNote.textContent = `V balíčku je ${quizList.length} kartiček.`;
   if (summaryBox) {
-    if (quizLastSummary && !quizSessionActive && !examSessionActive) {
+    if (quizLastSummary && !quizSessionActive) {
       summaryBox.style.display = '';
       summaryBox.innerHTML = quizLastSummary;
     } else {
       summaryBox.style.display = 'none';
       summaryBox.innerHTML = '';
-    }
-  }
-  if (examHistoryBox) {
-    const history = getExamHistory().slice(0, 5);
-    if (history.length && !quizSessionActive && !examSessionActive) {
-      examHistoryBox.style.display = '';
-      examHistoryBox.innerHTML = `
-        <div class="exam-history-title">Posledních 5 simulací</div>
-        <table class="exam-history-table">
-          <thead><tr><th>Datum</th><th>Skóre</th><th>Úspěšnost</th><th>Čas</th></tr></thead>
-          <tbody>${history.map(h => {
-            const pct = h.total ? Math.round((Number(h.score || 0) / Number(h.total || 1)) * 100) : 0;
-            const secs = Math.max(0, Number(h.timeSeconds || 0));
-            const mins = Math.floor(secs / 60);
-            const sec = secs % 60;
-            const dateLabel = new Date(h.date || Date.now()).toLocaleString('cs-CZ');
-            return `<tr><td>${esc(dateLabel)}</td><td>${Number(h.score || 0)}/${Number(h.total || 0)}</td><td>${pct}%</td><td>${mins}:${String(sec).padStart(2, '0')}</td></tr>`;
-          }).join('')}</tbody>
-        </table>
-      `;
-    } else {
-      examHistoryBox.style.display = 'none';
-      examHistoryBox.innerHTML = '';
     }
   }
   renderDailyProgress();
@@ -2576,235 +2481,16 @@ function trackQuizAction(type) {
   if (type === 'learned') quizSessionStats.learned++;
 }
 
-function clearExamTimer() {
-  if (examTimerHandle) clearInterval(examTimerHandle);
-  examTimerHandle = null;
-}
-
-function formatClock(totalSeconds) {
-  const secs = Math.max(0, Number(totalSeconds) || 0);
-  const mins = Math.floor(secs / 60);
-  const sec = secs % 60;
-  return `${mins}:${String(sec).padStart(2, '0')}`;
-}
-
-function getExamRemainingSeconds() {
-  return Math.max(0, Math.ceil((examDeadlineAt - Date.now()) / 1000));
-}
-
-function updateExamCountdownLabel() {
-  const el = document.getElementById('exam-countdown');
-  if (!el) return;
-  const remaining = getExamRemainingSeconds();
-  el.textContent = `⏳ ${formatClock(remaining)}`;
-  el.classList.toggle('warning', remaining <= 120);
-}
-
-function startExamTimer() {
-  clearExamTimer();
-  updateExamCountdownLabel();
-  examTimerHandle = setInterval(() => {
-    if (!examSessionActive) {
-      clearExamTimer();
-      return;
-    }
-    if (Date.now() >= examDeadlineAt) {
-      finishExamSimulation({timedOut: true});
-      return;
-    }
-    updateExamCountdownLabel();
-  }, 1000);
-}
-
-function normalizeExamText(value) {
-  return String(value || '')
-    .toLocaleLowerCase('cs')
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .replace(/[^\p{L}\p{N}]+/gu, ' ')
-    .trim();
-}
-
-function examMatch(userValue, expectedValue) {
-  return normalizeExamText(userValue) === normalizeExamText(expectedValue);
-}
-
-function getExamPlants() {
-  const fam = document.getElementById('quiz-family').value;
-  const famCz = document.getElementById('quiz-family-cz').value;
-  return getAllPlants().filter(p => {
-    if (activeQuizGroups.length && !activeQuizGroups.includes(p.group)) return false;
-    if (activeQuizLFs.length && !activeQuizLFs.includes(p.life_form)) return false;
-    if (activeQuizHabs.length && !activeQuizHabs.some(h => p.habitat.includes(h))) return false;
-    if (activeQuizToxes.length && !activeQuizToxes.includes(p.toxic)) return false;
-    if (fam && p.family_lat !== fam) return false;
-    if (famCz && p.family_cz !== famCz) return false;
-    return true;
-  });
-}
-
-function startExamSimulation() {
-  const countInput = document.getElementById('exam-question-count');
-  const minutesInput = document.getElementById('exam-time-limit');
-  const requestedCount = Math.max(1, Number.parseInt(countInput?.value || '20', 10) || 20);
-  const requestedMinutes = Math.max(1, Number.parseInt(minutesInput?.value || '20', 10) || 20);
-  const pool = getExamPlants().filter(p => D(p.latin).photos.length);
-  if (!pool.length) {
-    alert('Pro simulaci nejsou dostupné žádné rostliny s fotkou v aktuálním filtru.');
-    return;
-  }
-  examLastConfig = {count: requestedCount, minutes: requestedMinutes};
-  examList = shuffle(pool).slice(0, Math.min(requestedCount, pool.length));
-  examIdx = 0;
-  examAnswers = [];
-  examStartedAt = Date.now();
-  examDeadlineAt = examStartedAt + (requestedMinutes * 60 * 1000);
-  examResultHTML = '';
-  quizSessionActive = false;
-  quizFlipped = false;
-  lastFocusedBeforeQuiz = document.activeElement;
-  examSessionActive = true;
-  setQuizOverlayOpen(true);
-  startExamTimer();
-  renderQuizSetup();
-  renderQuiz();
-}
-
-function getExamGradeLabel(percent) {
-  if (percent < 50) return 'Potřebuješ víc procvičovat';
-  if (percent < 70) return 'Skoro tam';
-  if (percent < 90) return 'Dobře!';
-  return 'Výborně, jsi připraven/a na zkoušku!';
-}
-
-function appendMissedExamAnswers() {
-  for (let i = examAnswers.length; i < examList.length; i++) {
-    const p = examList[i];
-    examAnswers.push({
-      latin: p.latin,
-      czechExpected: p.czech,
-      familyCzExpected: p.family_cz,
-      familyLatExpected: p.family_lat,
-      userCzech: '',
-      userLatin: '',
-      userFamily: '',
-      namesCorrect: false,
-      familyCorrect: false
-    });
-  }
-}
-
-function finishExamSimulation({timedOut = false} = {}) {
-  if (!examSessionActive) return;
-  clearExamTimer();
-  if (timedOut) appendMissedExamAnswers();
-  const elapsedSeconds = Math.max(0, Math.round((Date.now() - examStartedAt) / 1000));
-  const namesScore = examAnswers.filter(a => a.namesCorrect).length;
-  const familyScore = examAnswers.filter(a => a.familyCorrect).length;
-  const totalScore = namesScore + familyScore;
-  const totalPossible = examList.length * 2;
-  const percent = totalPossible ? Math.round((totalScore / totalPossible) * 100) : 0;
-  const gradeLabel = getExamGradeLabel(percent);
-  saveExamHistoryEntry({
-    date: new Date().toISOString(),
-    score: totalScore,
-    total: totalPossible,
-    timeSeconds: elapsedSeconds
-  });
-  examResultHTML = `
-    <div class="quiz-stage">
-      <div class="exam-result-summary">
-        <b>Celkové skóre:</b> ${percent}% (${totalScore}/${totalPossible})<br>
-        <b>Čas:</b> ${formatClock(elapsedSeconds)}${timedOut ? ' · <b style="color:var(--flag);">Čas vypršel</b>' : ''}<br>
-        <b>Rozpad:</b> Jména: ${namesScore}/${examList.length}, Čeledi: ${familyScore}/${examList.length}
-      </div>
-      <div class="exam-grade">${esc(gradeLabel)}</div>
-      <div style="overflow:auto;">
-        <table class="exam-result-table">
-          <thead>
-            <tr>
-              <th>#</th><th>Rostlina</th><th>Tvoje jména</th><th>Správná jména</th><th>Tvoje čeleď</th><th>Správná čeleď</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${examAnswers.map((a, i) => `
-              <tr>
-                <td>${i + 1}</td>
-                <td><i>${esc(a.latin)}</i></td>
-                <td class="${a.namesCorrect ? 'exam-result-ok' : 'exam-result-bad'}">${esc(a.userCzech || '—')} · <i>${esc(a.userLatin || '—')}</i></td>
-                <td><b>${esc(a.czechExpected)}</b> · <i>${esc(a.latin)}</i></td>
-                <td class="${a.familyCorrect ? 'exam-result-ok' : 'exam-result-bad'}">${esc(a.userFamily || '—')}</td>
-                <td>${esc(a.familyCzExpected)} · <i>${esc(a.familyLatExpected)}</i></td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn" onclick="closeQuizOverlay()">Zavřít</button>
-        <button class="btn green" onclick="startExamSimulation()">Spustit znovu</button>
-      </div>
-    </div>
-  `;
-  examSessionActive = false;
-  examIdx = 0;
-  examList = [];
-  examAnswers = [];
-  renderQuizSetup();
-  renderQuiz();
-}
-
-function submitExamAnswer(event) {
-  if (event) event.preventDefault();
-  if (!examSessionActive) return;
-  const p = examList[examIdx];
-  if (!p) return;
-  const userCzech = document.getElementById('exam-czech')?.value.trim() || '';
-  const userLatin = document.getElementById('exam-latin')?.value.trim() || '';
-  const userFamily = document.getElementById('exam-family')?.value.trim() || '';
-  const namesCorrect = examMatch(userCzech, p.czech) && examMatch(userLatin, p.latin);
-  const familyCorrect = examMatch(userFamily, p.family_cz) || examMatch(userFamily, p.family_lat);
-  examAnswers.push({
-    latin: p.latin,
-    czechExpected: p.czech,
-    familyCzExpected: p.family_cz,
-    familyLatExpected: p.family_lat,
-    userCzech,
-    userLatin,
-    userFamily,
-    namesCorrect,
-    familyCorrect
-  });
-  examIdx++;
-  if (examIdx >= examList.length) {
-    finishExamSimulation();
-    return;
-  }
-  renderQuiz();
-}
-
 function startQuiz() {
-  clearExamTimer();
-  examSessionActive = false;
-  examResultHTML = '';
   quizList = buildQuizDeck();
   quizIdx = 0;
   quizFlipped = false;
   quizLastSummary = null;
-  mcfotoPoints = 0;
+  mcfotoCorrect = 0;
   mcfotoAnswered = 0;
-  mcfotoNameCorrect = 0;
-  mcfotoFamilyCorrect = 0;
   mcfotoLocked = false;
-  mcfotoNameChoices = [];
-  mcfotoFamilyChoices = [];
+  mcfotoChoices = [];
   mcfotoCorrectLatin = '';
-  mcfotoNameSelection = null;
-  mcfotoFamilySelection = null;
-  mcfotoNameAnswered = false;
-  mcfotoFamilyAnswered = false;
-  mcfotoResults = [];
-  mcfotoFinished = false;
   quizSessionActive = quizList.length > 0;
   if (quizSessionActive) resetQuizStats();
   lastFocusedBeforeQuiz = document.activeElement;
@@ -2876,47 +2562,24 @@ function buildQuizDeck() {
 }
 
 function resetQuiz() {
-  if (examSessionActive) return;
-  examResultHTML = '';
   quizList = buildQuizDeck();
   quizIdx = 0; quizFlipped = false;
-  mcfotoPoints = 0;
+  mcfotoCorrect = 0;
   mcfotoAnswered = 0;
-  mcfotoNameCorrect = 0;
-  mcfotoFamilyCorrect = 0;
   mcfotoLocked = false;
-  mcfotoNameChoices = [];
-  mcfotoFamilyChoices = [];
+  mcfotoChoices = [];
   mcfotoCorrectLatin = '';
-  mcfotoNameSelection = null;
-  mcfotoFamilySelection = null;
-  mcfotoNameAnswered = false;
-  mcfotoFamilyAnswered = false;
-  mcfotoResults = [];
-  mcfotoFinished = false;
   renderQuizSetup();
   renderQuiz();
 }
 
-function formatMcFotoPoints(points) {
-  return Number.isInteger(points) ? String(points) : points.toFixed(1);
-}
-
-function getMcFotoScoreHTML() {
-  return `Správně: <b>${formatMcFotoPoints(mcfotoPoints)}</b> / <b>${mcfotoAnswered}</b> (název: <b>${mcfotoNameCorrect}</b>/<b>${mcfotoAnswered}</b>, čeleď: <b>${mcfotoFamilyCorrect}</b>/<b>${mcfotoAnswered}</b>)`;
-}
-
-function mcfotoFamilyLabel(item) {
-  return `${item.family_cz || item.family_lat || '—'} (${item.family_lat || '—'})`;
-}
-
-function buildMcFotoNameChoices(correctPlant) {
+function buildMcFotoChoices(correctPlant) {
   const rest = quizList.filter(item => item.latin !== correctPlant.latin);
   const picked = [];
   const used = new Set();
-  const groupMatches = shuffle(rest.filter(item => item.group && item.group === correctPlant.group));
-  const familyMatches = shuffle(rest.filter(item =>
-    item.family_lat === correctPlant.family_lat && (!item.group || item.group !== correctPlant.group)
+  const familyMatches = shuffle(rest.filter(item => item.family_lat === correctPlant.family_lat));
+  const groupMatches = shuffle(rest.filter(item =>
+    item.group && item.group === correctPlant.group && item.family_lat !== correctPlant.family_lat
   ));
   const others = shuffle(rest);
   const pushUnique = (list) => {
@@ -2927,191 +2590,48 @@ function buildMcFotoNameChoices(correctPlant) {
       picked.push(item);
     }
   };
-  pushUnique(groupMatches);
   pushUnique(familyMatches);
+  pushUnique(groupMatches);
   pushUnique(others);
+  while (picked.length < 3 && others.length) {
+    picked.push(others[Math.floor(Math.random() * others.length)]);
+  }
   return shuffle([correctPlant, ...picked.slice(0, 3)]);
 }
 
-function buildMcFotoFamilyChoices(correctPlant) {
-  const familyFromPlants = (plants) => {
-    const map = new Map();
-    plants.forEach(item => {
-      if (!item.family_lat || item.family_lat === correctPlant.family_lat) return;
-      if (!map.has(item.family_lat)) {
-        map.set(item.family_lat, {family_lat: item.family_lat, family_cz: item.family_cz || item.family_lat, group: item.group || ''});
-      }
-    });
-    return Array.from(map.values());
-  };
-  const inDeck = quizList.filter(item => item.latin !== correctPlant.latin);
-  const picked = [];
-  const used = new Set();
-  const sameGroup = shuffle(familyFromPlants(inDeck.filter(item => item.group && item.group === correctPlant.group)));
-  const othersInDeck = shuffle(familyFromPlants(inDeck));
-  const allFallback = shuffle(familyFromPlants(getAllPlants().filter(item => item.latin !== correctPlant.latin)));
-  const pushUnique = (list) => {
-    for (const family of list) {
-      if (picked.length >= 3) break;
-      if (used.has(family.family_lat)) continue;
-      used.add(family.family_lat);
-      picked.push(family);
-    }
-  };
-  pushUnique(sameGroup);
-  pushUnique(othersInDeck);
-  pushUnique(allFallback);
-  const correctFamily = {
-    family_lat: correctPlant.family_lat,
-    family_cz: correctPlant.family_cz || correctPlant.family_lat,
-    group: correctPlant.group || ''
-  };
-  return shuffle([correctFamily, ...picked.slice(0, 3)]);
-}
-
-function initMcFotoCardState(plant) {
-  mcfotoCorrectLatin = plant.latin;
-  mcfotoNameChoices = buildMcFotoNameChoices(plant);
-  mcfotoFamilyChoices = buildMcFotoFamilyChoices(plant);
-  mcfotoNameSelection = null;
-  mcfotoFamilySelection = null;
-  mcfotoNameAnswered = false;
-  mcfotoFamilyAnswered = false;
-  mcfotoLocked = false;
-}
-
 function answerMcFoto(index) {
-  if (quizMode !== 'mcfoto' || mcfotoLocked) return;
-  if (!mcfotoNameAnswered) {
-    answerMcFotoName(index);
+  if (quizMode !== 'mcfoto' || mcfotoLocked || !mcfotoChoices.length) return;
+  const chosen = mcfotoChoices[index];
+  if (!chosen) return;
+  mcfotoLocked = true;
+  mcfotoAnswered++;
+  const isCorrect = chosen.latin === mcfotoCorrectLatin;
+  const correctIndex = mcfotoChoices.findIndex(opt => opt.latin === mcfotoCorrectLatin);
+  const clickedBtn = document.getElementById('mcfoto-opt-' + index);
+  const correctBtn = document.getElementById('mcfoto-opt-' + correctIndex);
+  document.querySelectorAll('.mcfoto-option').forEach(btn => btn.disabled = true);
+  if (isCorrect) {
+    mcfotoCorrect++;
+    clickedBtn?.classList.add('correct');
+    trackQuizAction('learned');
+    const d = D(mcfotoCorrectLatin);
+    const newStreak = (d.correctStreak || 0) + 1;
+    setData(mcfotoCorrectLatin, {status:'learned', flagged:false, correctStreak:newStreak, wrongCount:0});
+    renderFlagged();
+    renderStats();
+    document.getElementById('mcfoto-score').innerHTML = `Správně: <b>${mcfotoCorrect}</b> / <b>${mcfotoAnswered}</b>`;
+    setTimeout(() => { mcfotoLocked = false; qNext(); }, 800);
     return;
   }
-  if (!mcfotoFamilyAnswered) {
-    answerMcFotoFamily(index);
-  }
-}
-
-function answerMcFotoName(index) {
-  if (quizMode !== 'mcfoto' || mcfotoLocked || mcfotoNameAnswered || !mcfotoNameChoices.length) return;
-  const chosen = mcfotoNameChoices[index];
-  if (!chosen) return;
-  mcfotoNameSelection = chosen;
-  mcfotoNameAnswered = true;
-  renderQuiz();
-}
-
-function answerMcFotoFamily(index) {
-  if (quizMode !== 'mcfoto' || mcfotoLocked || !mcfotoNameAnswered || mcfotoFamilyAnswered || !mcfotoFamilyChoices.length) return;
-  const chosen = mcfotoFamilyChoices[index];
-  if (!chosen) return;
-  const plant = quizList[quizIdx];
-  if (!plant) return;
-  mcfotoFamilySelection = chosen;
-  mcfotoFamilyAnswered = true;
-  mcfotoLocked = true;
-  finalizeMcFotoCard(plant);
-}
-
-function buildMcFotoSummaryPhotos(plant, maxHeight = 170) {
-  const d = D(plant.latin);
-  const sources = d.photos.map(src => src.startsWith('data:') ? src : esc(src));
-  if (!sources.length) return '<div style="font-size:12px;color:var(--text3);">bez fotky</div>';
-  const maxWidth = sources.length > 1 ? '48%' : '100%';
-  return sources.map(src => `<img class="flip-img" style="max-height:${maxHeight}px;max-width:${maxWidth};width:auto;object-fit:contain;border-radius:8px;" src="${src}" onerror="this.style.display='none'">`).join('');
-}
-
-function finalizeMcFotoCard(plant) {
-  const nameCorrect = !!mcfotoNameSelection && mcfotoNameSelection.latin === plant.latin;
-  const familyCorrect = !!mcfotoFamilySelection && mcfotoFamilySelection.family_lat === plant.family_lat;
-  const activity = trackDailyActivity();
-  if (activity.goalReachedNow) quizSessionStats.dailyGoalReached = true;
-  mcfotoAnswered++;
-  if (nameCorrect) mcfotoNameCorrect++;
-  if (familyCorrect) mcfotoFamilyCorrect++;
-
-  let pointsEarned = 0;
-  let resultKey = 'zero';
-  if (nameCorrect && familyCorrect) {
-    pointsEarned = 1;
-    resultKey = 'full';
-  } else if (nameCorrect) {
-    pointsEarned = 0.5;
-    resultKey = 'half';
-  }
-  mcfotoPoints += pointsEarned;
-  const d = D(plant.latin);
-  if (resultKey === 'full') {
-    trackQuizAction('learned');
-    recordFamilyQuizResult(plant, true);
-    const newStreak = (d.correctStreak || 0) + 1;
-    setData(plant.latin, {status:'learned', flagged:false, correctStreak:newStreak, wrongCount:0});
-    sm2Update(plant.latin, 4);
-    renderFlagged();
-  } else {
-    trackQuizAction('review');
-    recordFamilyQuizResult(plant, familyCorrect);
-    const newWrongCount = (d.wrongCount || 0) + 1;
-    setData(plant.latin, {status:'review', wrongCount:newWrongCount, correctStreak:0});
-    sm2Update(plant.latin, nameCorrect ? 2 : 1);
-  }
+  trackQuizAction('review');
+  clickedBtn?.classList.add('wrong');
+  correctBtn?.classList.add('correct');
+  const d = D(mcfotoCorrectLatin);
+  const newWrongCount = (d.wrongCount || 0) + 1;
+  setData(mcfotoCorrectLatin, {status:'review', wrongCount:newWrongCount, correctStreak:0});
   renderStats();
-
-  const familyLabel = mcfotoFamilyLabel(plant);
-  mcfotoResults.push({
-    latin: plant.latin,
-    czech: plant.czech,
-    familyLabel,
-    nameCorrect,
-    familyCorrect,
-    nameAnswer: mcfotoNameSelection ? mcfotoNameSelection.czech : '',
-    familyAnswer: mcfotoFamilySelection ? mcfotoFamilyLabel(mcfotoFamilySelection) : '',
-    pointsEarned,
-    resultKey
-  });
-
-  const area = document.getElementById('quiz-area');
-  if (!area) return;
-  const resultClass = resultKey === 'full' ? 'mcfoto-result-full' : resultKey === 'half' ? 'mcfoto-result-half' : 'mcfoto-result-zero';
-  const progressPct = Math.round((mcfotoAnswered / Math.max(1, quizList.length)) * 100);
-  area.innerHTML = `
-    <div class="quiz-stage">
-      <div class="quiz-meta">
-        <span>${Math.min(quizIdx + 1, quizList.length)} / ${quizList.length}</span>
-      </div>
-      <div class="progress"><div class="progress-fill" style="width:${progressPct}%"></div></div>
-      <div class="mcfoto-score">${getMcFotoScoreHTML()}</div>
-      <div class="mcfoto-card ${resultClass}">
-        <div class="mcfoto-photos">${buildMcFotoSummaryPhotos(plant)}</div>
-        <div class="mcfoto-answer-row"><b>${esc(plant.czech)}</b> · <i>${esc(plant.latin)}</i></div>
-        <div class="mcfoto-answer-row"><span>${esc(familyLabel)}</span></div>
-        <div class="mcfoto-answer-row">
-          <b>${nameCorrect ? '✅' : '❌'} Název</b>
-          <span class="mcfoto-answer-user">${esc(mcfotoNameSelection?.czech || '—')}</span>
-        </div>
-        <div class="mcfoto-answer-row">
-          <b>${familyCorrect ? '✅' : '❌'} Čeleď</b>
-          <span class="mcfoto-answer-user">${esc(mcfotoFamilySelection ? mcfotoFamilyLabel(mcfotoFamilySelection) : '—')}</span>
-        </div>
-      </div>
-    </div>
-  `;
-  setTimeout(() => {
-    if (quizMode !== 'mcfoto') return;
-    if (mcfotoAnswered >= quizList.length) {
-      mcfotoFinished = true;
-      renderQuiz();
-      return;
-    }
-    quizIdx = Math.min(quizIdx + 1, quizList.length - 1);
-    mcfotoCorrectLatin = '';
-    mcfotoLocked = false;
-    renderQuiz();
-  }, 1500);
-}
-
-function buildMcFotoBreakdownList(items, emptyText) {
-  if (!items.length) return `<li>${esc(emptyText)}</li>`;
-  return items.map(item => `<li><b>${esc(item.czech)}</b> · <i>${esc(item.latin)}</i> <span style="color:var(--text3);">(${esc(item.familyLabel)})</span></li>`).join('');
+  document.getElementById('mcfoto-score').innerHTML = `Správně: <b>${mcfotoCorrect}</b> / <b>${mcfotoAnswered}</b>`;
+  setTimeout(() => { mcfotoLocked = false; qNext(); }, 1500);
 }
 
 function getQuizPhotoSizingTokens(area) {
@@ -3169,10 +2689,9 @@ function onQuizTypeInputKeydown(event) {
 function showQuizTypeAnswer() {
   const p = getQuizTypePlant();
   if (!p) return;
-  const typeConfig = getQuizTypeConfig(p);
   const answerEl = document.getElementById('quiz-type-answer');
   if (!answerEl) return;
-  answerEl.innerHTML = `Správná odpověď: ${typeConfig.answerHTML}`;
+  answerEl.innerHTML = `Správná odpověď: <b><i>${esc(p.latin)}</i></b>`;
 }
 
 function typeQuizCountAsCorrect() {
@@ -3199,9 +2718,8 @@ function checkQuizTypeAnswer() {
   const feedback = document.getElementById('quiz-type-feedback');
   const actions = document.getElementById('quiz-type-actions');
   if (!input || !checkBtn || !feedback || !actions || checkBtn.disabled) return;
-  const typeConfig = getQuizTypeConfig(p);
   const given = normalizeQuizTypeAnswer(input.value);
-  const correct = normalizeQuizTypeAnswer(typeConfig.correctValue);
+  const correct = normalizeQuizTypeAnswer(p.latin);
   if (!given) {
     feedback.className = 'type-quiz-feedback bad';
     feedback.textContent = 'Napiš odpověď.';
@@ -3212,7 +2730,7 @@ function checkQuizTypeAnswer() {
   input.disabled = true;
   checkBtn.disabled = true;
   actions.innerHTML = '';
-  const answerHTML = typeConfig.answerHTML;
+  const escapedCorrect = esc(p.latin);
 
   if (given === correct) {
     feedback.className = 'type-quiz-feedback ok';
@@ -3228,12 +2746,9 @@ function checkQuizTypeAnswer() {
   }
 
   const distance = levenshtein(given, correct);
-  const levenshteinTolerance = typeConfig.target === 'czech'
-    ? (correct.length <= 15 ? 2 : 3)
-    : 2;
-  if (distance <= levenshteinTolerance) {
+  if (distance <= 2) {
     feedback.className = 'type-quiz-feedback almost';
-    feedback.innerHTML = `Skoro! Správně je: ${answerHTML}`;
+    feedback.innerHTML = `Skoro! Správně je: <b><i>${escapedCorrect}</i></b>`;
     actions.innerHTML = `
       <button class="btn green" onclick="typeQuizCountAsCorrect()">Počítat jako správně</button>
       <button class="btn" onclick="typeQuizNextWrong()">Další</button>
@@ -3242,7 +2757,7 @@ function checkQuizTypeAnswer() {
   }
 
   feedback.className = 'type-quiz-feedback bad';
-  feedback.innerHTML = `Špatně. Správně je: ${answerHTML}`;
+  feedback.innerHTML = `Špatně. Správně je: <b><i>${escapedCorrect}</i></b>`;
   actions.innerHTML = `<button class="btn" onclick="typeQuizNextWrong()">Další</button>`;
 }
 
@@ -3251,48 +2766,6 @@ function renderQuiz() {
   if (quizTypeAutoAdvanceTimer) {
     clearTimeout(quizTypeAutoAdvanceTimer);
     quizTypeAutoAdvanceTimer = null;
-  }
-  if (examSessionActive) {
-    area.classList.remove('foto-large');
-    if (!examList.length) {
-      area.innerHTML = `<div class="quiz-empty"><div class="quiz-empty-message">Pro simulaci nejsou žádné otázky.</div></div>`;
-      return;
-    }
-    const p = examList[examIdx];
-    const d = D(p.latin);
-    const photo = d.photos[0] || '';
-    const photoSrc = photo ? (photo.startsWith('data:') ? photo : esc(photo)) : '';
-    const pct = Math.round(((examIdx + 1) / examList.length) * 100);
-    area.innerHTML = `
-      <div class="quiz-stage">
-        <div class="quiz-meta">
-          <span>${examIdx + 1} / ${examList.length}</span>
-          <span class="exam-timer" id="exam-countdown">⏳ ${formatClock(getExamRemainingSeconds())}</span>
-        </div>
-        <div class="progress"><div class="progress-fill" style="width:${pct}%"></div></div>
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:10px;">
-          ${photoSrc ? `<img src="${photoSrc}" alt="Foto rostliny" style="width:100%;max-height:340px;object-fit:cover;border-radius:10px;">` : '<div style="font-size:12px;color:var(--text3);">bez fotky</div>'}
-        </div>
-        <form id="exam-form" onsubmit="submitExamAnswer(event)">
-          <div class="exam-form-grid">
-            <input type="text" id="exam-czech" placeholder="Český název" autocomplete="off" required>
-            <input type="text" id="exam-latin" placeholder="Latinský název" autocomplete="off" required>
-            <input type="text" id="exam-family" placeholder="Čeleď (CZ nebo LAT)" autocomplete="off" required>
-          </div>
-          <button class="btn green" type="submit">Potvrdit odpověď</button>
-        </form>
-      </div>
-    `;
-    requestAnimationFrame(() => {
-      updateExamCountdownLabel();
-      document.getElementById('exam-czech')?.focus();
-    });
-    return;
-  }
-  if (examResultHTML) {
-    area.classList.remove('foto-large');
-    area.innerHTML = examResultHTML;
-    return;
   }
   if (!quizSessionActive) {
     area.classList.remove('foto-large');
@@ -3312,21 +2785,15 @@ function renderQuiz() {
   }
   const p = quizList[quizIdx];
   const d = D(p.latin);
+  const identTips = getIdentificationTips(p.latin, p.tags || []);
+  const identTipsHTML = getQuizIdentTipsHTML(identTips);
   const pct = Math.round(((quizIdx+1)/quizList.length)*100);
   if (quizMode === 'type') {
-    const typeConfig = getQuizTypeConfig(p);
     const photo = d.photos[0] || '';
     const photoSrc = photo ? (photo.startsWith('data:') ? photo : esc(photo)) : '';
-    let questionHTML = '';
-    if (typeConfig.target === 'family_lat') {
-      questionHTML = `<div class="flip-q"><i>${esc(p.latin)}</i></div>`;
-    } else if (typeConfig.target === 'latin') {
-      questionHTML = `<div class="flip-q cz">${esc(p.czech)}</div>`;
-    } else {
-      questionHTML = photoSrc
-        ? `<img class="type-quiz-photo" src="${photoSrc}" alt="${esc(p.latin)}" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<div class=&quot;flip-q&quot;><i>${esc(p.latin)}</i></div>')">`
-        : `<div class="flip-q"><i>${esc(p.latin)}</i></div>`;
-    }
+    const questionHTML = photoSrc
+      ? `<img class="type-quiz-photo" src="${photoSrc}" alt="${esc(p.czech)}" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<div class=&quot;flip-q cz&quot;>${esc(p.czech)}</div>')">`
+      : `<div class="flip-q cz">${esc(p.czech)}</div>`;
     area.innerHTML = `
       <div class="quiz-stage">
         <div class="quiz-meta">
@@ -3334,9 +2801,8 @@ function renderQuiz() {
         </div>
         <div class="progress"><div class="progress-fill" style="width:${pct}%"></div></div>
         <div class="type-quiz-card">${questionHTML}</div>
-        <div class="flip-hint">${typeConfig.promptLabel}</div>
         <div class="type-quiz-input-wrap">
-          <input id="quiz-type-input" type="text" placeholder="${typeConfig.placeholder}" onkeydown="onQuizTypeInputKeydown(event)" autocomplete="off" autocapitalize="off" spellcheck="false">
+          <input id="quiz-type-input" type="text" placeholder="Napiš latinský název…" onkeydown="onQuizTypeInputKeydown(event)" autocomplete="off" autocapitalize="off" spellcheck="false">
           <button class="btn green" id="quiz-type-check" onclick="checkQuizTypeAnswer()">Zkontrolovat</button>
         </div>
         <div id="quiz-type-feedback" class="type-quiz-feedback"></div>
@@ -3364,60 +2830,6 @@ function renderQuiz() {
       area.innerHTML = `<div class="quiz-empty"><div class="quiz-empty-message">Pro režim Foto výběr jsou potřeba alespoň 4 kartičky s fotkou v aktuálním balíčku.</div><button class="btn green" onclick="resetQuiz()">Načíst znovu</button></div>`;
       return;
     }
-    if (mcfotoFinished) {
-      const full = mcfotoResults.filter(r => r.resultKey === 'full');
-      const half = mcfotoResults.filter(r => r.resultKey === 'half');
-      const zero = mcfotoResults.filter(r => r.resultKey === 'zero');
-      const missedFamilyMap = new Map();
-      mcfotoResults.forEach(item => {
-        if (item.resultKey === 'full') return;
-        const key = item.familyLabel || '—';
-        missedFamilyMap.set(key, (missedFamilyMap.get(key) || 0) + 1);
-      });
-      const missedFamilyEntries = Array.from(missedFamilyMap.entries()).sort((a, b) => (b[1] - a[1]) || a[0].localeCompare(b[0], 'cs'));
-      const repeatLabel = missedFamilyEntries.length
-        ? `Budeš si muset zopakovat ${missedFamilyEntries.map(([family]) => family).join(', ')}.`
-        : 'Skvělé — žádné slabé čeledi v tomto kole.';
-      area.innerHTML = `
-        <div class="quiz-stage">
-          <div class="quiz-meta">
-            <span>Hotovo · ${quizList.length} / ${quizList.length}</span>
-          </div>
-          <div class="progress"><div class="progress-fill" style="width:100%"></div></div>
-          <div class="mcfoto-score">${getMcFotoScoreHTML()}</div>
-          <div class="mcfoto-card">
-            <div style="font-size:13px;line-height:1.65;color:var(--text2);">
-              <b>Celkové body:</b> ${formatMcFotoPoints(mcfotoPoints)} / ${quizList.length}<br>
-              <b>Plně správně:</b> ${full.length} · <b>Název ano / čeleď ne:</b> ${half.length} · <b>Minuto:</b> ${zero.length}
-            </div>
-            <div class="mcfoto-breakdown">
-              <div>
-                <h4>✅ Plně správně</h4>
-                <ul>${buildMcFotoBreakdownList(full, 'V tomto kole zatím nic.')}</ul>
-              </div>
-              <div>
-                <h4>🟠 Název ano, čeleď ne</h4>
-                <ul>${buildMcFotoBreakdownList(half, 'Tady žádné položky nejsou.')}</ul>
-              </div>
-              <div>
-                <h4>❌ Minuto (název špatně)</h4>
-                <ul>${buildMcFotoBreakdownList(zero, 'Nic jsi úplně neminul/a.')}</ul>
-              </div>
-            </div>
-            <div style="margin-top:10px;font-size:12px;color:var(--text2);"><b>${esc(repeatLabel)}</b></div>
-            ${missedFamilyEntries.length ? `
-              <div class="mcfoto-missed-families">
-                ${missedFamilyEntries.map(([family, count]) => `<span class="mcfoto-missed-family-badge">${esc(family)} · ${count}×</span>`).join('')}
-              </div>
-            ` : ''}
-            <div class="type-quiz-actions" style="justify-content:flex-end;margin-top:12px;">
-              <button class="btn" onclick="resetQuiz()">Hrát znovu</button>
-            </div>
-          </div>
-        </div>
-      `;
-      return;
-    }
     const frontMaxHeight = largePhotoMode ? photoSizing.frontLarge : photoSizing.frontCompact;
     const frontRadius = largePhotoMode ? 10 : 8;
     const photoCount = quizPhotoSources.length;
@@ -3426,50 +2838,22 @@ function renderQuiz() {
     if (photoCount > 2) frontPhotoMaxWidth = '31%';
     else if (photoCount === 2) frontPhotoMaxWidth = '48%';
     const frontPhotoStyle = `max-height:${frontPhotoMaxHeight}px;max-width:${frontPhotoMaxWidth};width:auto;object-fit:contain;border-radius:${frontRadius}px;`;
-    if (mcfotoCorrectLatin !== p.latin || !mcfotoNameChoices.length || !mcfotoFamilyChoices.length) initMcFotoCardState(p);
-    const nameCorrectIndex = mcfotoNameChoices.findIndex(opt => opt.latin === p.latin);
-    const familyCorrectIndex = mcfotoFamilyChoices.findIndex(opt => opt.family_lat === p.family_lat);
-    const selectedNameIndex = mcfotoNameSelection ? mcfotoNameChoices.findIndex(opt => opt.latin === mcfotoNameSelection.latin) : -1;
-    const selectedFamilyIndex = mcfotoFamilySelection ? mcfotoFamilyChoices.findIndex(opt => opt.family_lat === mcfotoFamilySelection.family_lat) : -1;
-    const nameIsCorrect = selectedNameIndex === nameCorrectIndex && selectedNameIndex !== -1;
+    const options = buildMcFotoChoices(p);
+    mcfotoChoices = options;
+    mcfotoCorrectLatin = p.latin;
     area.innerHTML = `
       <div class="quiz-stage">
         <div class="quiz-meta">
           <span>${quizIdx+1} / ${quizList.length}</span>
         </div>
         <div class="progress"><div class="progress-fill" style="width:${pct}%"></div></div>
-        <div class="mcfoto-score" id="mcfoto-score">${getMcFotoScoreHTML()}</div>
+        <div class="mcfoto-score" id="mcfoto-score">Správně: <b>${mcfotoCorrect}</b> / <b>${mcfotoAnswered}</b></div>
         <div class="mcfoto-card">
           <div class="mcfoto-photos">${
             quizPhotoSources.map(src => `<img class="flip-img" style="${frontPhotoStyle}" src="${src}" onerror="this.style.display='none'">`).join('')
           }</div>
-          <div class="mcfoto-question">
-            <div class="mcfoto-qtitle">Jaký je český název?</div>
-            <div class="mcfoto-options">
-              ${mcfotoNameChoices.map((opt, idx) => {
-                const isCorrect = idx === nameCorrectIndex;
-                const isPicked = idx === selectedNameIndex;
-                const classes = ['btn', 'mcfoto-option'];
-                if (mcfotoNameAnswered && isCorrect) classes.push('correct');
-                if (mcfotoNameAnswered && isPicked && !isCorrect) classes.push('wrong');
-                return `<button class="${classes.join(' ')}" id="mcfoto-opt-name-${idx}" onclick="answerMcFotoName(${idx})" ${mcfotoNameAnswered ? 'disabled' : ''}>${esc(opt.czech)}</button>`;
-              }).join('')}
-            </div>
-            ${mcfotoNameAnswered ? `<div class="mcfoto-feedback ${nameIsCorrect ? 'ok' : 'bad'}">${nameIsCorrect ? '✅ Správně.' : `❌ Správně je <b>${esc(p.czech)}</b>.`}</div>` : ''}
-          </div>
-          <div class="mcfoto-question" ${mcfotoNameAnswered ? '' : 'style="display:none;"'}>
-            <div class="mcfoto-qtitle">Do jaké čeledi patří?</div>
-            <div class="mcfoto-options">
-              ${mcfotoFamilyChoices.map((opt, idx) => {
-                const isCorrect = idx === familyCorrectIndex;
-                const isPicked = idx === selectedFamilyIndex;
-                const classes = ['btn', 'mcfoto-option'];
-                if (mcfotoFamilyAnswered && isCorrect) classes.push('correct');
-                if (mcfotoFamilyAnswered && isPicked && !isCorrect) classes.push('wrong');
-                return `<button class="${classes.join(' ')}" id="mcfoto-opt-family-${idx}" onclick="answerMcFotoFamily(${idx})" ${(mcfotoFamilyAnswered || !mcfotoNameAnswered) ? 'disabled' : ''}>${esc(mcfotoFamilyLabel(opt))}</button>`;
-              }).join('')}
-            </div>
-            ${mcfotoFamilyAnswered ? `<div class="mcfoto-feedback ${(selectedFamilyIndex === familyCorrectIndex && selectedFamilyIndex !== -1) ? 'ok' : 'bad'}">${(selectedFamilyIndex === familyCorrectIndex && selectedFamilyIndex !== -1) ? '✅ Správně.' : `❌ Správně je <b>${esc(mcfotoFamilyLabel(p))}</b>.`}</div>` : ''}
+          <div class="mcfoto-options">
+            ${options.map((opt, idx) => `<button class="btn mcfoto-option" id="mcfoto-opt-${idx}" onclick="answerMcFoto(${idx})">${esc(opt.czech)}</button>`).join('')}
           </div>
         </div>
       </div>
@@ -3502,6 +2886,7 @@ function renderQuiz() {
       <div class="flip-a">${p.czech}</div>
       <div class="flip-a" style="font-size:${latinSize}px;font-style:italic;">${p.latin}</div>
       <div class="flip-family">${p.family_cz} · ${p.family_lat}</div>
+      ${identTipsHTML}
       ${d.funfact ? `<div class="flip-fact">${esc(d.funfact)}</div>` : ''}
       ${confusionHint}`;
   } else {
@@ -3517,6 +2902,7 @@ function renderQuiz() {
       ${photoSrc ? `<img class="flip-img" src="${photoSrc}" onerror="this.style.display='none'">` : ''}
       <div class="flip-a ${aCls}">${aText}</div>
       <div class="flip-family">${p.family_cz} · ${p.family_lat}</div>
+      ${identTipsHTML}
       ${d.funfact ? `<div class="flip-fact">${esc(d.funfact)}</div>` : ''}
       ${confusionHint}`;
   }
@@ -3552,20 +2938,8 @@ function flipQuiz() {
   document.getElementById('qflip')?.classList.toggle('flipped', quizFlipped);
 }
 
-function qNext() {
-  quizIdx = (quizIdx + 1) % quizList.length;
-  quizFlipped = false;
-  mcfotoLocked = false;
-  mcfotoCorrectLatin = '';
-  renderQuiz();
-}
-function qPrev() {
-  quizIdx = (quizIdx - 1 + quizList.length) % quizList.length;
-  quizFlipped = false;
-  mcfotoLocked = false;
-  mcfotoCorrectLatin = '';
-  renderQuiz();
-}
+function qNext() { quizIdx=(quizIdx+1)%quizList.length; quizFlipped=false; mcfotoLocked=false; renderQuiz(); }
+function qPrev() { quizIdx=(quizIdx-1+quizList.length)%quizList.length; quizFlipped=false; mcfotoLocked=false; renderQuiz(); }
 
 // Anki/Quizlet style: re-insert "Nevím" card back soon (2-4 positions ahead)
 function qFlag() {
@@ -3741,211 +3115,19 @@ function startFlaggedQuiz() {
 
 // ── Matching quiz ──
 let matchMode = 'ptof'; // plant-to-family or family-to-plants
-let matchOverviewMode = false;
-let matchExpandedFamilies = new Set();
 let matchSelected = null;
 let matchCorrect = 0;
 let matchTotal = 0;
 let matchPairs = []; // [{plant, family_lat, family_cz}]
 
-function setMatchUiMode() {
-  const gameShell = document.getElementById('match-game-shell');
-  const overviewShell = document.getElementById('match-overview-shell');
-  const score = document.getElementById('match-score');
-  const restartBtn = document.getElementById('match-new-round-btn');
-  if (gameShell) gameShell.style.display = matchOverviewMode ? 'none' : '';
-  if (overviewShell) overviewShell.style.display = matchOverviewMode ? '' : 'none';
-  if (score) score.style.display = matchOverviewMode ? 'none' : '';
-  if (restartBtn) restartBtn.style.display = matchOverviewMode ? 'none' : '';
-  ['ptof','ftop'].forEach(k => document.getElementById('mm-'+k)?.classList.toggle('active', !matchOverviewMode && k===matchMode));
-  document.getElementById('mm-overview')?.classList.toggle('active', matchOverviewMode);
-}
-
 function setMatchMode(m) {
-  matchOverviewMode = false;
   matchMode = m;
-  setMatchUiMode();
+  ['ptof','ftop'].forEach(k => document.getElementById('mm-'+k).classList.toggle('active', k===m));
   const dir = m==='ptof'
     ? 'Klikni na rostlinu vlevo, pak na správnou čeleď vpravo.'
     : 'Klikni na čeleď vlevo, pak na rostliny které do ní patří — postupně všechny.';
   document.getElementById('match-dir').textContent = dir;
   startMatch();
-}
-
-function setMatchOverviewMode(enabled = true) {
-  matchOverviewMode = !!enabled;
-  setMatchUiMode();
-  if (matchOverviewMode) {
-    renderFamilyOverview();
-    return;
-  }
-  startMatch();
-}
-
-function splitTraitValues(value) {
-  if (Array.isArray(value)) {
-    return value.map(v => String(v || '').trim().toLowerCase()).filter(Boolean);
-  }
-  return String(value || '')
-    .split(/[\/,;|]+/)
-    .map(v => v.trim().toLowerCase())
-    .filter(Boolean);
-}
-
-function formatTopTraits(items) {
-  if (!items.length) return '—';
-  return items.map(x => `${esc(x.value)} (${x.count})`).join(', ');
-}
-
-function aggregateMostCommon(values, limit = 3) {
-  const counts = new Map();
-  values.forEach(v => counts.set(v, (counts.get(v) || 0) + 1));
-  return [...counts.entries()]
-    .sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0], 'cs'))
-    .slice(0, limit)
-    .map(([value, count]) => ({value, count}));
-}
-
-function getPlantSuccessRate(plant) {
-  const d = D(plant.latin);
-  const wrong = Math.max(0, Number(d.wrongCount) || 0);
-  const correct = Math.max(0, Number(d.correctStreak) || 0);
-  const attempts = wrong + correct;
-  let rate;
-  if (attempts > 0) {
-    rate = correct / attempts;
-  } else if (d.status === 'learned') {
-    rate = 1;
-  } else if (d.status === 'review') {
-    rate = 0.35;
-  } else {
-    rate = 0.5;
-  }
-  if (d.flagged) rate -= 0.25;
-  return Math.min(1, Math.max(0, rate));
-}
-
-function formatPlantCount(count) {
-  if (count === 1) return '1 rostlina';
-  if (count >= 2 && count <= 4) return `${count} rostliny`;
-  return `${count} rostlin`;
-}
-
-function getFamilyOverviewData() {
-  const grouped = new Map();
-  getAllPlants().forEach(plant => {
-    const key = plant.family_lat || `__fam__${plant.family_cz || ''}`;
-    if (!grouped.has(key)) grouped.set(key, []);
-    grouped.get(key).push(plant);
-  });
-
-  return [...grouped.values()].map(plants => {
-    const family_lat = plants[0]?.family_lat || '';
-    const family_cz = plants[0]?.family_cz || '';
-    const tags = aggregateMostCommon(plants.flatMap(p => splitTraitValues(p.tags || [])), 4);
-    const habitats = aggregateMostCommon(plants.flatMap(p => splitTraitValues(p.habitat)), 3);
-    const lifeForms = aggregateMostCommon(plants.flatMap(p => splitTraitValues(p.life_form)), 3);
-    const toxicities = aggregateMostCommon(plants.flatMap(p => splitTraitValues(p.toxic)), 3);
-    const successRate = plants.reduce((sum, p) => sum + getPlantSuccessRate(p), 0) / Math.max(1, plants.length);
-    const keyPoints = [
-      lifeForms[0]?.value,
-      habitats[0]?.value,
-      tags[0]?.value,
-      tags[1]?.value,
-      toxicities[0]?.value && toxicities[0].value !== 'ne' ? toxicities[0].value : ''
-    ].filter(Boolean);
-    return {
-      family_lat,
-      family_cz,
-      plants,
-      successRate,
-      tags,
-      habitats,
-      lifeForms,
-      toxicities,
-      summary: keyPoints.length ? `Většina: ${keyPoints.join(', ')}` : 'Společné znaky nejsou zatím dostupné.'
-    };
-  }).sort((a,b) => a.successRate - b.successRate || b.plants.length - a.plants.length || a.family_cz.localeCompare(b.family_cz, 'cs'));
-}
-
-function startFamilyOverviewQuiz(familyLatEnc) {
-  const familyLat = decodeURIComponent(familyLatEnc || '');
-  if (!familyLat) return;
-  showTab('quiz');
-  const selLat = document.getElementById('quiz-family');
-  const selCz = document.getElementById('quiz-family-cz');
-  const src = document.getElementById('quiz-source');
-  if (selLat) selLat.value = familyLat;
-  if (selCz) selCz.value = '';
-  if (src) src.value = 'all';
-  resetQuiz();
-  startQuiz();
-}
-
-function toggleMatchFamilyDetails(familyLatEnc, ev) {
-  if (ev) ev.stopPropagation();
-  const key = decodeURIComponent(familyLatEnc || '');
-  if (!key) return;
-  if (matchExpandedFamilies.has(key)) matchExpandedFamilies.delete(key);
-  else matchExpandedFamilies.add(key);
-  renderFamilyOverview();
-}
-
-function onFamilyOverviewCardKey(event, familyLatEnc) {
-  if (event.key === 'Enter' || event.key === ' ') {
-    event.preventDefault();
-    startFamilyOverviewQuiz(familyLatEnc);
-  }
-}
-
-function renderFamilyOverview() {
-  const list = document.getElementById('match-overview-list');
-  if (!list) return;
-  const families = getFamilyOverviewData();
-  if (!families.length) {
-    list.innerHTML = `<div class="family-overview-empty">Žádné čeledi k zobrazení.</div>`;
-    return;
-  }
-  list.innerHTML = families.map(f => {
-    const familyLatEsc = esc(f.family_lat || '');
-    const familyCzEsc = esc(f.family_cz || '');
-    const successPct = Math.round(f.successRate * 100);
-    const famEnc = encodeURIComponent(f.family_lat || '');
-    const expanded = matchExpandedFamilies.has(f.family_lat || '');
-    const thumbs = f.plants.map(p => {
-      const photo = D(p.latin).photos[0];
-      const safeAlt = esc(`${p.czech} (${p.latin})`);
-      return photo
-        ? `<div class="family-overview-thumb"><img src="${esc(photo)}" alt="${safeAlt}" loading="lazy" onerror="this.parentNode.textContent='bez fotky'"></div>`
-        : `<div class="family-overview-thumb" title="${safeAlt}">${esc((p.czech || p.latin || '?').slice(0, 2).toUpperCase())}</div>`;
-    }).join('');
-    return `
-      <div class="family-overview-card" role="button" tabindex="0" onclick="startFamilyOverviewQuiz('${famEnc}')" onkeydown="onFamilyOverviewCardKey(event,'${famEnc}')">
-        <div class="family-overview-header">
-          <div class="family-overview-main">
-            <div class="family-overview-name">${familyCzEsc} · <i>${familyLatEsc}</i></div>
-            <div class="family-overview-meta">
-              <span>${formatPlantCount(f.plants.length)}</span>
-              <span>Úspěšnost: ${successPct}%</span>
-            </div>
-            <div class="family-overview-summary"><b>Společné znaky:</b> ${esc(f.summary)}</div>
-          </div>
-          <button class="family-overview-expand" onclick="toggleMatchFamilyDetails('${famEnc}', event)">${expanded ? 'Sbalit' : 'Rozbalit'}</button>
-        </div>
-        ${expanded ? `
-          <div class="family-overview-details">
-            <div class="family-overview-thumbs">${thumbs}</div>
-            <div class="family-overview-traits">
-              <div class="family-overview-trait"><b>Tagy:</b> ${formatTopTraits(f.tags)}</div>
-              <div class="family-overview-trait"><b>Biotop:</b> ${formatTopTraits(f.habitats)}</div>
-              <div class="family-overview-trait"><b>Životní forma:</b> ${formatTopTraits(f.lifeForms)}</div>
-              <div class="family-overview-trait"><b>Toxicita:</b> ${formatTopTraits(f.toxicities)}</div>
-            </div>
-          </div>
-        ` : ''}
-      </div>
-    `;
-  }).join('');
 }
 
 function shuffle(arr) {
@@ -3958,11 +3140,6 @@ function shuffle(arr) {
 }
 
 function startMatch() {
-  setMatchUiMode();
-  if (matchOverviewMode) {
-    renderFamilyOverview();
-    return;
-  }
   matchSelected = null;
   matchCorrect = 0;
   const allPlants = getAllPlants();
@@ -3992,7 +3169,6 @@ function startMatch() {
 }
 
 function updateMatchScore() {
-  if (matchOverviewMode) return;
   document.getElementById('match-score').innerHTML =
     `Správně: <b>${matchCorrect}</b> / <b>${matchTotal}</b>`;
 }
