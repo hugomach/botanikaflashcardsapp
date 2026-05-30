@@ -489,8 +489,6 @@ body.quiz-open { overflow: hidden; }
           <div class="quiz-mode-toggle">
             <button id="qm-foto" class="active" onclick="setQuizMode('foto')">Foto → název</button>
             <button id="qm-mcfoto" onclick="setQuizMode('mcfoto')">Foto výběr</button>
-            <button id="qm-lat" onclick="setQuizMode('lat')">LAT → CZ</button>
-            <button id="qm-cz" onclick="setQuizMode('cz')">CZ → LAT</button>
             <button id="qm-fam" onclick="setQuizMode('fam')">Čeleď</button>
             <button id="qm-type" onclick="setQuizMode('type')">Psaní ✏️</button>
           </div>
@@ -2433,7 +2431,7 @@ function quizOverlayBgClick(e) {
 // ── Quiz ──
 function setQuizMode(m) {
   quizMode = m;
-  ['foto','mcfoto','lat','cz','fam','type'].forEach(k => document.getElementById('qm-'+k).classList.toggle('active',k===m));
+  ['foto','mcfoto','fam','type'].forEach(k => document.getElementById('qm-'+k).classList.toggle('active',k===m));
   const photoSizeToggle = document.getElementById('quiz-photo-size-toggle');
   if (photoSizeToggle) photoSizeToggle.style.display = (m === 'foto' || m === 'mcfoto') ? 'inline-flex' : 'none';
   resetQuiz();
@@ -2893,10 +2891,8 @@ function renderQuiz() {
     const photo = d.photos[0] || '';
     const photoSrc = photo ? (photo.startsWith('data:') ? photo : esc(photo)) : '';
     let qText='', aText='', qCls='', aCls='';
-    if (quizMode==='lat') { qText=p.latin; aText=p.czech; qCls=''; aCls='cz'; }
-    else if (quizMode==='cz') { qText=p.czech; aText=p.latin; qCls='cz'; aCls=''; }
-    else { qText=p.latin; aText=p.family_cz+' ('+p.family_lat+')'; qCls=''; aCls='cz'; }
-    const hint = quizMode==='lat'?'Jaký je český název?':quizMode==='cz'?'Jaký je latinský název?':'Jaká je čeleď?';
+    qText=p.latin; aText=p.family_cz+' ('+p.family_lat+')'; qCls=''; aCls='cz';
+    const hint = 'Jaká je čeleď?';
     frontHTML = `<div class="flip-hint">${hint}</div><div class="flip-q ${qCls}">${qText}</div><div class="flip-hint" style="margin-top:6px;">klepni pro odpověď</div>`;
     backHTML = `
       ${photoSrc ? `<img class="flip-img" src="${photoSrc}" onerror="this.style.display='none'">` : ''}
