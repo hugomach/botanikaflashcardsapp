@@ -195,6 +195,48 @@ body.quiz-open { overflow: hidden; }
 .quiz-empty-message { font-size: 14px; color: var(--text2); }
 .quiz-empty { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; }
 
+
+.exam-setup-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 16px; max-width: 680px; margin: 0 auto; }
+.exam-setup-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+.exam-setup-sub { font-size: 13px; color: var(--text2); margin-bottom: 12px; }
+.exam-count-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+.exam-count-option { border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); padding: 10px 12px; font-size: 13px; cursor: pointer; text-align: left; }
+.exam-count-option.active { border-color: var(--green); background: var(--green-light); color: var(--green-dark); font-weight: 600; }
+.exam-count-option:disabled { opacity: 0.55; cursor: not-allowed; }
+.exam-setup-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.exam-progress { font-size: 14px; font-weight: 600; }
+.exam-timer { font-size: 14px; color: var(--text2); font-variant-numeric: tabular-nums; }
+.exam-run-photos { background: var(--surface2); border: 1px solid var(--border); border-radius: 14px; padding: 10px; margin: 0.6rem 0 0.8rem; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; }
+.exam-run-photo { max-height: min(60dvh, 500px); max-width: 100%; width: auto; border-radius: 10px; object-fit: contain; }
+.exam-input-grid { display: grid; gap: 10px; }
+.exam-input-grid input { font-size: 16px; padding: 11px 12px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); outline: none; }
+.exam-input-grid input:focus { border-color: var(--green); }
+.exam-next-row { margin-top: 10px; display: flex; justify-content: flex-end; }
+.exam-results-wrap { display: grid; gap: 12px; }
+.exam-results-head { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px; }
+.exam-score-line { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+.exam-grade-line { font-size: 13px; color: var(--text2); margin-bottom: 6px; }
+.exam-breakdown { font-size: 13px; color: var(--text2); }
+.exam-results-list { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px; max-height: min(45dvh, 460px); overflow-y: auto; display: grid; gap: 8px; }
+.exam-result-item { border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: var(--surface2); display: grid; grid-template-columns: 82px 1fr; gap: 10px; }
+.exam-result-thumb { width: 82px; height: 82px; object-fit: cover; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); }
+.exam-result-thumb-empty { width: 82px; height: 82px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text3); }
+.exam-result-rows { display: grid; gap: 4px; }
+.exam-result-row { font-size: 12px; line-height: 1.4; padding: 5px 7px; border-radius: 8px; border: 1px solid transparent; }
+.exam-result-row.exact { background: var(--green-light); border-color: #9fe1cb; color: var(--green-dark); }
+.exam-result-row.close { background: var(--amber-light); border-color: #f0c37b; color: #854F0B; }
+.exam-result-row.wrong { background: #fff0ee; border-color: #f5c4b3; color: var(--flag); }
+.exam-repeat-line { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; font-size: 13px; color: var(--text2); }
+.exam-history { margin-top: 0.65rem; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 8px 10px; }
+.exam-history-title { font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
+.exam-history-table-wrap { overflow-x: auto; }
+.exam-history-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.exam-history-table th, .exam-history-table td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.exam-history-table th { color: var(--text3); font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; }
+.exam-history-table tr:last-child td { border-bottom: none; }
+.exam-history-empty { font-size: 12px; color: var(--text3); }
+
+
 /* Group filter chips */
 .filter-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 0.75rem; }
 .filter-all-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; padding: 2px 0; margin-bottom: 4px; }
@@ -501,7 +543,12 @@ body.quiz-open { overflow: hidden; }
         </div>
         <div class="quiz-setup-actions">
           <button class="btn green" id="quiz-start-btn" onclick="startQuiz()">Spustit kvíz</button>
+          <button class="btn" id="quiz-exam-btn" onclick="openExamSetup()">🎓 Simulace zkoušky</button>
           <div class="quiz-setup-note" id="quiz-setup-note"></div>
+        </div>
+        <div class="exam-history" id="exam-history-box">
+          <div class="exam-history-title">Poslední simulace</div>
+          <div id="exam-history-content" class="exam-history-empty">Zatím bez výsledků.</div>
         </div>
         <div class="daily-progress" id="daily-progress-box">
           <div class="daily-progress-label" id="daily-progress-label">Dnes: 0/20 kartiček</div>
@@ -743,8 +790,21 @@ let syncTimer = null;
 let quizList = [], quizIdx = 0, quizFlipped = false, quizMode = 'foto', quizPhotoSize = 'compact';
 let quizTypeAutoAdvanceTimer = null;
 let quizSessionActive = false;
+let quizSessionKind = null; // 'regular' | 'exam'
 let quizSessionStats = { startedAt: 0, total: 0, actions: 0, flagged: 0, review: 0, learned: 0, flips: 0, dailyGoalReached: false };
 let quizLastSummary = null;
+let examTimerInterval = null;
+let examState = {
+  stage: 'idle', // idle | setup | running | results
+  pool: [],
+  questionCountChoice: '10',
+  questions: [],
+  idx: 0,
+  startedAt: 0,
+  elapsedSeconds: 0,
+  answers: [],
+  result: null
+};
 let mcfotoCorrect = 0, mcfotoAnswered = 0, mcfotoLocked = false, mcfotoChoices = [], mcfotoCorrectLatin = '';
 let dirty = false;
 let activeGroup = '';
@@ -2420,6 +2480,10 @@ function setQuizOverlayOpen(isOpen) {
 
 function closeQuizOverlay() {
   if (quizSessionActive) {
+    if (quizSessionKind === 'exam') {
+      exitExamSession();
+      return;
+    }
     finishQuizSession();
     return;
   }
@@ -2457,6 +2521,7 @@ function renderQuizSetup() {
   if (photoSizeToggle) photoSizeToggle.style.display = (quizMode === 'foto' || quizMode === 'mcfoto') ? 'inline-flex' : 'none';
   if (setupPanel) setupPanel.style.display = quizSessionActive ? 'none' : '';
   if (setupNote && !quizSessionActive) setupNote.textContent = `V balíčku je ${quizList.length} kartiček.`;
+  if (!quizSessionActive) renderExamHistory();
   if (summaryBox) {
     if (quizLastSummary && !quizSessionActive) {
       summaryBox.style.display = '';
@@ -2467,6 +2532,405 @@ function renderQuizSetup() {
     }
   }
   renderDailyProgress();
+}
+
+
+function stripDiacritics(value) {
+  return String(value || '').normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+function normalizeExamAnswer(value) {
+  return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function formatDuration(seconds) {
+  const safe = Math.max(0, Number(seconds) || 0);
+  const mins = Math.floor(safe / 60);
+  const secs = safe % 60;
+  return `${mins}:${String(secs).padStart(2, '0')}`;
+}
+
+function formatExamDate(isoDate) {
+  if (!isoDate) return '—';
+  const dt = new Date(isoDate);
+  if (Number.isNaN(dt.getTime())) return '—';
+  return dt.toLocaleString('cs-CZ', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' });
+}
+
+function getExamHistory() {
+  const raw = userData.__examHistory;
+  return Array.isArray(raw) ? raw.filter(item => item && typeof item === 'object') : [];
+}
+
+function renderExamHistory() {
+  const box = document.getElementById('exam-history-box');
+  const content = document.getElementById('exam-history-content');
+  if (!box || !content) return;
+  const items = getExamHistory().slice(-5).reverse();
+  if (!items.length) {
+    content.className = 'exam-history-empty';
+    content.textContent = 'Zatím bez výsledků.';
+    return;
+  }
+  content.className = 'exam-history-table-wrap';
+  content.innerHTML = `
+    <table class="exam-history-table">
+      <thead>
+        <tr><th>datum</th><th>skóre</th><th>čas</th></tr>
+      </thead>
+      <tbody>
+        ${items.map(item => `<tr>
+          <td>${esc(formatExamDate(item.date))}</td>
+          <td>${Math.round(Number(item.score) || 0)} %</td>
+          <td>${esc(formatDuration(Number(item.timeSeconds) || 0))}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function clearExamTimer() {
+  if (!examTimerInterval) return;
+  clearInterval(examTimerInterval);
+  examTimerInterval = null;
+}
+
+function updateExamTimerDisplay() {
+  const timerEl = document.getElementById('exam-timer');
+  if (!timerEl || examState.stage !== 'running') return;
+  const elapsed = Math.max(0, Math.round((Date.now() - examState.startedAt) / 1000));
+  timerEl.textContent = formatDuration(elapsed);
+}
+
+function startExamTimer() {
+  clearExamTimer();
+  updateExamTimerDisplay();
+  examTimerInterval = setInterval(updateExamTimerDisplay, 1000);
+}
+
+function getExamGradeLabel(score) {
+  if (score < 50) return 'Potřebuješ víc procvičovat';
+  if (score < 70) return 'Skoro tam';
+  if (score < 90) return 'Dobře!';
+  return 'Výborně, jsi připraven/a na zkoušku!';
+}
+
+function getExamComparison(givenRaw, correctRaw) {
+  const strictGiven = normalizeExamAnswer(givenRaw);
+  const strictCorrect = normalizeExamAnswer(correctRaw);
+  const looseGiven = stripDiacritics(strictGiven);
+  const looseCorrect = stripDiacritics(strictCorrect);
+  if (!looseGiven) return { type: 'wrong', accepted: false };
+  if (strictGiven === strictCorrect) return { type: 'exact', accepted: true };
+  const maxLen = Math.max(looseGiven.length, looseCorrect.length);
+  const threshold = maxLen <= 8 ? 2 : 3;
+  const dist = levenshtein(looseGiven, looseCorrect);
+  if (looseGiven === looseCorrect || dist <= threshold) return { type: 'close', accepted: true };
+  return { type: 'wrong', accepted: false };
+}
+
+function getExamPoolPlants() {
+  const fam = document.getElementById('quiz-family').value;
+  const famCz = document.getElementById('quiz-family-cz').value;
+  return getAllPlants().filter(p => {
+    const d = D(p.latin);
+    if (!d.photos.length) return false;
+    if (activeQuizGroups.length && !activeQuizGroups.includes(p.group)) return false;
+    if (activeQuizLFs.length && !activeQuizLFs.includes(p.life_form)) return false;
+    if (activeQuizHabs.length && !activeQuizHabs.some(h => p.habitat.includes(h))) return false;
+    if (activeQuizToxes.length && !activeQuizToxes.includes(p.toxic)) return false;
+    if (fam && p.family_lat !== fam) return false;
+    if (famCz && p.family_cz !== famCz) return false;
+    return true;
+  });
+}
+
+function openExamSetup() {
+  const pool = getExamPoolPlants();
+  quizSessionKind = 'exam';
+  quizSessionActive = true;
+  quizLastSummary = null;
+  examState = {
+    stage: 'setup',
+    pool,
+    questionCountChoice: '10',
+    questions: [],
+    idx: 0,
+    startedAt: 0,
+    elapsedSeconds: 0,
+    answers: [],
+    result: null
+  };
+  if (pool.length < 10) {
+    if (pool.length >= 1) examState.questionCountChoice = 'all';
+  }
+  clearExamTimer();
+  lastFocusedBeforeQuiz = document.activeElement;
+  setQuizOverlayOpen(true);
+  renderQuizSetup();
+  renderQuiz();
+}
+
+function exitExamSession() {
+  clearExamTimer();
+  quizSessionActive = false;
+  quizSessionKind = null;
+  examState = {
+    stage: 'idle',
+    pool: [],
+    questionCountChoice: '10',
+    questions: [],
+    idx: 0,
+    startedAt: 0,
+    elapsedSeconds: 0,
+    answers: [],
+    result: null
+  };
+  setQuizOverlayOpen(false);
+  resetQuiz();
+}
+
+function setExamQuestionCount(choice) {
+  if (examState.stage !== 'setup') return;
+  examState.questionCountChoice = String(choice);
+  renderQuiz();
+}
+
+function startExamSimulation() {
+  if (quizSessionKind !== 'exam' || examState.stage !== 'setup') return;
+  const pool = examState.pool || [];
+  const requested = examState.questionCountChoice === 'all' ? pool.length : Number(examState.questionCountChoice);
+  const total = Number.isFinite(requested) ? Math.min(Math.max(1, requested), pool.length) : pool.length;
+  if (!pool.length || !total) {
+    renderQuiz();
+    return;
+  }
+  examState.questions = shuffle(pool).slice(0, total);
+  examState.idx = 0;
+  examState.answers = [];
+  examState.result = null;
+  examState.stage = 'running';
+  examState.startedAt = Date.now();
+  examState.elapsedSeconds = 0;
+  startExamTimer();
+  renderQuiz();
+}
+
+function onExamInputKeydown(event) {
+  if (event.key !== 'Enter') return;
+  event.preventDefault();
+  submitExamAnswer();
+}
+
+function submitExamAnswer() {
+  if (quizSessionKind !== 'exam' || examState.stage !== 'running') return;
+  const current = examState.questions[examState.idx];
+  if (!current) return;
+  const d = D(current.latin);
+  const valName = document.getElementById('exam-name-input')?.value || '';
+  const valFamCz = document.getElementById('exam-family-cz-input')?.value || '';
+  const valFamLat = document.getElementById('exam-family-lat-input')?.value || '';
+
+  const nameRes = getExamComparison(valName, current.czech);
+  const famCzRes = getExamComparison(valFamCz, current.family_cz);
+  const famLatRes = getExamComparison(valFamLat, current.family_lat);
+
+  examState.answers.push({
+    plantLatin: current.latin,
+    plantCzech: current.czech,
+    familyCz: current.family_cz,
+    familyLat: current.family_lat,
+    photo: d.photos[0] || '',
+    values: {
+      name: { typed: valName, correct: current.czech, type: nameRes.type, accepted: nameRes.accepted },
+      familyCz: { typed: valFamCz, correct: current.family_cz, type: famCzRes.type, accepted: famCzRes.accepted },
+      familyLat: { typed: valFamLat, correct: current.family_lat, type: famLatRes.type, accepted: famLatRes.accepted }
+    }
+  });
+
+  examState.idx += 1;
+  if (examState.idx >= examState.questions.length) {
+    finishExamSimulation();
+    return;
+  }
+  renderQuiz();
+}
+
+function buildExamResults() {
+  const totalQuestions = examState.questions.length;
+  const totalFields = totalQuestions * 3;
+  let exact = 0;
+  let close = 0;
+  let nameScore = 0;
+  let familyCzScore = 0;
+  let familyLatScore = 0;
+  const familyMisses = {};
+
+  examState.answers.forEach(item => {
+    const vals = item.values;
+    if (vals.name.type === 'exact') exact++;
+    if (vals.name.type === 'close') close++;
+    if (vals.name.accepted) nameScore++;
+    else familyMisses[item.familyCz] = (familyMisses[item.familyCz] || 0) + 1;
+
+    if (vals.familyCz.type === 'exact') exact++;
+    if (vals.familyCz.type === 'close') close++;
+    if (vals.familyCz.accepted) familyCzScore++;
+    else familyMisses[item.familyCz] = (familyMisses[item.familyCz] || 0) + 1;
+
+    if (vals.familyLat.type === 'exact') exact++;
+    if (vals.familyLat.type === 'close') close++;
+    if (vals.familyLat.accepted) familyLatScore++;
+    else familyMisses[item.familyCz] = (familyMisses[item.familyCz] || 0) + 1;
+  });
+
+  const correctTotal = nameScore + familyCzScore + familyLatScore;
+  const score = totalFields ? (correctTotal / totalFields) * 100 : 0;
+  const missesByFamily = Object.entries(familyMisses)
+    .map(([family, count]) => ({ family, count }))
+    .sort((a, b) => b.count - a.count || a.family.localeCompare(b.family, 'cs'));
+
+  return {
+    totalQuestions,
+    totalFields,
+    exact,
+    close,
+    correctTotal,
+    score,
+    nameScore,
+    familyCzScore,
+    familyLatScore,
+    missesByFamily
+  };
+}
+
+function finishExamSimulation() {
+  clearExamTimer();
+  examState.elapsedSeconds = Math.max(0, Math.round((Date.now() - examState.startedAt) / 1000));
+  examState.result = buildExamResults();
+  examState.stage = 'results';
+
+  const history = getExamHistory();
+  history.push({
+    date: new Date().toISOString(),
+    score: examState.result.score,
+    totalQuestions: examState.result.totalQuestions,
+    nameScore: examState.result.nameScore,
+    familyCzScore: examState.result.familyCzScore,
+    familyLatScore: examState.result.familyLatScore,
+    timeSeconds: examState.elapsedSeconds
+  });
+  userData.__examHistory = history;
+  scheduleSave();
+  renderQuizSetup();
+  renderQuiz();
+}
+
+function closeExamResults() {
+  exitExamSession();
+}
+
+function renderExamMode(area) {
+  const poolSize = examState.pool.length;
+  if (examState.stage === 'setup') {
+    const options = [
+      { key: '10', label: '10 otázek', count: 10 },
+      { key: '20', label: '20 otázek', count: 20 },
+      { key: '30', label: '30 otázek', count: 30 },
+      { key: 'all', label: `Všechny (${poolSize})`, count: poolSize }
+    ];
+    area.classList.remove('foto-large');
+    area.innerHTML = `
+      <div class="exam-setup-card">
+        <div class="exam-setup-title">🎓 Simulace zkoušky</div>
+        <div class="exam-setup-sub">Vyber počet otázek. Losuje se náhodně jen z filtrovaných rostlin s fotkou.</div>
+        <div class="exam-count-options">
+          ${options.map(opt => {
+            const disabled = opt.key !== 'all' ? poolSize < opt.count : poolSize < 1;
+            return `<button class="exam-count-option${examState.questionCountChoice === opt.key ? ' active' : ''}" onclick="setExamQuestionCount('${opt.key}')" ${disabled ? 'disabled' : ''}>${opt.label}</button>`;
+          }).join('')}
+        </div>
+        <div class="quiz-setup-note" style="margin-bottom:10px;">K dispozici: <b>${poolSize}</b> rostlin.</div>
+        <div class="exam-setup-actions">
+          <button class="btn" onclick="closeExamResults()">Zavřít</button>
+          <button class="btn green" onclick="startExamSimulation()" ${poolSize ? '' : 'disabled'}>Spustit simulaci</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  if (examState.stage === 'running') {
+    const total = examState.questions.length;
+    const idx = examState.idx;
+    const p = examState.questions[idx];
+    const d = D(p.latin);
+    const photos = d.photos.map(src => src.startsWith('data:') ? src : esc(src));
+    const pct = total ? Math.round(((idx + 1) / total) * 100) : 0;
+    area.innerHTML = `
+      <div class="quiz-stage">
+        <div class="quiz-meta">
+          <span class="exam-progress">Otázka ${idx + 1} / ${total}</span>
+          <span class="exam-timer" id="exam-timer">0:00</span>
+        </div>
+        <div class="progress"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <div class="exam-run-photos">
+          ${photos.map(src => `<img class="exam-run-photo" src="${src}" alt="${esc(p.czech)}" onerror="this.style.display='none'">`).join('')}
+        </div>
+        <div class="exam-input-grid">
+          <input id="exam-name-input" type="text" placeholder="Český název rostliny…" onkeydown="onExamInputKeydown(event)" autocomplete="off" autocapitalize="off" spellcheck="false">
+          <input id="exam-family-cz-input" type="text" placeholder="Česká čeleď…" onkeydown="onExamInputKeydown(event)" autocomplete="off" autocapitalize="off" spellcheck="false">
+          <input id="exam-family-lat-input" type="text" placeholder="Latinská čeleď…" onkeydown="onExamInputKeydown(event)" autocomplete="off" autocapitalize="off" spellcheck="false">
+        </div>
+        <div class="exam-next-row"><button class="btn green" onclick="submitExamAnswer()">Další →</button></div>
+      </div>
+    `;
+    const first = document.getElementById('exam-name-input');
+    if (first) first.focus();
+    updateExamTimerDisplay();
+    return;
+  }
+
+  if (examState.stage === 'results' && examState.result) {
+    const result = examState.result;
+    const scoreRounded = Math.round(result.score);
+    const gradeLabel = getExamGradeLabel(result.score);
+    const repeatLine = result.missesByFamily.length
+      ? `Zopakuj si: ${result.missesByFamily.map(item => `${esc(item.family)} (${item.count} chyby)`).join(', ')}`
+      : 'Zopakuj si: skvělé, bez chyb!';
+    area.classList.remove('foto-large');
+    area.innerHTML = `
+      <div class="exam-results-wrap">
+        <div class="exam-results-head">
+          <div class="exam-score-line">Skóre: ${scoreRounded}%</div>
+          <div class="exam-grade-line">${gradeLabel}</div>
+          <div class="exam-breakdown">Čas: <b>${formatDuration(examState.elapsedSeconds)}</b></div>
+          <div class="exam-breakdown">Názvy rostlin: <b>${result.nameScore}/${result.totalQuestions}</b> · České čeledi: <b>${result.familyCzScore}/${result.totalQuestions}</b> · Latinské čeledi: <b>${result.familyLatScore}/${result.totalQuestions}</b></div>
+          <div class="exam-breakdown">Přesně: <b>${result.exact}</b> · Skoro: <b>${result.close}</b> · Chybně: <b>${result.totalFields - result.correctTotal}</b></div>
+        </div>
+        <div class="exam-results-list">
+          ${examState.answers.map((item, qIndex) => {
+            const photoSrc = item.photo ? (item.photo.startsWith('data:') ? item.photo : esc(item.photo)) : '';
+            const renderRow = (label, data) => `<div class="exam-result-row ${data.type}"><b>${label}</b> · tvoje: <b>${esc(data.typed || '—')}</b> · správně: <b>${esc(data.correct)}</b></div>`;
+            return `<div class="exam-result-item">
+              ${photoSrc ? `<img class="exam-result-thumb" src="${photoSrc}" alt="${esc(item.plantCzech)}" onerror="this.style.display='none'">` : '<div class="exam-result-thumb-empty">bez foto</div>'}
+              <div class="exam-result-rows">
+                <div style="font-size:12px;color:var(--text2);margin-bottom:2px;">${qIndex + 1}. <b>${esc(item.plantCzech)}</b> <span style="color:var(--text3);">(${esc(item.plantLatin)})</span></div>
+                ${renderRow('Český název', item.values.name)}
+                ${renderRow('Česká čeleď', item.values.familyCz)}
+                ${renderRow('Latinská čeleď', item.values.familyLat)}
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+        <div class="exam-repeat-line">${repeatLine}</div>
+        <div style="display:flex;justify-content:flex-end;"><button class="btn green" onclick="closeExamResults()">Hotovo</button></div>
+      </div>
+    `;
+    return;
+  }
+
+  area.innerHTML = '<div class="quiz-empty"><div class="quiz-empty-message">Simulaci se nepodařilo připravit.</div></div>';
 }
 
 function resetQuizStats() {
@@ -2482,6 +2946,8 @@ function trackQuizAction(type) {
 }
 
 function startQuiz() {
+  clearExamTimer();
+  quizSessionKind = 'regular';
   quizList = buildQuizDeck();
   quizIdx = 0;
   quizFlipped = false;
@@ -2512,6 +2978,7 @@ function finishQuizSession() {
     ${quizSessionStats.dailyGoalReached ? '<br>🎉 Denní cíl splněn! Skvělá práce.' : ''}
   `;
   quizSessionActive = false;
+  quizSessionKind = null;
   quizFlipped = false;
   resetQuiz();
   setQuizOverlayOpen(false);
@@ -2562,6 +3029,12 @@ function buildQuizDeck() {
 }
 
 function resetQuiz() {
+  if (quizSessionKind === 'exam' && quizSessionActive) {
+    renderQuizSetup();
+    renderQuiz();
+    return;
+  }
+  quizSessionKind = quizSessionActive ? quizSessionKind : null;
   quizList = buildQuizDeck();
   quizIdx = 0; quizFlipped = false;
   mcfotoCorrect = 0;
@@ -2763,6 +3236,10 @@ function checkQuizTypeAnswer() {
 
 function renderQuiz() {
   const area = document.getElementById('quiz-area');
+  if (quizSessionKind === 'exam' && quizSessionActive) {
+    renderExamMode(area);
+    return;
+  }
   if (quizTypeAutoAdvanceTimer) {
     clearTimeout(quizTypeAutoAdvanceTimer);
     quizTypeAutoAdvanceTimer = null;
@@ -3424,6 +3901,7 @@ document.addEventListener('keydown', e => {
   if (document.getElementById('modal').style.display !== 'none' || document.getElementById('settings-modal').style.display !== 'none') return;
   const tag = e.target.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  if (quizSessionKind === 'exam') return;
   if (!quizList || !quizList.length) return;
   if (quizMode === 'mcfoto') {
     if (['1','2','3','4'].includes(e.key)) {
