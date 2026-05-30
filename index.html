@@ -1044,15 +1044,50 @@ function trackDailyActivity() {
   return {goalReachedNow: previousTodayActions < goal && streak.todayActions >= goal};
 }
 
-function suggestKeyFeatureFromTags(tags) {
-  if (!Array.isArray(tags) || !tags.length) return '';
-  const cleaned = tags.map(t => String(t || '').trim()).filter(Boolean);
-  const hintParts = ['míza','miza','latex','trn','ostn','chlup','jež','vůně','vune','zápach','zapach','lepiv','žahav','bodlin','jehlic','šiška','stonek','lodyh','list','květ','kvet','plod','semeno','oranž','žlut','fial','červen','bíl'];
-  const hit = cleaned.find(tag => {
-    const low = tag.toLowerCase();
-    return hintParts.some(part => low.includes(part));
+function normIdentText(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function buildTagFrequencyMap() {
+  const freq = new Map();
+  getAllPlants().forEach(plant => {
+    const uniqueTags = new Set(
+      (Array.isArray(plant.tags) ? plant.tags : [])
+        .map(tag => normIdentText(tag))
+        .filter(Boolean)
+    );
+    uniqueTags.forEach(tag => freq.set(tag, (freq.get(tag) || 0) + 1));
   });
-  return hit || cleaned[0] || '';
+  return freq;
+}
+
+function suggestKeyFeatureFromPlant(plant) {
+  if (!plant || typeof plant !== 'object') return '';
+  const genericTags = new Set([
+    'listnatý','listnaty','louka','les','bílý květ','bily kvet','žlutý květ','zluty kvet'
+  ]);
+  const lifeForm = String(plant.life_form || '').trim();
+  const habitat = String(plant.habitat || '').trim();
+  const toxic = String(plant.toxic || '').trim();
+  const baseParts = [lifeForm, habitat];
+  if (normIdentText(toxic) && normIdentText(toxic) !== 'ne') baseParts.push(toxic);
+  const blocked = new Set(baseParts.map(part => normIdentText(part)).filter(Boolean));
+  const tags = Array.isArray(plant.tags) ? plant.tags : [];
+  const tagFreq = buildTagFrequencyMap();
+  const seen = new Set();
+  const specificTags = tags
+    .map(raw => ({ raw: String(raw || '').trim(), norm: normIdentText(raw) }))
+    .filter(tag => tag.raw && !seen.has(tag.norm) && !genericTags.has(tag.norm) && !blocked.has(tag.norm) && (seen.add(tag.norm) || true))
+    .sort((a, b) => {
+      const aFreq = tagFreq.get(a.norm) || 0;
+      const bFreq = tagFreq.get(b.norm) || 0;
+      if (aFreq !== bFreq) return aFreq - bFreq;
+      return b.norm.length - a.norm.length;
+    })
+    .slice(0, 3)
+    .map(tag => tag.raw);
+  const parts = [...baseParts, ...specificTags].filter(Boolean);
+  return parts.join(' · ');
 }
 
 function getStoredIdentTips(latin) {
@@ -1063,13 +1098,15 @@ function getStoredIdentTips(latin) {
   return tip;
 }
 
-function getIdentificationTips(latin, tags = []) {
+function getIdentificationTips(latin, plant = null) {
   const stored = getStoredIdentTips(latin);
   const flower = typeof stored.flower === 'string' ? stored.flower : '';
   const leaf = typeof stored.leaf === 'string' ? stored.leaf : '';
-  const keyFeature = (typeof stored.keyFeature === 'string' && stored.keyFeature.trim())
-    ? stored.keyFeature
-    : suggestKeyFeatureFromTags(tags);
+  const customKeyFeature = typeof stored.keyFeature === 'string' ? stored.keyFeature.trim() : '';
+  const sourcePlant = (plant && typeof plant === 'object')
+    ? plant
+    : (getAllPlants().find(p => p.latin === latin) || null);
+  const keyFeature = customKeyFeature || suggestKeyFeatureFromPlant(sourcePlant);
   return {flower, leaf, keyFeature};
 }
 
@@ -1808,7 +1845,6 @@ function renderStats() {
 // ── Card rendering ──
 function cardHTML(p) {
   const d = D(p.latin);
-  const tips = getIdentificationTips(p.latin, p.tags || []);
   const cls = d.flagged ? 'flagged-card' : d.status==='learned' ? 'learned' : d.status==='review' ? 'review' : '';
   const badge = d.status==='learned' ? '<span class="badge b-learned">naučeno</span>'
     : d.status==='review' ? '<span class="badge b-review">opakování</span>'
@@ -1822,14 +1858,12 @@ function cardHTML(p) {
     : `<div class="card-img">bez fotky</div>`;
   const safe = esc(p.latin);
   const groupBadge = `<span class="badge" style="background:${GROUP_COLORS[p.group]||'#888'};color:#fff;margin-left:auto">${p.group||''}</span>`;
-  const keyFeatureLine = tips.keyFeature ? `<div class="card-key-feature">Poznej podle: ${esc(tips.keyFeature)}</div>` : '';
   return `<div class="card ${cls}" onclick="openModal('${safe}')">
     ${img}
     <div class="card-body">
       <div class="card-latin">${p.latin}</div>
       <div class="card-czech">${p.czech}</div>
       <div class="card-family">${p.family_cz} · <i>${p.family_lat}</i></div>
-      ${keyFeatureLine}
       <div class="card-footer">${badge}${flag}${groupBadge}</div>
     </div>
   </div>`;
@@ -2017,7 +2051,7 @@ function openModal(latin) {
     return;
   }
   const d = D(latin);
-  const tips = getIdentificationTips(latin, p.tags || []);
+  const tips = getIdentificationTips(latin, p);
   const enc = encodeURIComponent(latin);
   const sl = latin.replace(/'/g,"\\'");
   lastFocusedBeforeModal = document.activeElement;
@@ -3321,7 +3355,7 @@ function renderQuiz() {
   }
   const p = quizList[quizIdx];
   const d = D(p.latin);
-  const identTips = getIdentificationTips(p.latin, p.tags || []);
+  const identTips = getIdentificationTips(p.latin, p);
   const identTipsHTML = getQuizIdentTipsHTML(identTips);
   const pct = Math.round(((quizIdx+1)/quizList.length)*100);
   if (quizMode === 'type') {
