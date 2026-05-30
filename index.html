@@ -56,6 +56,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .filterbar input, .filterbar select { font-size: 13px; padding: 7px 10px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); outline: none; }
 .filterbar input { flex: 1; min-width: 160px; }
 .filterbar input:focus, .filterbar select:focus { border-color: var(--green); }
+.quiz-count-row { display: flex; align-items: center; gap: 8px; margin: -0.25rem 0 0.75rem; }
+.quiz-count-row label { font-size: 13px; color: var(--text2); }
+#quiz-count { font-size: 13px; padding: 7px 10px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); outline: none; width: 80px; min-width: 80px; flex: 0 0 80px; }
+#quiz-count:focus { border-color: var(--green); }
+.quiz-count-help { font-size: 12px; color: var(--text3); }
 .quiz-mode-toggle { display: flex; background: var(--surface2); border-radius: var(--radius); padding: 3px; gap: 2px; border: 1px solid var(--border); flex-wrap: wrap; }
 .quiz-mode-toggle button { padding: 5px 10px; font-size: 12px; border: none; background: none; border-radius: 7px; cursor: pointer; color: var(--text2); }
 .quiz-mode-toggle button.active { background: var(--surface); color: var(--green); font-weight: 500; }
@@ -200,10 +205,7 @@ body.quiz-open { overflow: hidden; }
 .exam-setup-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 16px; max-width: 680px; margin: 0 auto; }
 .exam-setup-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
 .exam-setup-sub { font-size: 13px; color: var(--text2); margin-bottom: 12px; }
-.exam-count-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
-.exam-count-option { border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); padding: 10px 12px; font-size: 13px; cursor: pointer; text-align: left; }
-.exam-count-option.active { border-color: var(--green); background: var(--green-light); color: var(--green-dark); font-weight: 600; }
-.exam-count-option:disabled { opacity: 0.55; cursor: not-allowed; }
+
 .exam-setup-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .exam-progress { font-size: 14px; font-weight: 600; }
 .exam-timer { font-size: 14px; color: var(--text2); font-variant-numeric: tabular-nums; }
@@ -528,6 +530,11 @@ body.quiz-open { overflow: hidden; }
             <button id="qm-type" onclick="setQuizMode('type')">Psaní ✏️</button>
           </div>
         </div>
+        <div class="quiz-count-row">
+          <label for="quiz-count">Počet kartiček:</label>
+          <input type="number" id="quiz-count" placeholder="vše" min="1" step="1" oninput="resetQuiz()">
+          <span class="quiz-count-help">Prázdné = všechny</span>
+        </div>
         <div class="quiz-setup-actions">
           <button class="btn green" id="quiz-start-btn" onclick="startQuiz()">Spustit kvíz</button>
           <button class="btn" id="quiz-exam-btn" onclick="openExamSetup()">🎓 Simulace zkoušky</button>
@@ -785,7 +792,6 @@ let examTimerInterval = null;
 let examState = {
   stage: 'idle', // idle | setup | running | results
   pool: [],
-  questionCountChoice: '10',
   questions: [],
   idx: 0,
   startedAt: 0,
@@ -2492,12 +2498,27 @@ function setQuizMode(m) {
   resetQuiz();
 }
 
+function getQuizCountValue() {
+  const raw = String(document.getElementById('quiz-count')?.value ?? '').trim();
+  if (!raw) return 0;
+  const value = Math.floor(Number(raw));
+  if (!Number.isFinite(value) || value <= 0) return 0;
+  return value;
+}
+
 function renderQuizSetup() {
   const setupPanel = document.getElementById('quiz-setup-panel');
   const setupNote = document.getElementById('quiz-setup-note');
   const summaryBox = document.getElementById('quiz-session-summary');
+  const totalAvailable = getQuizPlants().length;
+  const requestedCount = getQuizCountValue();
+  const selectedCount = requestedCount ? Math.min(requestedCount, totalAvailable) : totalAvailable;
   if (setupPanel) setupPanel.style.display = quizSessionActive ? 'none' : '';
-  if (setupNote && !quizSessionActive) setupNote.textContent = `V balíčku je ${quizList.length} kartiček.`;
+  if (setupNote && !quizSessionActive) {
+    setupNote.textContent = requestedCount
+      ? `V balíčku je ${selectedCount} kartiček (z ${totalAvailable} dostupných).`
+      : `V balíčku je ${totalAvailable} kartiček.`;
+  }
   if (!quizSessionActive) renderExamHistory();
   if (summaryBox) {
     if (quizLastSummary && !quizSessionActive) {
@@ -2630,7 +2651,6 @@ function openExamSetup() {
   examState = {
     stage: 'setup',
     pool,
-    questionCountChoice: '10',
     questions: [],
     idx: 0,
     startedAt: 0,
@@ -2638,9 +2658,6 @@ function openExamSetup() {
     answers: [],
     result: null
   };
-  if (pool.length < 10) {
-    if (pool.length >= 1) examState.questionCountChoice = 'all';
-  }
   clearExamTimer();
   lastFocusedBeforeQuiz = document.activeElement;
   setQuizOverlayOpen(true);
@@ -2655,7 +2672,6 @@ function exitExamSession() {
   examState = {
     stage: 'idle',
     pool: [],
-    questionCountChoice: '10',
     questions: [],
     idx: 0,
     startedAt: 0,
@@ -2667,16 +2683,15 @@ function exitExamSession() {
   resetQuiz();
 }
 
-function setExamQuestionCount(choice) {
-  if (examState.stage !== 'setup') return;
-  examState.questionCountChoice = String(choice);
-  renderQuiz();
-}
-
 function startExamSimulation() {
   if (quizSessionKind !== 'exam' || examState.stage !== 'setup') return;
   const pool = examState.pool || [];
-  const requested = examState.questionCountChoice === 'all' ? pool.length : Number(examState.questionCountChoice);
+  const rawCount = String(document.getElementById('quiz-count')?.value ?? '').trim();
+  let requested = 20;
+  if (rawCount) {
+    const parsed = Math.floor(Number(rawCount));
+    requested = Number.isFinite(parsed) && parsed > 0 ? parsed : pool.length;
+  }
   const total = Number.isFinite(requested) ? Math.min(Math.max(1, requested), pool.length) : pool.length;
   if (!pool.length || !total) {
     renderQuiz();
@@ -2810,24 +2825,16 @@ function closeExamResults() {
 function renderExamMode(area) {
   const poolSize = examState.pool.length;
   if (examState.stage === 'setup') {
-    const options = [
-      { key: '10', label: '10 otázek', count: 10 },
-      { key: '20', label: '20 otázek', count: 20 },
-      { key: '30', label: '30 otázek', count: 30 },
-      { key: 'all', label: `Všechny (${poolSize})`, count: poolSize }
-    ];
+    const rawCount = String(document.getElementById('quiz-count')?.value ?? '').trim();
+    const parsedCount = Math.floor(Number(rawCount));
+    const previewCount = !rawCount ? 20 : (Number.isFinite(parsedCount) && parsedCount > 0 ? parsedCount : poolSize);
+    const finalCount = poolSize ? Math.min(Math.max(1, previewCount), poolSize) : 0;
     area.classList.remove('foto-large');
     area.innerHTML = `
       <div class="exam-setup-card">
         <div class="exam-setup-title">🎓 Simulace zkoušky</div>
-        <div class="exam-setup-sub">Vyber počet otázek. Losuje se náhodně jen z filtrovaných rostlin s fotkou.</div>
-        <div class="exam-count-options">
-          ${options.map(opt => {
-            const disabled = opt.key !== 'all' ? poolSize < opt.count : poolSize < 1;
-            return `<button class="exam-count-option${examState.questionCountChoice === opt.key ? ' active' : ''}" onclick="setExamQuestionCount('${opt.key}')" ${disabled ? 'disabled' : ''}>${opt.label}</button>`;
-          }).join('')}
-        </div>
-        <div class="quiz-setup-note" style="margin-bottom:10px;">K dispozici: <b>${poolSize}</b> rostlin.</div>
+        <div class="exam-setup-sub">Počet otázek se bere z pole „Počet kartiček“. Prázdné pole použije výchozích 20.</div>
+        <div class="quiz-setup-note" style="margin-bottom:10px;">K dispozici: <b>${poolSize}</b> rostlin · V simulaci: <b>${finalCount}</b> otázek.</div>
         <div class="exam-setup-actions">
           <button class="btn" onclick="closeExamResults()">Zavřít</button>
           <button class="btn green" onclick="startExamSimulation()" ${poolSize ? '' : 'disabled'}>Spustit simulaci</button>
@@ -3009,16 +3016,22 @@ function getQuizPlants() {
 function buildQuizDeck() {
   const plants = getQuizPlants();
   const src = document.getElementById('quiz-source').value;
-  if (src !== 'weak_spots') return shuffle(plants);
-  const weak = [];
-  const rest = [];
-  plants.forEach(p => {
-    const perf = getFamilyPerformance(p.family_lat);
-    if (perf.total > 0 && perf.ratio !== null && perf.ratio < 0.7) weak.push(p);
-    else rest.push(p);
-  });
-  if (!weak.length) return shuffle(plants);
-  return [...shuffle(weak), ...shuffle(rest)];
+  let fullDeck = [];
+  if (src !== 'weak_spots') {
+    fullDeck = shuffle(plants);
+  } else {
+    const weak = [];
+    const rest = [];
+    plants.forEach(p => {
+      const perf = getFamilyPerformance(p.family_lat);
+      if (perf.total > 0 && perf.ratio !== null && perf.ratio < 0.7) weak.push(p);
+      else rest.push(p);
+    });
+    fullDeck = weak.length ? [...shuffle(weak), ...shuffle(rest)] : shuffle(plants);
+  }
+  const requestedCount = getQuizCountValue();
+  if (!requestedCount) return fullDeck;
+  return fullDeck.slice(0, requestedCount);
 }
 
 function resetQuiz() {
