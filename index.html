@@ -759,6 +759,18 @@ create policy "anon update botanika_sync" on botanika_sync for update to anon us
         </div>
         <div id="data-transfer-status" style="font-size:12px;color:var(--text3);margin-top:6px;"></div>
       </div>
+
+      <div class="settings-section">
+        <h3>Reset</h3>
+        <div class="settings-actions" style="display:block;">
+          <button class="btn" id="reset-learned-btn" onclick="resetLearnedToReview()">Resetovat naučené → K opakování (0)</button>
+          <div id="reset-learned-count" style="font-size:12px;color:var(--text3);margin:6px 0 10px;">Nalezeno 0 naučených rostlin.</div>
+          <button class="btn" id="reset-flagged-btn" onclick="resetFlaggedPlants()">Resetovat 🚩 Nevím (0)</button>
+          <div id="reset-flagged-count" style="font-size:12px;color:var(--text3);margin:6px 0 10px;">Nalezeno 0 označených rostlin.</div>
+          <button class="btn red-flag" id="reset-all-btn" onclick="resetAllPlantsToNew()">Resetovat vše na Nové (0)</button>
+          <div id="reset-all-count" style="font-size:12px;color:var(--text3);margin-top:6px;">Celkem 0 rostlin k resetu.</div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -2005,6 +2017,7 @@ function renderAll() {
     resetQuiz();
   }
   renderTable();
+  renderResetButtons();
 }
 
 // ── Modal ──
@@ -2098,7 +2111,84 @@ function closeModal() {
   }
   lastFocusedBeforeModal = null;
 }
-function openSettingsModal() { document.getElementById('settings-modal').style.display = 'flex'; }
+function getResetPlantCounts() {
+  const allPlants = getAllPlants();
+  let learned = 0;
+  let flagged = 0;
+  allPlants.forEach(p => {
+    const d = D(p.latin);
+    if (d.status === 'learned') learned++;
+    if (d.flagged) flagged++;
+  });
+  return { learned, flagged, total: allPlants.length };
+}
+
+function renderResetButtons() {
+  const counts = getResetPlantCounts();
+  const learnedBtn = document.getElementById('reset-learned-btn');
+  const flaggedBtn = document.getElementById('reset-flagged-btn');
+  const allBtn = document.getElementById('reset-all-btn');
+  const learnedInfo = document.getElementById('reset-learned-count');
+  const flaggedInfo = document.getElementById('reset-flagged-count');
+  const allInfo = document.getElementById('reset-all-count');
+  if (learnedBtn) learnedBtn.textContent = `Resetovat naučené → K opakování (${counts.learned})`;
+  if (flaggedBtn) flaggedBtn.textContent = `Resetovat 🚩 Nevím (${counts.flagged})`;
+  if (allBtn) allBtn.textContent = `Resetovat vše na Nové (${counts.total})`;
+  if (learnedInfo) learnedInfo.textContent = `Nalezeno ${counts.learned} naučených rostlin.`;
+  if (flaggedInfo) flaggedInfo.textContent = `Nalezeno ${counts.flagged} označených rostlin.`;
+  if (allInfo) allInfo.textContent = `Celkem ${counts.total} rostlin k resetu.`;
+}
+
+function resetLearnedToReview() {
+  const plants = getAllPlants();
+  const learnedLatins = plants.filter(p => D(p.latin).status === 'learned').map(p => p.latin);
+  const count = learnedLatins.length;
+  if (!confirm(`Přesunout ${count} naučených rostlin zpět k opakování?`)) return;
+  learnedLatins.forEach(latin => {
+    const key = SK(latin);
+    userData[key] = Object.assign(D(latin), { status: 'review' });
+  });
+  scheduleSave();
+  renderAll();
+}
+
+function resetFlaggedPlants() {
+  const plants = getAllPlants();
+  const flaggedLatins = plants.filter(p => D(p.latin).flagged).map(p => p.latin);
+  const count = flaggedLatins.length;
+  if (!confirm(`Odstranit vlajku u ${count} rostlin?`)) return;
+  flaggedLatins.forEach(latin => {
+    const key = SK(latin);
+    userData[key] = Object.assign(D(latin), { flagged: false });
+  });
+  scheduleSave();
+  renderAll();
+}
+
+function resetAllPlantsToNew() {
+  if (!confirm('Opravdu resetovat statistiky všech rostlin? Fotky a poznámky zůstanou zachovány.')) return;
+  getAllPlants().forEach(p => {
+    const key = SK(p.latin);
+    const next = Object.assign(D(p.latin), {
+      status: 'new',
+      flagged: false,
+      wrongCount: 0,
+      correctStreak: 0
+    });
+    delete next.srInterval;
+    delete next.srEaseFactor;
+    delete next.srNextReview;
+    delete next.srRepetitions;
+    userData[key] = next;
+  });
+  scheduleSave();
+  renderAll();
+}
+
+function openSettingsModal() {
+  renderResetButtons();
+  document.getElementById('settings-modal').style.display = 'flex';
+}
 function closeSettingsModal() { document.getElementById('settings-modal').style.display = 'none'; }
 function settingsModalBgClick(e) { if (e.target.id==='settings-modal') closeSettingsModal(); }
 
