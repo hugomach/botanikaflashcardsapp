@@ -185,12 +185,15 @@ body.quiz-open { overflow: hidden; }
 .type-quiz-input-wrap input.type-ok { border-color: var(--green); }
 .type-quiz-input-wrap input.type-almost { border-color: #BA7517; }
 .type-quiz-input-wrap input.type-bad { border-color: var(--flag); }
+.type-quiz-input-wrap input.type-revealed { font-style: italic; color: var(--text3); background: var(--surface2); }
 .type-quiz-inline { min-height: 18px; font-size: 12px; text-align: right; color: var(--text2); white-space: nowrap; }
 .type-quiz-inline.ok { color: var(--green); }
 .type-quiz-inline.almost { color: #854F0B; white-space: normal; text-align: left; }
 .type-quiz-hint { min-height: 18px; font-size: 12px; }
 .type-quiz-hint.bad { color: var(--flag); }
 .type-quiz-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 10px; }
+.type-quiz-secondary-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
+.type-quiz-toast { display: none; width: 100%; text-align: center; font-size: 12px; color: var(--text2); background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 7px 10px; }
 .quiz-setup-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 0.25rem 0 0.75rem; }
 .quiz-setup-note { font-size: 12px; color: var(--text2); }
 .daily-progress { margin-bottom: 0.85rem; }
@@ -783,6 +786,8 @@ let sb = null;
 let syncTimer = null;
 let quizList = [], quizIdx = 0, quizFlipped = false, quizMode = 'foto';
 let quizTypeAutoAdvanceTimer = null;
+let quizTypeToastTimer = null;
+let pendingTypeQuizToast = '';
 let quizSessionMode = 'foto';
 let quizSessionActive = false;
 let quizSessionKind = null; // 'regular' | 'exam'
@@ -3161,7 +3166,14 @@ function getQuizTypePlant() {
 }
 
 function onQuizTypeInputKeydown(event) {
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    event.stopPropagation();
+    skipQuizTypeCard();
+    return;
+  }
   if (event.key !== 'Enter') return;
+  if (!(event.ctrlKey || event.metaKey) && !typeQuizChecked) return;
   event.preventDefault();
   if (typeQuizChecked) {
     typeQuizNext();
@@ -3217,6 +3229,105 @@ function typeQuizNext() {
   qNext();
 }
 
+function showTypeQuizToast(text) {
+  const toast = document.getElementById('type-quiz-toast');
+  if (!toast || !text) return;
+  toast.textContent = text;
+  toast.style.display = '';
+  if (quizTypeToastTimer) {
+    clearTimeout(quizTypeToastTimer);
+    quizTypeToastTimer = null;
+  }
+  quizTypeToastTimer = setTimeout(() => {
+    toast.style.display = 'none';
+    quizTypeToastTimer = null;
+  }, 1800);
+}
+
+function setQuizTypeRevealUI(prefix, correctText) {
+  const input = document.getElementById(`${prefix}-input`);
+  const inline = document.getElementById(`${prefix}-inline`);
+  const hint = document.getElementById(`${prefix}-hint`);
+  if (!input || !inline || !hint) return;
+  input.classList.remove('type-ok', 'type-almost', 'type-bad', 'type-revealed');
+  input.classList.add('type-bad', 'type-revealed');
+  input.value = correctText;
+  inline.className = 'type-quiz-inline';
+  inline.textContent = '✕';
+  hint.className = 'type-quiz-hint bad';
+  hint.textContent = `Správně: ${correctText}`;
+}
+
+function revealQuizTypeAnswer() {
+  const p = getQuizTypePlant();
+  if (!p) return;
+  if (quizTypeAutoAdvanceTimer) {
+    clearTimeout(quizTypeAutoAdvanceTimer);
+    quizTypeAutoAdvanceTimer = null;
+  }
+  const plantInput = document.getElementById('quiz-type-plant-input');
+  const famCzInput = document.getElementById('quiz-type-family-cz-input');
+  const famLatInput = document.getElementById('quiz-type-family-lat-input');
+  const checkBtn = document.getElementById('quiz-type-check');
+  const nextBtn = document.getElementById('quiz-type-next');
+  const card = document.getElementById('type-quiz-card');
+  const secondary = document.getElementById('quiz-type-secondary-actions');
+  if (!plantInput || !famCzInput || !famLatInput || !checkBtn || !nextBtn || !card || checkBtn.disabled || typeQuizChecked) return;
+
+  setQuizTypeRevealUI('quiz-type-plant', p.czech);
+  setQuizTypeRevealUI('quiz-type-family-cz', p.family_cz);
+  setQuizTypeRevealUI('quiz-type-family-lat', p.family_lat);
+
+  typeQuizAnswered++;
+  const score = document.getElementById('type-quiz-score');
+  if (score) score.innerHTML = `Správně: <b>${typeQuizFull}</b> / <b>${typeQuizAnswered}</b> · Částečně: <b>${typeQuizPartial}</b>`;
+
+  card.classList.remove('flash-correct', 'flash-partial', 'flash-missed');
+  card.classList.add('flash-missed');
+
+  const current = quizList[quizIdx];
+  if (!current) return;
+  const d = D(current.latin);
+  trackQuizAction('flagged');
+  const activity = trackDailyActivity();
+  if (activity.goalReachedNow) quizSessionStats.dailyGoalReached = true;
+  recordFamilyQuizResult(current, false);
+  setData(current.latin, {flagged:true, wrongCount:(d.wrongCount || 0) + 1, correctStreak:0});
+  sm2Update(current.latin, 0);
+  renderFlagged();
+  renderStats();
+
+  const cardItem = quizList.splice(quizIdx, 1)[0];
+  const insertAt = Math.min(quizIdx + 3 + Math.floor(Math.random() * 3), quizList.length);
+  quizList.splice(insertAt, 0, cardItem);
+  const nextIdx = quizIdx >= quizList.length ? 0 : quizIdx;
+  quizIdx = quizList.length ? (nextIdx - 1 + quizList.length) % quizList.length : 0;
+
+  typeQuizChecked = true;
+  plantInput.disabled = true;
+  famCzInput.disabled = true;
+  famLatInput.disabled = true;
+  checkBtn.disabled = true;
+  checkBtn.style.display = 'none';
+  if (secondary) secondary.style.display = 'none';
+  nextBtn.style.display = '';
+  nextBtn.focus();
+}
+
+function skipQuizTypeCard() {
+  const p = getQuizTypePlant();
+  if (!p || !quizList.length || typeQuizChecked) return;
+  if (quizTypeAutoAdvanceTimer) {
+    clearTimeout(quizTypeAutoAdvanceTimer);
+    quizTypeAutoAdvanceTimer = null;
+  }
+  const skipped = quizList.splice(quizIdx, 1)[0];
+  quizList.push(skipped);
+  if (quizIdx >= quizList.length) quizIdx = 0;
+  pendingTypeQuizToast = 'Přeskočeno — vrátí se znovu';
+  renderQuiz();
+}
+
 function checkQuizTypeAnswer() {
   const p = getQuizTypePlant();
   if (!p) return;
@@ -3230,6 +3341,7 @@ function checkQuizTypeAnswer() {
   const checkBtn = document.getElementById('quiz-type-check');
   const nextBtn = document.getElementById('quiz-type-next');
   const card = document.getElementById('type-quiz-card');
+  const secondary = document.getElementById('quiz-type-secondary-actions');
   if (!plantInput || !famCzInput || !famLatInput || !checkBtn || !nextBtn || !card || checkBtn.disabled || typeQuizChecked) return;
 
   const plantResult = getQuizTypeFieldResult(plantInput.value, p.czech);
@@ -3272,6 +3384,7 @@ function checkQuizTypeAnswer() {
   famLatInput.disabled = true;
   checkBtn.disabled = true;
   checkBtn.style.display = 'none';
+  if (secondary) secondary.style.display = 'none';
   nextBtn.style.display = '';
   nextBtn.focus();
 
@@ -3373,12 +3486,22 @@ function renderQuiz() {
         </div>
         <div class="type-quiz-input-wrap">
           <button class="btn green" id="quiz-type-check" onclick="checkQuizTypeAnswer()">Zkontrolovat</button>
+          <div class="type-quiz-secondary-actions" id="quiz-type-secondary-actions">
+            <button class="btn red-flag" id="quiz-type-reveal" onclick="revealQuizTypeAnswer()">🚩 Nevím</button>
+            <button class="btn" id="quiz-type-skip" onclick="skipQuizTypeCard()">⏭️ Přeskočit</button>
+          </div>
           <button class="btn" id="quiz-type-next" style="display:none;" onclick="typeQuizNext()">Další →</button>
+          <div class="type-quiz-toast" id="type-quiz-toast"></div>
         </div>
       </div>
     `;
     const input = document.getElementById('quiz-type-plant-input');
     if (input) input.focus();
+    if (pendingTypeQuizToast) {
+      const toastText = pendingTypeQuizToast;
+      pendingTypeQuizToast = '';
+      showTypeQuizToast(toastText);
+    }
     return;
   }
   const quizPhotoSources = (quizMode === 'foto' || quizMode === 'mcfoto')
