@@ -192,7 +192,8 @@ body.quiz-open { overflow: hidden; }
 .type-quiz-hint { min-height: 18px; font-size: 12px; }
 .type-quiz-hint.bad { color: var(--flag); }
 .type-quiz-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 10px; }
-.type-quiz-secondary-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
+.type-quiz-secondary-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; width: 100%; }
+.type-quiz-primary-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
 .type-quiz-toast { display: none; width: 100%; text-align: center; font-size: 12px; color: var(--text2); background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 7px 10px; }
 .quiz-setup-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 0.25rem 0 0.75rem; }
 .quiz-setup-note { font-size: 12px; color: var(--text2); }
@@ -232,6 +233,7 @@ body.quiz-open { overflow: hidden; }
 .exam-result-row.exact { background: var(--green-light); border-color: #9fe1cb; color: var(--green-dark); }
 .exam-result-row.close { background: var(--amber-light); border-color: #f0c37b; color: #854F0B; }
 .exam-result-row.wrong { background: #fff0ee; border-color: #f5c4b3; color: var(--flag); }
+.exam-result-row.skipped { background: var(--surface); border-color: var(--border); color: var(--text2); }
 .exam-repeat-line { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; font-size: 13px; color: var(--text2); }
 .exam-history { margin-top: 0.65rem; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 8px 10px; }
 .exam-history-title { font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
@@ -2853,7 +2855,10 @@ function submitExamAnswer() {
   const valFamLat = document.getElementById('exam-family-lat-input')?.value || '';
 
   const nameRes = getExamComparison(valName, current.czech);
-  const famCzRes = getExamComparison(valFamCz, current.family_cz);
+  const famCzAttempted = normalizeExamAnswer(valFamCz) !== '';
+  const famCzRes = famCzAttempted
+    ? getExamComparison(valFamCz, current.family_cz)
+    : { type: 'skipped', accepted: true };
   const famLatRes = getExamComparison(valFamLat, current.family_lat);
 
   examState.answers.push({
@@ -2864,7 +2869,7 @@ function submitExamAnswer() {
     photo: d.photos[0] || '',
     values: {
       name: { typed: valName, correct: current.czech, type: nameRes.type, accepted: nameRes.accepted },
-      familyCz: { typed: valFamCz, correct: current.family_cz, type: famCzRes.type, accepted: famCzRes.accepted },
+      familyCz: { typed: valFamCz, correct: current.family_cz, type: famCzRes.type, accepted: famCzRes.accepted, attempted: famCzAttempted },
       familyLat: { typed: valFamLat, correct: current.family_lat, type: famLatRes.type, accepted: famLatRes.accepted }
     }
   });
@@ -2879,7 +2884,7 @@ function submitExamAnswer() {
 
 function buildExamResults() {
   const totalQuestions = examState.questions.length;
-  const totalFields = totalQuestions * 3;
+  let totalFields = totalQuestions * 2;
   let exact = 0;
   let close = 0;
   let nameScore = 0;
@@ -2896,8 +2901,13 @@ function buildExamResults() {
 
     if (vals.familyCz.type === 'exact') exact++;
     if (vals.familyCz.type === 'close') close++;
-    if (vals.familyCz.accepted) familyCzScore++;
-    else familyMisses[item.familyCz] = (familyMisses[item.familyCz] || 0) + 1;
+    if (vals.familyCz.attempted) {
+      totalFields++;
+      if (vals.familyCz.accepted) familyCzScore++;
+      else familyMisses[item.familyCz] = (familyMisses[item.familyCz] || 0) + 1;
+    } else {
+      familyCzScore++;
+    }
 
     if (vals.familyLat.type === 'exact') exact++;
     if (vals.familyLat.type === 'close') close++;
@@ -2992,7 +3002,7 @@ function renderExamMode(area) {
         </div>
         <div class="exam-input-grid">
           <input id="exam-name-input" type="text" placeholder="Český název rostliny…" onkeydown="onExamInputKeydown(event)" autocomplete="off" autocapitalize="off" spellcheck="false">
-          <input id="exam-family-cz-input" type="text" placeholder="Česká čeleď…" onkeydown="onExamInputKeydown(event)" autocomplete="off" autocapitalize="off" spellcheck="false">
+          <input id="exam-family-cz-input" type="text" placeholder="Česká čeleď (nepovinné)…" onkeydown="onExamInputKeydown(event)" autocomplete="off" autocapitalize="off" spellcheck="false">
           <input id="exam-family-lat-input" type="text" placeholder="Latinská čeleď…" onkeydown="onExamInputKeydown(event)" autocomplete="off" autocapitalize="off" spellcheck="false">
         </div>
         <div class="exam-next-row"><button class="btn green" onclick="submitExamAnswer()">Další →</button></div>
@@ -3024,7 +3034,7 @@ function renderExamMode(area) {
         <div class="exam-results-list">
           ${examState.answers.map((item, qIndex) => {
             const photoSrc = item.photo ? (item.photo.startsWith('data:') ? item.photo : esc(item.photo)) : '';
-            const renderRow = (label, data) => `<div class="exam-result-row ${data.type}"><b>${label}</b> · tvoje: <b>${esc(data.typed || '—')}</b> · správně: <b>${esc(data.correct)}</b></div>`;
+            const renderRow = (label, data) => `<div class="exam-result-row ${data.type}"><b>${label}</b> · tvoje: <b>${esc(data.typed || '—')}</b> · správně: <b>${esc(data.correct)}</b>${data.type === 'skipped' ? ' · <i>nepovinné — přeskočeno</i>' : ''}</div>`;
             return `<div class="exam-result-item">
               ${photoSrc ? `<img class="exam-result-thumb" src="${photoSrc}" alt="${esc(item.plantCzech)}" onerror="this.style.display='none'">` : '<div class="exam-result-thumb-empty">bez foto</div>'}
               <div class="exam-result-rows">
@@ -3058,6 +3068,10 @@ function resetTypeQuizStats() {
   typeQuizPlantCorrect = 0;
   typeQuizFamilyCzCorrect = 0;
   typeQuizFamilyLatCorrect = 0;
+}
+
+function getTypeQuizScoreHTML() {
+  return `Správně: <b>${typeQuizFull}</b> / <b>${typeQuizAnswered}</b> · Částečně: <b>${typeQuizPartial}</b> · Česká čeleď: nepovinná`;
 }
 
 function trackQuizAction(type) {
@@ -3347,6 +3361,18 @@ function setQuizTypeFieldUI(prefix, result, correctText) {
   hint.textContent = `Správně: ${correctText}`;
 }
 
+function setQuizTypeOptionalSkippedUI(prefix) {
+  const input = document.getElementById(`${prefix}-input`);
+  const inline = document.getElementById(`${prefix}-inline`);
+  const hint = document.getElementById(`${prefix}-hint`);
+  if (!input || !inline || !hint) return;
+  input.classList.remove('type-ok', 'type-almost', 'type-bad', 'type-revealed');
+  inline.className = 'type-quiz-inline';
+  inline.textContent = '—';
+  hint.className = 'type-quiz-hint';
+  hint.textContent = 'Nepovinné pole přeskočeno.';
+}
+
 function typeQuizNext() {
   if (!quizSessionActive || quizMode !== 'type' || !typeQuizChecked) return;
   typeQuizChecked = false;
@@ -3395,16 +3421,21 @@ function revealQuizTypeAnswer() {
   const checkBtn = document.getElementById('quiz-type-check');
   const nextBtn = document.getElementById('quiz-type-next');
   const card = document.getElementById('type-quiz-card');
-  const secondary = document.getElementById('quiz-type-secondary-actions');
   if (!plantInput || !famCzInput || !famLatInput || !checkBtn || !nextBtn || !card || checkBtn.disabled || typeQuizChecked) return;
+  const famCzAttempted = normalizeQuizTypeAnswer(famCzInput.value) !== '';
 
   setQuizTypeRevealUI('quiz-type-plant', p.czech);
-  setQuizTypeRevealUI('quiz-type-family-cz', p.family_cz);
+  if (famCzAttempted) {
+    setQuizTypeRevealUI('quiz-type-family-cz', p.family_cz);
+  } else {
+    famCzInput.value = '';
+    setQuizTypeOptionalSkippedUI('quiz-type-family-cz');
+  }
   setQuizTypeRevealUI('quiz-type-family-lat', p.family_lat);
 
   typeQuizAnswered++;
   const score = document.getElementById('type-quiz-score');
-  if (score) score.innerHTML = `Správně: <b>${typeQuizFull}</b> / <b>${typeQuizAnswered}</b> · Částečně: <b>${typeQuizPartial}</b>`;
+  if (score) score.innerHTML = getTypeQuizScoreHTML();
 
   card.classList.remove('flash-correct', 'flash-partial', 'flash-missed');
   card.classList.add('flash-missed');
@@ -3433,7 +3464,6 @@ function revealQuizTypeAnswer() {
   famLatInput.disabled = true;
   checkBtn.disabled = true;
   checkBtn.style.display = 'none';
-  if (secondary) secondary.style.display = 'none';
   nextBtn.style.display = '';
   nextBtn.focus();
 }
@@ -3465,7 +3495,6 @@ function checkQuizTypeAnswer() {
   const checkBtn = document.getElementById('quiz-type-check');
   const nextBtn = document.getElementById('quiz-type-next');
   const card = document.getElementById('type-quiz-card');
-  const secondary = document.getElementById('quiz-type-secondary-actions');
   if (!plantInput || !famCzInput || !famLatInput || !checkBtn || !nextBtn || !card || checkBtn.disabled || typeQuizChecked) return;
 
   const plantResult = getQuizTypeFieldResult(plantInput.value, p.czech);
@@ -3478,28 +3507,33 @@ function checkQuizTypeAnswer() {
   }
 
   setQuizTypeFieldUI('quiz-type-plant', plantResult, p.czech);
-  setQuizTypeFieldUI('quiz-type-family-cz', famCzResult, p.family_cz);
+  if (famCzResult.state === 'empty') setQuizTypeOptionalSkippedUI('quiz-type-family-cz');
+  else setQuizTypeFieldUI('quiz-type-family-cz', famCzResult, p.family_cz);
   setQuizTypeFieldUI('quiz-type-family-lat', famLatResult, p.family_lat);
 
   const plantOk = plantResult.state === 'correct' || plantResult.state === 'almost';
-  const famCzOk = famCzResult.state === 'correct' || famCzResult.state === 'almost';
   const famLatOk = famLatResult.state === 'correct' || famLatResult.state === 'almost';
-  const correctCount = Number(plantOk) + Number(famCzOk) + Number(famLatOk);
+  const famCzAttempted = famCzResult.state !== 'empty';
+  const famCzOk = famCzAttempted && (famCzResult.state === 'correct' || famCzResult.state === 'almost');
+  const attemptedCount = 2 + Number(famCzAttempted);
+  const correctCount = Number(plantOk) + Number(famLatOk) + Number(famCzOk);
+  const isFull = plantOk && famLatOk && (!famCzAttempted || famCzOk);
+  const isPartial = !isFull && correctCount > 0;
 
   typeQuizAnswered++;
   if (plantOk) typeQuizPlantCorrect++;
-  if (famCzOk) typeQuizFamilyCzCorrect++;
+  if (famCzOk || !famCzAttempted) typeQuizFamilyCzCorrect++;
   if (famLatOk) typeQuizFamilyLatCorrect++;
 
-  if (correctCount === 3) typeQuizFull++;
-  else if (correctCount === 2) typeQuizPartial++;
+  if (isFull) typeQuizFull++;
+  else if (isPartial) typeQuizPartial++;
 
   const score = document.getElementById('type-quiz-score');
-  if (score) score.innerHTML = `Správně: <b>${typeQuizFull}</b> / <b>${typeQuizAnswered}</b> · Částečně: <b>${typeQuizPartial}</b>`;
+  if (score) score.innerHTML = getTypeQuizScoreHTML();
 
   card.classList.remove('flash-correct', 'flash-partial', 'flash-missed');
-  if (correctCount === 3) card.classList.add('flash-correct');
-  else if (correctCount === 2) card.classList.add('flash-partial');
+  if (isFull) card.classList.add('flash-correct');
+  else if (isPartial) card.classList.add('flash-partial');
   else card.classList.add('flash-missed');
 
   typeQuizChecked = true;
@@ -3508,7 +3542,6 @@ function checkQuizTypeAnswer() {
   famLatInput.disabled = true;
   checkBtn.disabled = true;
   checkBtn.style.display = 'none';
-  if (secondary) secondary.style.display = 'none';
   nextBtn.style.display = '';
   nextBtn.focus();
 
@@ -3517,7 +3550,7 @@ function checkQuizTypeAnswer() {
   const d = D(current.latin);
   const activity = trackDailyActivity();
   if (activity.goalReachedNow) quizSessionStats.dailyGoalReached = true;
-  if (correctCount === 3) {
+  if (isFull) {
     trackQuizAction('learned');
     recordFamilyQuizResult(current, true);
     setData(current.latin, {status:'learned', flagged:false, correctStreak:(d.correctStreak || 0) + 1, wrongCount:0});
@@ -3527,9 +3560,93 @@ function checkQuizTypeAnswer() {
     trackQuizAction('review');
     recordFamilyQuizResult(current, false);
     setData(current.latin, {status:'review', correctStreak:0, wrongCount:(d.wrongCount || 0) + 1});
-    sm2Update(current.latin, correctCount === 2 ? 3 : 2);
+    sm2Update(current.latin, correctCount === attemptedCount - 1 ? 3 : 2);
   }
   renderStats();
+}
+
+function typeQuizQuickLearned() {
+  const current = getQuizTypePlant();
+  if (!current || typeQuizChecked) return;
+  if (quizTypeAutoAdvanceTimer) {
+    clearTimeout(quizTypeAutoAdvanceTimer);
+    quizTypeAutoAdvanceTimer = null;
+  }
+  const d = D(current.latin);
+  trackQuizAction('learned');
+  const activity = trackDailyActivity();
+  if (activity.goalReachedNow) quizSessionStats.dailyGoalReached = true;
+  recordFamilyQuizResult(current, true);
+  setData(current.latin, {status:'learned', flagged:false, correctStreak:(d.correctStreak || 0) + 1, wrongCount:0});
+  sm2Update(current.latin, 4);
+  renderFlagged();
+  renderStats();
+  qNext();
+}
+
+function typeQuizQuickFlag() {
+  const current = getQuizTypePlant();
+  if (!current || typeQuizChecked || !quizList.length) return;
+  if (quizTypeAutoAdvanceTimer) {
+    clearTimeout(quizTypeAutoAdvanceTimer);
+    quizTypeAutoAdvanceTimer = null;
+  }
+  const d = D(current.latin);
+  trackQuizAction('flagged');
+  const activity = trackDailyActivity();
+  if (activity.goalReachedNow) quizSessionStats.dailyGoalReached = true;
+  recordFamilyQuizResult(current, false);
+  setData(current.latin, {flagged:true, wrongCount:(d.wrongCount || 0) + 1, correctStreak:0});
+  sm2Update(current.latin, 0);
+  renderFlagged();
+  renderStats();
+  const cardItem = quizList.splice(quizIdx, 1)[0];
+  const insertAt = Math.min(quizIdx + 2 + Math.floor(Math.random() * 3), quizList.length);
+  quizList.splice(insertAt, 0, cardItem);
+  const nextIdx = quizIdx >= quizList.length ? 0 : quizIdx;
+  quizIdx = quizList.length ? (nextIdx - 1 + quizList.length) % quizList.length : 0;
+  qNext();
+}
+
+function typeQuizQuickReview() {
+  const current = getQuizTypePlant();
+  if (!current || typeQuizChecked || !quizList.length) return;
+  if (quizTypeAutoAdvanceTimer) {
+    clearTimeout(quizTypeAutoAdvanceTimer);
+    quizTypeAutoAdvanceTimer = null;
+  }
+  const d = D(current.latin);
+  trackQuizAction('review');
+  const activity = trackDailyActivity();
+  if (activity.goalReachedNow) quizSessionStats.dailyGoalReached = true;
+  recordFamilyQuizResult(current, false);
+  const newWrongCount = (d.wrongCount || 0) + 1;
+  setData(current.latin, {status:'review', wrongCount:newWrongCount, correctStreak:0});
+  sm2Update(current.latin, 2);
+  renderStats();
+
+  const freq = d.repeatFreq || 'auto';
+  if (freq === 'once') {
+    const card = quizList.splice(quizIdx, 1)[0];
+    quizList.push(card);
+  } else {
+    let insertOffset;
+    if (freq === 'more') {
+      insertOffset = 2;
+    } else if (freq === 'less') {
+      insertOffset = 20;
+    } else if (freq === 'auto') {
+      insertOffset = newWrongCount >= 3 ? 2 : 5;
+    } else {
+      insertOffset = 10;
+    }
+    const card = quizList.splice(quizIdx, 1)[0];
+    const insertAt = Math.min(quizIdx + insertOffset, quizList.length);
+    quizList.splice(insertAt, 0, card);
+  }
+  const nextIdx = quizIdx >= quizList.length ? 0 : quizIdx;
+  quizIdx = quizList.length ? (nextIdx - 1 + quizList.length) % quizList.length : 0;
+  qNext();
 }
 
 function renderQuiz() {
@@ -3577,13 +3694,18 @@ function renderQuiz() {
           <span>${quizIdx+1} / ${quizList.length}</span>
         </div>
         <div class="progress"><div class="progress-fill" style="width:${pct}%"></div></div>
-        <div class="type-quiz-score" id="type-quiz-score">Správně: <b>${typeQuizFull}</b> / <b>${typeQuizAnswered}</b> · Částečně: <b>${typeQuizPartial}</b></div>
+        <div class="type-quiz-score" id="type-quiz-score">${getTypeQuizScoreHTML()}</div>
         <div class="type-quiz-card" id="type-quiz-card">
           <div class="type-quiz-photos">${
             quizPhotoSources.length
               ? quizPhotoSources.map(src => `<img class="type-quiz-photo" style="${photoStyle}" src="${src}" alt="${esc(p.czech)}" onerror="this.style.display='none'">`).join('')
               : '<div class="type-quiz-photo-empty">bez fotky</div>'
           }</div>
+          <div class="type-quiz-secondary-actions" id="quiz-type-secondary-actions">
+            <button class="btn green" id="quiz-type-quick-learned" onclick="typeQuizQuickLearned()">Vím ✓</button>
+            <button class="btn red-flag" id="quiz-type-quick-flag" onclick="typeQuizQuickFlag()">Nevím 🚩</button>
+            <button class="btn amber" id="quiz-type-quick-review" onclick="typeQuizQuickReview()">Opakovat 🔁</button>
+          </div>
           <div class="type-quiz-input-wrap">
             <div class="type-quiz-field">
               <div class="type-quiz-field-row">
@@ -3594,7 +3716,7 @@ function renderQuiz() {
             </div>
             <div class="type-quiz-field">
               <div class="type-quiz-field-row">
-                <input id="quiz-type-family-cz-input" type="text" placeholder="Česká čeleď…" onkeydown="onQuizTypeInputKeydown(event)" autocomplete="off" autocapitalize="off" spellcheck="false">
+                <input id="quiz-type-family-cz-input" type="text" placeholder="Česká čeleď (nepovinné)…" onkeydown="onQuizTypeInputKeydown(event)" autocomplete="off" autocapitalize="off" spellcheck="false">
                 <div class="type-quiz-inline" id="quiz-type-family-cz-inline"></div>
               </div>
               <div class="type-quiz-hint" id="quiz-type-family-cz-hint"></div>
@@ -3610,7 +3732,7 @@ function renderQuiz() {
         </div>
         <div class="type-quiz-input-wrap">
           <button class="btn green" id="quiz-type-check" onclick="checkQuizTypeAnswer()">Zkontrolovat</button>
-          <div class="type-quiz-secondary-actions" id="quiz-type-secondary-actions">
+          <div class="type-quiz-primary-actions">
             <button class="btn red-flag" id="quiz-type-reveal" onclick="revealQuizTypeAnswer()">🚩 Nevím</button>
             <button class="btn" id="quiz-type-skip" onclick="skipQuizTypeCard()">⏭️ Přeskočit</button>
           </div>
