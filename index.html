@@ -55,6 +55,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .filterbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
 .filterbar input, .filterbar select { font-size: 13px; padding: 7px 10px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); color: var(--text); outline: none; }
 .filterbar input { flex: 1; min-width: 160px; }
+#search { min-height: 40px; }
 .filterbar input:focus, .filterbar select:focus { border-color: var(--green); }
 .quiz-count-row { display: flex; align-items: center; gap: 8px; margin: -0.25rem 0 0.75rem; }
 .quiz-count-row label { font-size: 13px; color: var(--text2); }
@@ -335,6 +336,7 @@ body.quiz-open { overflow: hidden; }
   .quiz-overlay-shell { width: 100%; max-height: 100dvh; border-radius: 0; box-shadow: none; }
 }
 @media (max-width: 700px) {
+  #search { font-size: 16px; padding: 11px 12px; min-height: 46px; }
   .modal { max-width: 100%; }
   .modal-img { max-height: 300px; }
   .photo-thumb { width: 130px; height: 100px; }
