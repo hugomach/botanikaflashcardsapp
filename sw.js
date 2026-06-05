@@ -1,10 +1,11 @@
-const CACHE_NAME = 'botanika-cache-v1';
+const CACHE_NAME = 'botanika-cache-v2';
+const BASE_PATH = '/botanikaflashcardsapp';
 const CORE_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon-192.svg',
-  '/icon-512.svg',
+  `${BASE_PATH}/`,
+  `${BASE_PATH}/index.html`,
+  `${BASE_PATH}/manifest.json`,
+  `${BASE_PATH}/icon-192.svg`,
+  `${BASE_PATH}/icon-512.svg`,
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'
 ];
 
